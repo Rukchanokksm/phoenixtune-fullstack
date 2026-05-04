@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(node -e \"const pkg = require\\('./node_modules/lightningcss/package.json'\\); console.log\\('lightningcss version:', pkg.version\\)\")",
+      "Bash(npm --version)",
+      "Bash(dir E:\\\\my_code\\\\phoenixtune\\\\racing-tune-hub\\\\node_modules\\\\lightningcss *)",
+      "Bash(npm install *)",
+      "PowerShell(Get-Content *)",
+      "Bash(python3 -c ' *)",
+      "Bash(node -e ' *)",
+      "Bash(xargs grep *)",
+      "Bash(node -e \"const Stripe = require\\('./node_modules/stripe'\\); console.log\\(Stripe.LATEST_API_VERSION\\)\")",
+      "Bash(node -e \"const {Stripe} = require\\('./node_modules/stripe/cjs/stripe.js'\\); console.log\\(new Stripe\\('sk_test_fake'\\).VERSION\\)\")",
+      "PowerShell(Select-String -Path \"E:\\\\my_code\\\\phoenixtune\\\\racing-tune-hub\\\\node_modules\\\\@supabase\\\\ssr\\\\dist\\\\main\\\\index.d.ts\" -Pattern \"export\" | Select-Object -First 20 | ForEach-Object { $_.Line.Trim\\(\\) })",
+      "Bash(kill %1)",
+      "Bash(wait)",
+      "PowerShell(taskkill *)",
+      "PowerShell(Get-Process *)",
+      "Bash(node -e \"require\\('lightningcss-win32-x64-msvc'\\)\")",
+      "Bash(node -e \"const n = require\\('./node_modules/lightningcss-win32-x64-msvc'\\); console.log\\('OK', typeof n\\);\")",
+      "Bash(node -e \"const n = require\\('./node_modules/lightningcss/node/index.js'\\); console.log\\('OK', typeof n.transform\\);\")",
+      "PowerShell(Copy-Item *)",
+      "Read(//tmp/**)",
+      "Bash(node -e \"const pkg = require\\('./node_modules/@tailwindcss/postcss/package.json'\\); console.log\\('tailwindcss/postcss:', pkg.version\\)\")",
+      "Bash(node -e \"const pkg = require\\('./node_modules/tailwindcss/package.json'\\); console.log\\('tailwindcss:', pkg.version\\)\")",
+      "Bash(node_modules/.bin/next dev *)"
+    ]
+  }
+}
