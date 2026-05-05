@@ -8,8 +8,8 @@ interface DbGame {
 }
 interface DbTune {
   id: string; discipline: string; title: string; upvotes: number
-  car: { make: string; model: string; pi_class: string } | null
-  user: { username: string } | null
+  car:  { make: string; model: string; pi_class: string }[]
+  user: { username: string }[]
 }
 
 const DISCIPLINE_STYLE: Record<string, { bg: string; color: string; label: string }> = {
@@ -91,15 +91,15 @@ export default async function HomePage() {
       {/* HERO */}
       <section style={{ maxWidth:'1280px', margin:'0 auto', padding:'80px 24px 64px', textAlign:'center' }}>
         <span style={{ display:'inline-block', fontSize:'12px', fontWeight:600, letterSpacing:'0.1em',
-          textTransform:'uppercase', color:'#d97706', background:'rgba(217,119,6,0.1)',
-          border:'1px solid rgba(217,119,6,0.2)', padding:'4px 14px', borderRadius:'100px', marginBottom:'20px' }}>
+          textTransform:'uppercase', color:'#facc15', background:'rgba(250,204,21,0.1)',
+          border:'1px solid rgba(250,204,21,0.2)', padding:'4px 14px', borderRadius:'100px', marginBottom:'20px' }}>
           Community Tuning Platform
         </span>
 
         <h1 style={{ fontSize:'clamp(36px,5vw,60px)', fontWeight:900, lineHeight:1.1,
           letterSpacing:'-1px', margin:'0 0 20px', color:'#f1f5f9' }}>
           แชร์ tune.{' '}
-          <span style={{ background:'linear-gradient(135deg,#d97706,#fbbf24)',
+          <span style={{ background:'linear-gradient(135deg,#facc15,#fbbf24)',
             WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>
             เร็วกว่า. ถูกกว่า.
           </span>
@@ -111,7 +111,7 @@ export default async function HomePage() {
         </p>
 
         <div style={{ display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap', marginBottom:'56px' }}>
-          <Link href="/tunes" style={{ padding:'12px 28px', borderRadius:'9px', background:'#d97706',
+          <Link href="/tunes" style={{ padding:'12px 28px', borderRadius:'9px', background:'#facc15',
             color:'#fff', fontWeight:700, fontSize:'15px', textDecoration:'none' }}>
             Browse Tunes →
           </Link>
@@ -171,8 +171,8 @@ export default async function HomePage() {
       <section style={{ maxWidth:'1280px', margin:'0 auto', padding:'0 24px 80px' }}>
         <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:'20px' }}>
           <h2 style={{ fontSize:'20px', fontWeight:700, color:'#f1f5f9', margin:0 }}>Recent Tunes</h2>
-          <Link href="/tunes" style={{ fontSize:'13px', fontWeight:600, color:'#d97706', textDecoration:'none',
-            padding:'5px 12px', borderRadius:'7px', border:'1px solid rgba(217,119,6,0.25)' }}>
+          <Link href="/tunes" style={{ fontSize:'13px', fontWeight:600, color:'#facc15', textDecoration:'none',
+            padding:'5px 12px', borderRadius:'7px', border:'1px solid rgba(250,204,21,0.25)' }}>
             ดูทั้งหมด →
           </Link>
         </div>
@@ -190,24 +190,28 @@ export default async function HomePage() {
             <div style={{ padding:'48px 24px', textAlign:'center', color:'#475569', fontSize:'14px' }}>
               ยังไม่มี tune — เป็นคนแรกที่ upload!
             </div>
-          ) : (recentTunes as DbTune[]).map((tune) => (
-            <Link key={tune.id} href={`/tunes/${tune.id}`}
-              style={{ ...rowStyle, borderTop:'1px solid rgba(255,255,255,0.05)', textDecoration:'none' }}>
-              <span><DisciplineBadge discipline={tune.discipline} /></span>
-              <span style={{ display:'flex', alignItems:'center', gap:'6px' }}>
-                {tune.car ? (
-                  <><span style={{ fontSize:'13px', color:'#cbd5e1' }}>{tune.car.make} {tune.car.model}</span>
-                  <PIBadge piClass={tune.car.pi_class} /></>
-                ) : <span style={{ color:'#475569' }}>—</span>}
-              </span>
-              <span style={{ fontSize:'13.5px', color:'#e2e8f0', fontWeight:500 }}>{tune.title}</span>
-              <span style={{ fontSize:'13px', color:'#64748b' }}>{tune.user?.username ?? '—'}</span>
-              <span style={{ fontSize:'13px', color:'#94a3b8', textAlign:'right', display:'flex',
-                alignItems:'center', justifyContent:'flex-end', gap:'4px' }}>
-                <span style={{ color:'#d97706' }}>▲</span>{tune.upvotes}
-              </span>
-            </Link>
-          ))}
+          ) : (recentTunes as DbTune[]).map((tune) => {
+            const car  = tune.car?.[0]  ?? null
+            const user = tune.user?.[0] ?? null
+            return (
+              <Link key={tune.id} href={`/tunes/${tune.id}`}
+                style={{ ...rowStyle, borderTop:'1px solid rgba(255,255,255,0.05)', textDecoration:'none' }}>
+                <span><DisciplineBadge discipline={tune.discipline} /></span>
+                <span style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+                  {car ? (
+                    <><span style={{ fontSize:'13px', color:'#cbd5e1' }}>{car.make} {car.model}</span>
+                    <PIBadge piClass={car.pi_class} /></>
+                  ) : <span style={{ color:'#475569' }}>—</span>}
+                </span>
+                <span style={{ fontSize:'13.5px', color:'#e2e8f0', fontWeight:500 }}>{tune.title}</span>
+                <span style={{ fontSize:'13px', color:'#64748b' }}>{user?.username ?? '—'}</span>
+                <span style={{ fontSize:'13px', color:'#94a3b8', textAlign:'right', display:'flex',
+                  alignItems:'center', justifyContent:'flex-end', gap:'4px' }}>
+                  <span style={{ color:'#facc15' }}>▲</span>{tune.upvotes}
+                </span>
+              </Link>
+            )
+          })}
         </div>
       </section>
     </div>
