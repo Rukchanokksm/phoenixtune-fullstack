@@ -5,7 +5,7 @@ import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { UserInitializer } from '@/components/providers/UserInitializer'
 import { createClient } from '@/lib/supabase/server'
-import type { UserProfile } from '@/types'
+import type { UserProfile, UserRole, Gender, TitleId } from '@/types'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 
@@ -17,7 +17,6 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
 
-  // Fetch auth + profile server-side for initial hydration
   const { data: { user: authUser } } = await supabase.auth.getUser()
 
   let profile: UserProfile | null = null
@@ -26,20 +25,27 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   if (authUser) {
     const { data: dbProfile } = await supabase
       .from('user_profiles')
-      .select('id, username, avatar_url, is_premium, premium_until, bio, created_at')
+      .select('id, username, avatar_url, is_premium, premium_until, bio, role, gender, country, active_title, titles_earned, tune_share_count, total_upvotes_received, created_at')
       .eq('id', authUser.id)
       .single()
 
     if (dbProfile) {
       profile = {
-        id:           dbProfile.id,
-        email:        authUser.email ?? '',
-        username:     dbProfile.username,
-        avatarUrl:    dbProfile.avatar_url ?? undefined,
-        isPremium:    dbProfile.is_premium,
-        premiumUntil: dbProfile.premium_until ?? undefined,
-        bio:          dbProfile.bio ?? undefined,
-        createdAt:    dbProfile.created_at,
+        id:                   dbProfile.id,
+        email:                authUser.email ?? '',
+        username:             dbProfile.username,
+        avatarUrl:            dbProfile.avatar_url ?? undefined,
+        isPremium:            dbProfile.is_premium,
+        premiumUntil:         dbProfile.premium_until ?? undefined,
+        bio:                  dbProfile.bio ?? undefined,
+        role:                 (dbProfile.role as UserRole)   ?? 'user',
+        gender:               (dbProfile.gender as Gender)   ?? 'unspecified',
+        country:              dbProfile.country ?? undefined,
+        activeTitle:          (dbProfile.active_title as TitleId) ?? 'newcomer',
+        titlesEarned:         (dbProfile.titles_earned as TitleId[]) ?? ['newcomer'],
+        tuneShareCount:       dbProfile.tune_share_count       ?? 0,
+        totalUpvotesReceived: dbProfile.total_upvotes_received ?? 0,
+        createdAt:            dbProfile.created_at,
       }
 
       if (dbProfile.is_premium) {
@@ -55,14 +61,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="th" className={geist.variable}>
       <body style={{ margin: 0, background: '#0d0f14', color: '#e2e8f0', fontFamily: 'var(--font-geist), sans-serif' }}>
-        {/* Hydrate Zustand userStore from server-fetched data */}
         <UserInitializer initialUser={profile} initialSavedIds={savedIds} />
-
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Navbar />
-          <main style={{ flex: 1 }}>
-            {children}
-          </main>
+          <main style={{ flex: 1 }}>{children}</main>
           <Footer />
         </div>
       </body>

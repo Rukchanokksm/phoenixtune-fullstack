@@ -136,16 +136,8 @@ export function Navbar() {
 
           {/* Logo */}
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{
-              background: 'linear-gradient(135deg, #d97706, #f59e0b)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              fontWeight: 800,
-              fontSize: '17px',
-              letterSpacing: '-0.3px',
-              whiteSpace: 'nowrap',
-            }}>
-              PhoenixTune
+            <span style={{ fontWeight:800, fontSize:'17px', letterSpacing:'-0.3px', whiteSpace:'nowrap' }}>
+              <span style={{ color:'#facc15' }}>Phoenix</span><span style={{ color:'#e2e8f0' }}>Tune</span>
             </span>
           </Link>
 
@@ -202,8 +194,8 @@ export function Navbar() {
                           fontWeight: 600,
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          background: 'rgba(217,119,6,0.15)',
-                          color: '#d97706',
+                          background: 'rgba(250,204,21,0.15)',
+                          color: '#facc15',
                           letterSpacing: '0.3px',
                         }}>SOON</span>
                       )}
@@ -235,7 +227,7 @@ export function Navbar() {
               boxSizing: 'border-box',
               transition: 'border-color 0.15s',
             }}
-            onFocus={(e) => { (e.target as HTMLElement).style.borderColor = 'rgba(217,119,6,0.5)' }}
+            onFocus={(e) => { (e.target as HTMLElement).style.borderColor = 'rgba(250,204,21,0.5)' }}
             onBlur={(e) => { (e.target as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)' }}
           />
           <button type="submit" style={{
@@ -292,7 +284,7 @@ export function Navbar() {
                     fontWeight: 700,
                     padding: '1px 5px',
                     borderRadius: '4px',
-                    background: 'linear-gradient(135deg, #d97706, #f59e0b)',
+                    background: 'linear-gradient(135deg, #facc15, #eab308)',
                     color: '#000',
                     letterSpacing: '0.5px',
                   }}>PRO</span>
@@ -357,7 +349,7 @@ export function Navbar() {
               <Link href="/register" style={{
                 padding: '6px 14px',
                 borderRadius: '7px',
-                background: '#d97706',
+                background: '#facc15',
                 color: '#fff',
                 textDecoration: 'none',
                 fontSize: '13.5px',
@@ -365,7 +357,7 @@ export function Navbar() {
                 transition: 'background 0.15s',
               }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#b45309' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#d97706' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#facc15' }}
               >
                 Register
               </Link>

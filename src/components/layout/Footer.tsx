@@ -78,7 +78,7 @@ export function Footer() {
         <div>
           <Link href="/" style={{ textDecoration: 'none' }}>
             <span style={{
-              background: 'linear-gradient(135deg, #d97706, #f59e0b)',
+              background: 'linear-gradient(135deg, #facc15, #eab308)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               fontWeight: 800,
@@ -144,7 +144,7 @@ export function Footer() {
                   {l.label}
                 </Link>
                 {l.soon && (
-                  <span style={{ fontSize: '10px', fontWeight: 600, padding: '1px 5px', borderRadius: '4px', background: 'rgba(217,119,6,0.12)', color: '#d97706' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 600, padding: '1px 5px', borderRadius: '4px', background: 'rgba(250,204,21,0.12)', color: '#facc15' }}>
                     SOON
                   </span>
                 )}
