@@ -120,13 +120,22 @@ export default function RegisterPage() {
         }
       }
 
-      // 3. Update profile with extra fields
-      await supabase.from('user_profiles').update({
-        username:   form.username,
-        gender:     form.gender,
-        country:    form.country || null,
-        avatar_url: avatarUrl,
-      }).eq('id', userId)
+      // 3. UPSERT profile ผ่าน API route (service role — bypass RLS)
+      const profileRes = await fetch('/api/auth/create-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          username:  form.username,
+          gender:    form.gender,
+          country:   form.country || null,
+          avatarUrl: avatarUrl ?? null,
+        }),
+      })
+      if (!profileRes.ok) {
+        const d = await profileRes.json()
+        throw new Error(d.error ?? 'บันทึกข้อมูลไม่สำเร็จ')
+      }
 
       router.push('/?registered=1')
     } catch (err: unknown) {

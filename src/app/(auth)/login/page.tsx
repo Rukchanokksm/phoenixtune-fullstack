@@ -63,7 +63,13 @@ export default function LoginPage() {
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password: loginPw })
     setLoading(false)
-    if (error) return setErr(error.message === 'Invalid login credentials' ? 'email หรือ password ไม่ถูกต้อง' : error.message)
+    if (error) {
+      const msg = error.message
+      if (msg.includes('Invalid login credentials')) return setErr('email หรือ password ไม่ถูกต้อง')
+      if (msg.includes('Email not confirmed'))       return setErr('กรุณายืนยัน email ก่อน — หรือปิด Email Confirmation ใน Supabase Dashboard')
+      if (msg.includes('Too many requests'))         return setErr('ลองเข้าสู่ระบบบ่อยเกินไป รอสักครู่แล้วลองใหม่')
+      return setErr(msg)
+    }
     router.push('/')
     router.refresh()
   }
