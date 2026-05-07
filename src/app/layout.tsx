@@ -27,7 +27,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       .from('user_profiles')
       .select('id, username, avatar_url, is_premium, premium_until, bio, role, gender, country, active_title, titles_earned, tune_share_count, total_upvotes_received, created_at')
       .eq('id', authUser.id)
-      .single()
+      .maybeSingle()
 
     if (dbProfile) {
       profile = {

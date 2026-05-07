@@ -1,198 +1,157 @@
-import type { CalculatorInput, TuneParameters, Discipline, Drivetrain, PIClass } from '@/types'
+// ─── FH5 Auto Tune Calculator — Engine v1.0 ──────────────────────────────────
 
-// ─── Base values per discipline ───────────────────────────────────────────────
-const BASE: Record<Discipline, {
-  camberF: number; camberR: number
-  toeF: number; toeR: number
-  arbF: number; arbR: number
-  diffAccel: number; diffDecel: number
-  springMultiplier: number
-  tirePressure: number
-  reboundMult: number; bumpMult: number
-  aeroF: number; aeroR: number
-}> = {
-  street: {
-    camberF: -1.5, camberR: -1.0, toeF: 0.0, toeR: 0.1,
-    arbF: 3, arbR: 3, diffAccel: 45, diffDecel: 30,
-    springMultiplier: 0.60, tirePressure: 30,
-    reboundMult: 0.60, bumpMult: 0.40,
-    aeroF: 0, aeroR: 0,
-  },
-  track: {
-    camberF: -2.0, camberR: -1.5, toeF: 0.0, toeR: 0.2,
-    arbF: 5, arbR: 4, diffAccel: 55, diffDecel: 35,
-    springMultiplier: 0.80, tirePressure: 28,
-    reboundMult: 0.65, bumpMult: 0.45,
-    aeroF: 150, aeroR: 200,
-  },
-  drift: {
-    camberF: -3.5, camberR: -2.5, toeF: 0.2, toeR: -0.2,
-    arbF: 2, arbR: 7, diffAccel: 85, diffDecel: 20,
-    springMultiplier: 0.50, tirePressure: 32,
-    reboundMult: 0.55, bumpMult: 0.35,
-    aeroF: 0, aeroR: 100,
-  },
-  rally: {
-    camberF: -1.0, camberR: -0.8, toeF: 0.1, toeR: 0.2,
-    arbF: 2, arbR: 2, diffAccel: 60, diffDecel: 40,
-    springMultiplier: 0.65, tirePressure: 26,
-    reboundMult: 0.70, bumpMult: 0.50,
-    aeroF: 0, aeroR: 0,
-  },
-  offroad: {
-    camberF: -0.5, camberR: -0.3, toeF: 0.0, toeR: 0.1,
-    arbF: 1, arbR: 1, diffAccel: 65, diffDecel: 45,
-    springMultiplier: 0.55, tirePressure: 22,
-    reboundMult: 0.75, bumpMult: 0.55,
-    aeroF: 0, aeroR: 0,
-  },
-  drag: {
-    camberF: 0.0, camberR: 0.0, toeF: 0.0, toeR: 0.0,
-    arbF: 1, arbR: 8, diffAccel: 100, diffDecel: 15,
-    springMultiplier: 1.00, tirePressure: 36,
-    reboundMult: 0.50, bumpMult: 0.35,
-    aeroF: 0, aeroR: 300,
-  },
+export type Drivetrain = 'AWD' | 'FWD' | 'RWD'
+export type Discipline = 'street' | 'track' | 'offroad' | 'rally' | 'drift'
+
+export interface CalcInput {
+  balanceFront : number    // % 0–100
+  drivetrain   : Drivetrain
+  discipline   : Discipline
+  weightKg     : number
+  torqueNm     : number
 }
 
-// ─── PI class scale factors ───────────────────────────────────────────────────
-const PI_SPRING_SCALE: Record<PIClass, number> = {
-  D: 0.70, C: 0.80, B: 0.90, A: 1.00, S1: 1.15, S2: 1.30, X: 1.50,
+export interface TireResult      { pressureF: number; pressureR: number }
+export interface AlignmentResult { camberF: number; camberR: number; toeF: number; toeR: number; caster: number }
+export interface ArbResult       { front: number; rear: number }
+export interface SpringResult    { rateF: number; rateR: number; rideHeightPct: number }
+export interface DampingResult   { reboundF: number; reboundR: number; bumpF: number; bumpR: number }
+export interface AeroResult      { pct: number }
+export interface BrakeResult     { biasFront: number; pressure: number }
+export interface DiffResult      { frontAccel?: number; frontDecel?: number; rearAccel?: number; rearDecel?: number; center?: number }
+
+export interface TuneResult {
+  tires     : TireResult
+  alignment : AlignmentResult
+  arb       : ArbResult
+  springs   : SpringResult
+  damping   : DampingResult
+  aero      : AeroResult
+  brakes    : BrakeResult
+  diff      : DiffResult
+  version   : string
 }
-const PI_PRESSURE_OFFSET: Record<PIClass, number> = {
-  D: -3, C: -2, B: -1, A: 0, S1: 1, S2: 2, X: 3,
-}
-const PI_CAMBER_EXTRA: Record<PIClass, number> = {
-  D: 0.2, C: 0.1, B: 0.0, A: 0.0, S1: -0.1, S2: -0.2, X: -0.3,
-}
 
-// ─── Helper: round to 1 decimal ──────────────────────────────────────────────
-const r1 = (n: number) => Math.round(n * 10) / 10
+const clamp = (v: number, mn: number, mx: number) => Math.max(mn, Math.min(mx, v))
+const r1    = (n: number) => Math.round(n * 10) / 10
 
-// ─── Main calculation function ────────────────────────────────────────────────
-export function calculateTune(input: CalculatorInput): TuneParameters & {
-  diffFront?: number; diffRear?: number; diffCenter?: number
-} {
-  const { discipline, drivetrain, piClass, powerHp, weightKg } = input
-  const base = BASE[discipline]
-
-  // ── Power-to-weight ratio influence ─────────────────────────────────────
-  const pwr       = powerHp / weightKg                 // typically 0.1–1.5
-  const pwrFactor = Math.min(1.5, Math.max(0.5, pwr))  // clamp
-
-  // ── Spring rate ──────────────────────────────────────────────────────────
-  const springBase = weightKg * base.springMultiplier * PI_SPRING_SCALE[piClass]
-  // Front slightly stiffer than rear for most disciplines (except drag)
-  const springF = r1(springBase * (discipline === 'drag' ? 0.90 : 1.05))
-  const springR = r1(springBase * (discipline === 'drag' ? 1.10 : 0.95))
-
-  // ── Rebound & Bump (derived from spring rate) ────────────────────────────
-  const reboundF = r1(springF * base.reboundMult)
-  const reboundR = r1(springR * base.reboundMult)
-  const bumpF    = r1(springF * base.bumpMult)
-  const bumpR    = r1(springR * base.bumpMult)
-
-  // ── Tire pressure ────────────────────────────────────────────────────────
-  const pressureBase = base.tirePressure + PI_PRESSURE_OFFSET[piClass]
-  // Higher PWR → slightly higher pressure for stability
-  const pressureAdj = r1(pressureBase + (pwrFactor - 1) * 1.5)
-  const tirePressureF = Math.max(18, Math.min(45, pressureAdj))
-  const tirePressureR = Math.max(18, Math.min(45, pressureAdj + (discipline === 'drag' ? 2 : 0)))
-
-  // ── Camber ───────────────────────────────────────────────────────────────
-  const camberExtra = PI_CAMBER_EXTRA[piClass]
-  let camberF = r1(base.camberF + camberExtra)
-  let camberR = r1(base.camberR + camberExtra * 0.7)
-
-  // ── Drivetrain adjustments ───────────────────────────────────────────────
-  let diffFront: number | undefined
-  let diffRear:  number | undefined
-  let diffCenter: number | undefined
-
-  switch (drivetrain as Drivetrain) {
-    case 'FWD':
-      // More front camber, softer front spring (less weight over driven wheels)
-      camberF = r1(camberF - 0.3)
-      diffFront = base.diffAccel
-      break
-
-    case 'RWD':
-      // Rear-biased: slightly more rear spring stiffness
-      diffRear = base.diffAccel
-      // Drift: even more aggressive rear diff
-      if (discipline === 'drift') diffRear = Math.min(100, base.diffAccel + 10)
-      break
-
-    case 'AWD':
-      // Split diff: front bias for street/rally, rear bias for track/drift
-      diffFront  = discipline === 'drag' ? 50 : Math.max(20, base.diffAccel - 20)
-      diffRear   = base.diffAccel
-      diffCenter = discipline === 'drag' ? 60 : 50
-      break
+// ── TIRES ─────────────────────────────────────────────────────────────────────
+function calcTires({ drivetrain, discipline }: CalcInput): TireResult {
+  if (discipline === 'drift') {
+    const D: Record<Drivetrain, [number,number]> = { AWD:[1.6,2.8], RWD:[1.0,3.8], FWD:[3.0,1.0] }
+    const [f,r] = D[drivetrain]; return { pressureF:f, pressureR:r }
   }
+  const BASE: Record<Drivetrain,[number,number]> = { AWD:[2.2,2.2], RWD:[2.0,2.4], FWD:[2.4,2.0] }
+  const OFF: Record<Discipline, number> = { street:0, track:0.2, offroad:-1.0, rally:-0.8, drift:0 }
+  const [bf,br] = BASE[drivetrain]; const adj = OFF[discipline]
+  return { pressureF: r1(clamp(bf+adj,1.0,3.8)), pressureR: r1(clamp(br+adj,1.0,3.8)) }
+}
 
-  // ── Final drive — higher PWR = shorter gearing (lower final drive ratio) ──
-  const finalDrive = r1(4.2 - pwrFactor * 0.8)
+// ── ALIGNMENT ─────────────────────────────────────────────────────────────────
+function calcAlignment({ discipline }: CalcInput): AlignmentResult {
+  const CAMBER: Record<Discipline,[number,number]> = {
+    street:[-1.5,-1.0], track:[-2.0,-1.5], rally:[-0.4,-0.2], offroad:[0,0], drift:[-5.0,-1.0],
+  }
+  // Toe: 0 base per user spec, added physics-based suggestion
+  const TOE: Record<Discipline,[number,number]> = {
+    street:[0.0,0.1], track:[0.0,0.2], rally:[0.1,0.3], offroad:[0.0,0.2], drift:[0.3,-0.3],
+  }
+  const CASTER: Record<Discipline,number> = { street:5.0, track:6.0, offroad:3.0, rally:4.0, drift:7.0 }
+  const [camberF,camberR] = CAMBER[discipline]; const [toeF,toeR] = TOE[discipline]
+  return { camberF, camberR, toeF, toeR, caster: CASTER[discipline] }
+}
 
-  // ── ARB ──────────────────────────────────────────────────────────────────
-  // Higher PI / more power → slightly stiffer ARB
-  const arbScale = 1 + (PI_SPRING_SCALE[piClass] - 1) * 0.3
-  const arbF = r1(Math.min(10, base.arbF * arbScale))
-  const arbR = r1(Math.min(10, base.arbR * arbScale))
+// ── ANTIROLL BARS ─────────────────────────────────────────────────────────────
+function calcArb({ drivetrain, discipline, balanceFront }: CalcInput): ArbResult {
+  if (discipline === 'drift') return { front:10.0, rear:65.0 }
+  // Base % of max (65) per drivetrain
+  const BASE: Record<Drivetrain,[number,number]> = {
+    AWD:[0.46,0.50], RWD:[0.89,0.25], FWD:[0.45,0.70],
+  }
+  const [pF,pR] = BASE[drivetrain]
+  let front = pF * 65; let rear = pR * 65
+  // Balance offset: deviate from 50% shifts ARB
+  const balAdj = (balanceFront - 50) * 0.12
+  front += balAdj; rear -= balAdj
+  // Discipline modifiers
+  if (discipline === 'offroad' || discipline === 'rally') {
+    front *= 0.60; rear *= 0.60
+    if (drivetrain === 'RWD') front += 8  // fight oversteer on loose
+  } else if (discipline === 'track') {
+    front *= 1.08; rear *= 1.05
+  }
+  return { front: r1(clamp(front,1,65)), rear: r1(clamp(rear,1,65)) }
+}
 
+// ── SPRINGS ───────────────────────────────────────────────────────────────────
+function calcSprings({ weightKg, balanceFront, discipline, drivetrain, torqueNm }: CalcInput): SpringResult {
+  const STIFF: Record<Discipline,number> = { street:1.0, track:1.5, rally:0.7, offroad:0.5, drift:1.1 }
+  const RIDE:  Record<Discipline,number> = { street:20, track:0, rally:60, offroad:100, drift:0 }
+  const base = (weightKg / 8) * STIFF[discipline]
+  let rateF = base * (balanceFront / 50)
+  let rateR = base * ((100 - balanceFront) / 50)
+  // Torque stiffens rear for driven-axle cars
+  const tqBonus = Math.min((torqueNm / 2000) * 30, 30)
+  if (drivetrain === 'RWD') rateR += tqBonus
+  if (drivetrain === 'AWD') { rateR += tqBonus*0.5; rateF += tqBonus*0.3 }
+  return { rateF: r1(Math.max(10,rateF)), rateR: r1(Math.max(10,rateR)), rideHeightPct: RIDE[discipline] }
+}
+
+// ── DAMPING ───────────────────────────────────────────────────────────────────
+function calcDamping(sp: SpringResult, { discipline }: CalcInput): DampingResult {
+  const RB_MULT: Record<Discipline,number> = { street:1.0, track:1.1, rally:0.75, offroad:0.65, drift:0.90 }
+  const m = RB_MULT[discipline]
+  const rF = r1(clamp(sp.rateF * 0.055 * m, 1, 20))
+  const rR = r1(clamp(sp.rateR * 0.055 * m, 1, 20))
+  return { reboundF:rF, reboundR:rR, bumpF:r1(clamp(rF*0.65,1,20)), bumpR:r1(clamp(rR*0.65,1,20)) }
+}
+
+// ── AERO ──────────────────────────────────────────────────────────────────────
+function calcAero({ discipline }: CalcInput): AeroResult {
+  const PCT: Record<Discipline,number> = { street:100, track:100, offroad:50, rally:50, drift:0 }
+  return { pct: PCT[discipline] }
+}
+
+// ── BRAKES ────────────────────────────────────────────────────────────────────
+function calcBrakes({ balanceFront, discipline }: CalcInput): BrakeResult {
+  const biasFront = r1(clamp(50 + (balanceFront - 50) * 0.4, 40, 70))
+  const PRESSURE: Record<Discipline,number> = { street:100, track:130, rally:85, offroad:75, drift:75 }
+  return { biasFront, pressure: PRESSURE[discipline] }
+}
+
+// ── DIFFERENTIAL ──────────────────────────────────────────────────────────────
+function calcDiff({ drivetrain, discipline, torqueNm }: CalcInput): DiffResult {
+  type DB = { fA:number; fD:number; rA:number; rD:number; ctr:number }
+  const D: Record<Discipline,DB> = {
+    street : { fA:35, fD:25, rA:45, rD:30, ctr:50 },
+    track  : { fA:40, fD:30, rA:55, rD:35, ctr:55 },
+    offroad: { fA:70, fD:55, rA:80, rD:60, ctr:65 },
+    rally  : { fA:65, fD:50, rA:75, rD:55, ctr:60 },
+    drift  : { fA:20, fD:15, rA:85, rD:20, ctr:40 },
+  }
+  const d = D[discipline]
+  const tqB = Math.min((torqueNm/2000)*15, 15)
+  const rA = Math.min(100, Math.round(d.rA + tqB))
+  const fA = Math.min(100, Math.round(d.fA + tqB*0.5))
+  switch (drivetrain) {
+    case 'RWD': return { rearAccel:rA,  rearDecel:d.rD }
+    case 'FWD': return { frontAccel:fA, frontDecel:d.fD }
+    case 'AWD': return { frontAccel:fA, frontDecel:d.fD, rearAccel:rA, rearDecel:d.rD, center:d.ctr }
+  }
+}
+
+// ── MAIN ──────────────────────────────────────────────────────────────────────
+export function calculateFH5Tune(input: CalcInput): TuneResult {
+  const springs = calcSprings(input)
   return {
-    // Tires
-    tirePressureF: r1(tirePressureF),
-    tirePressureR: r1(tirePressureR),
-    // Suspension
-    springRateF: springF,
-    springRateR: springR,
-    reboundF,
-    reboundR,
-    bumpF,
-    bumpR,
-    // Alignment
-    camberF,
-    camberR,
-    toeF: base.toeF,
-    toeR: base.toeR,
-    // ARB
-    arbF,
-    arbR,
-    // Differential
-    diffAccel:  base.diffAccel,
-    diffDecel:  base.diffDecel,
-    ...(diffFront  !== undefined && { diffFront }),
-    ...(diffRear   !== undefined && { diffRear }),
-    ...(diffCenter !== undefined && { diffCenter }),
-    // Aero
-    aeroF: base.aeroF,
-    aeroR: base.aeroR,
-    // Gearing
-    finalDrive,
+    tires    : calcTires(input),
+    alignment: calcAlignment(input),
+    arb      : calcArb(input),
+    springs,
+    damping  : calcDamping(springs, input),
+    aero     : calcAero(input),
+    brakes   : calcBrakes(input),
+    diff     : calcDiff(input),
+    version  : '1.0',
   }
-}
-
-// ─── Usage limit helpers (for page to use with localStorage) ──────────────────
-export const DAILY_FREE_LIMIT = 3
-export const STORAGE_KEY = 'rth_calc_usage'
-
-export function getTodayUsage(): number {
-  if (typeof window === 'undefined') return 0
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return 0
-    const { date, count } = JSON.parse(raw) as { date: string; count: number }
-    const today = new Date().toISOString().slice(0, 10)
-    return date === today ? count : 0
-  } catch {
-    return 0
-  }
-}
-
-export function incrementUsage(): void {
-  if (typeof window === 'undefined') return
-  const today = new Date().toISOString().slice(0, 10)
-  const current = getTodayUsage()
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: today, count: current + 1 }))
 }
