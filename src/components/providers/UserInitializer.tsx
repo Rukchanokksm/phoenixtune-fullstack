@@ -58,7 +58,7 @@ export function UserInitializer({ initialUser, initialSavedIds = [] }: Props) {
             .from('user_profiles')
             .select('id, username, avatar_url, is_premium, premium_until, bio, role, gender, country, active_title, titles_earned, tune_share_count, total_upvotes_received, created_at')
             .eq('id', session!.user.id)
-            .single()
+            .maybeSingle()
 
           if (profile) {
             setUser(mapProfile(profile as Record<string, unknown>, session!.user.email ?? ''))

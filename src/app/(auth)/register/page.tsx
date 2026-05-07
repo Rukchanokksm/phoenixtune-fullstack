@@ -15,12 +15,26 @@ const COUNTRIES = [
 ]
 
 // ── Password strength ─────────────────────────────────────────────────────────
-function calcStrength(pw: string): { level: 0|1|2; label: string; color: string } {
-  if (!pw) return { level: 0, label: '', color: '' }
-  const unique = new Set(pw).size
-  if (unique <= 1) return { level: 0, label: 'คาดเดาง่าย',  color: '#f87171' }
-  if (unique <= 5) return { level: 1, label: 'ปานกลาง',     color: '#facc15' }
-  return             { level: 2, label: 'คาดเดายาก',  color: '#4ade80' }
+function calcStrength(pw: string): { level: 0|1|2; label: string; color: string; score: number } {
+  if (!pw) return { level: 0, label: '', color: '', score: 0 }
+  // ── Scoring ──────────────────────────────────────────────────────────────
+  let score = 0
+  if (pw.length >= 8)               score += 1  // ความยาวขั้นต่ำ
+  if (pw.length >= 12)              score += 1  // ความยาวดี
+  if (pw.length >= 16)              score += 1  // ความยาวดีมาก
+  if (/[a-z]/.test(pw))            score += 1  // มีตัวพิมพ์เล็ก
+  if (/[A-Z]/.test(pw))            score += 1  // มีตัวพิมพ์ใหญ่
+  if (/\d/.test(pw))               score += 1  // มีตัวเลข
+  if (/[^a-zA-Z0-9]/.test(pw))     score += 2  // มีสัญลักษณ์พิเศษ (เพิ่ม 2)
+  // ── หักคะแนน ──────────────────────────────────────────────────────────
+  if (/^[0-9]+$/.test(pw))         score -= 3  // ตัวเลขล้วน
+  if (/^[a-zA-Z]+$/.test(pw))      score -= 1  // ตัวอักษรล้วน (ไม่มีตัวเลข/สัญลักษณ์)
+  if (/(..)\1{2,}/.test(pw))       score -= 1  // มีรูปแบบซ้ำ เช่น abcabcabc
+  score = Math.max(0, score)
+  // ── แปลงเป็น level ────────────────────────────────────────────────────
+  if (score <= 2) return { level: 0, label: 'คาดเดาง่าย', color: '#f87171', score }
+  if (score <= 4) return { level: 1, label: 'ปานกลาง',    color: '#facc15', score }
+  return           { level: 2, label: 'คาดเดายาก', color: '#4ade80', score }
 }
 
 // ── Default SVG Avatars ───────────────────────────────────────────────────────
@@ -66,6 +80,7 @@ export default function RegisterPage() {
   const [errors,        setErrors]        = useState<Record<string, string>>({})
   const [loading,       setLoading]       = useState(false)
   const [serverError,   setServerError]   = useState('')
+  const [showPassword,  setShowPassword]  = useState(false)
 
   const strength = calcStrength(form.password)
 
@@ -205,18 +220,36 @@ export default function RegisterPage() {
           {/* Password + strength bar */}
           <div>
             <label style={label}>Password <span style={{ color:'#f87171' }}>*</span></label>
-            <input style={{ ...inp, borderColor: errors.password ? '#f87171' : '#1e2130' }}
-              type="password" placeholder="อย่างน้อย 8 ตัวอักษร" value={form.password}
-              onChange={e => setField('password', e.target.value)} />
+            <div style={{ position:'relative' }}>
+              <input style={{ ...inp, borderColor: errors.password ? '#f87171' : '#1e2130', paddingRight:'42px' }}
+                type={showPassword ? 'text' : 'password'}
+                placeholder="อย่างน้อย 8 ตัวอักษร" value={form.password}
+                onChange={e => setField('password', e.target.value)} />
+              <button type="button" onClick={() => setShowPassword(s => !s)}
+                style={{ position:'absolute', right:'10px', top:'50%', transform:'translateY(-50%)',
+                  background:'none', border:'none', cursor:'pointer', color:'#64748b',
+                  fontSize:'16px', padding:'2px', lineHeight:1 }}>
+                {showPassword ? '🙈' : '👁'}
+              </button>
+            </div>
             {errors.password && <p style={err}>{errors.password}</p>}
             {form.password && (
               <div style={{ marginTop:'8px' }}>
-                <div style={{ display:'flex', gap:'4px', marginBottom:'4px' }}>
+                <div style={{ display:'flex', gap:'4px', marginBottom:'6px' }}>
                   {[0,1,2].map(i => (
-                    <div key={i} style={{ flex:1, height:'4px', borderRadius:'2px', background: i <= strength.level ? strength.color : '#1e2130', transition:'background 0.3s' }} />
+                    <div key={i} style={{ flex:1, height:'4px', borderRadius:'2px',
+                      background: i <= strength.level ? strength.color : '#1e2130',
+                      transition:'background 0.3s' }} />
                   ))}
                 </div>
-                <span style={{ fontSize:'11px', color: strength.color, fontWeight:600 }}>{strength.label}</span>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <span style={{ fontSize:'11px', color: strength.color, fontWeight:700 }}>{strength.label}</span>
+                  <span style={{ fontSize:'10px', color:'#334155' }}>
+                    {strength.level === 0 && 'เพิ่มตัวเลข/สัญลักษณ์และความยาว'}
+                    {strength.level === 1 && 'เพิ่มสัญลักษณ์พิเศษ หรือความยาว 12+'}
+                    {strength.level === 2 && '✓ รหัสผ่านแข็งแกร่ง'}
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -243,14 +276,7 @@ export default function RegisterPage() {
             </select>
           </div>
 
-          {/* Role note */}
-          <div style={{ padding:'10px 14px', background:'#0d1117', border:'1px solid #1e2130', borderRadius:'8px', display:'flex', alignItems:'center', gap:'10px' }}>
-            <span style={{ fontSize:'20px' }}>🏁</span>
-            <div>
-              <p style={{ margin:0, fontSize:'12px', color:'#64748b' }}>ฉายาเริ่มต้น</p>
-              <p style={{ margin:0, fontSize:'13px', color:'#e2e8f0', fontWeight:600 }}>มือสตาร์ทใหม่ · สมาชิก (User)</p>
-            </div>
-          </div>
+
 
           {/* Server error */}
           {serverError && (

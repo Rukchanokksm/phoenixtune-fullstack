@@ -227,7 +227,7 @@ export default async function HomePage() {
                             WebkitTextFillColor: "transparent",
                         }}
                     >
-                        เร็วกว่า. ถูกกว่า.
+                        ของคุณ ให้กับคนอื่นได้รู้
                     </span>
                 </h1>
 
