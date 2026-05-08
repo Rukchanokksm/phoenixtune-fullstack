@@ -1,37 +1,7 @@
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 import { TopTunesClient } from '@/components/game/TopTunesClient'
 import { BrandsGrid } from '@/components/game/BrandsGrid'
-
-const FH5_BRANDS = [
-  { name:'Acura',        country:'🇺🇸' }, { name:'Alfa Romeo',   country:'🇮🇹' },
-  { name:'Alpine',       country:'🇫🇷' }, { name:'Ariel',        country:'🇬🇧' },
-  { name:'Aston Martin', country:'🇬🇧' }, { name:'Audi',         country:'🇩🇪' },
-  { name:'BAC',          country:'🇬🇧' }, { name:'Bentley',      country:'🇬🇧' },
-  { name:'BMW',          country:'🇩🇪' }, { name:'Bugatti',      country:'🇫🇷' },
-  { name:'Buick',        country:'🇺🇸' }, { name:'Cadillac',     country:'🇺🇸' },
-  { name:'Caterham',     country:'🇬🇧' }, { name:'Chevrolet',    country:'🇺🇸' },
-  { name:'Citroën',      country:'🇫🇷' }, { name:'Dodge',        country:'🇺🇸' },
-  { name:'Ferrari',      country:'🇮🇹' }, { name:'Ford',         country:'🇺🇸' },
-  { name:'GMC',          country:'🇺🇸' }, { name:'Honda',        country:'🇯🇵' },
-  { name:'HUMMER',       country:'🇺🇸' }, { name:'Hyundai',      country:'🇰🇷' },
-  { name:'Infiniti',     country:'🇯🇵' }, { name:'Jaguar',       country:'🇬🇧' },
-  { name:'Jeep',         country:'🇺🇸' }, { name:'Koenigsegg',   country:'🇸🇪' },
-  { name:'KTM',          country:'🇦🇹' }, { name:'Lamborghini',  country:'🇮🇹' },
-  { name:'Land Rover',   country:'🇬🇧' }, { name:'Lexus',        country:'🇯🇵' },
-  { name:'Lincoln',      country:'🇺🇸' }, { name:'Lotus',        country:'🇬🇧' },
-  { name:'Maserati',     country:'🇮🇹' }, { name:'Mazda',        country:'🇯🇵' },
-  { name:'McLaren',      country:'🇬🇧' }, { name:'Mercedes-AMG', country:'🇩🇪' },
-  { name:'MINI',         country:'🇬🇧' }, { name:'Mitsubishi',   country:'🇯🇵' },
-  { name:'Mosler',       country:'🇺🇸' }, { name:'Nissan',       country:'🇯🇵' },
-  { name:'Pagani',       country:'🇮🇹' }, { name:'Peugeot',      country:'🇫🇷' },
-  { name:'Plymouth',     country:'🇺🇸' }, { name:'Pontiac',      country:'🇺🇸' },
-  { name:'Porsche',      country:'🇩🇪' }, { name:'RAM',          country:'🇺🇸' },
-  { name:'Renault',      country:'🇫🇷' }, { name:'Rimac',        country:'🇭🇷' },
-  { name:'Rolls-Royce',  country:'🇬🇧' }, { name:'Saleen',       country:'🇺🇸' },
-  { name:'Shelby',       country:'🇺🇸' }, { name:'Subaru',       country:'🇯🇵' },
-  { name:'Toyota',       country:'🇯🇵' }, { name:'TVR',          country:'🇬🇧' },
-  { name:'Volkswagen',   country:'🇩🇪' }, { name:'Volvo',        country:'🇸🇪' },
-]
 
 const GAME_META: Record<string, { name:string; subtitle:string; gradient:string; accent:string; available:boolean }> = {
   'forza-horizon-5': { name:'Forza Horizon 5', subtitle:'Mexico Open World · 500+ Cars', gradient:'linear-gradient(135deg,#1e3a5f,#0f2040,#0d0f1e)', accent:'#60a5fa', available:true },
@@ -58,8 +28,7 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
 
   if (!meta) {
     return (
-      <div style={{ background:'#0d0f14', minHeight:'100vh', display:'flex',
-        alignItems:'center', justifyContent:'center', color:'#475569' }}>
+      <div style={{ background:'#0d0f14', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
         <div style={{ textAlign:'center' }}>
           <div style={{ fontSize:'48px', marginBottom:'16px' }}>🎮</div>
           <h1 style={{ color:'#e2e8f0', marginBottom:'8px' }}>ไม่พบเกมนี้</h1>
@@ -71,8 +40,7 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
 
   if (!meta.available) {
     return (
-      <div style={{ background:'#0d0f14', minHeight:'100vh', display:'flex',
-        alignItems:'center', justifyContent:'center', color:'#475569' }}>
+      <div style={{ background:'#0d0f14', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
         <div style={{ textAlign:'center' }}>
           <div style={{ fontSize:'48px', marginBottom:'16px' }}>🔜</div>
           <h1 style={{ color:'#e2e8f0', marginBottom:'8px' }}>{meta.name}</h1>
@@ -83,12 +51,23 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
     )
   }
 
-  const isFH5 = gameSlug === 'forza-horizon-5'
+  // Fetch brands from DB
+  const supabase = await createClient()
+  const { data: game } = await supabase.from('games').select('id').eq('slug', gameSlug).single()
+  let brands: string[] = []
+  if (game) {
+    const { data: cars } = await supabase
+      .from('cars')
+      .select('make')
+      .eq('game_id', game.id)
+      .order('make', { ascending: true })
+    if (cars) brands = [...new Set(cars.map(c => c.make))]
+  }
 
   return (
     <div style={{ background:'#0d0f14', minHeight:'100vh', color:'#e2e8f0' }}>
 
-      {/* Hero banner */}
+      {/* Hero */}
       <div style={{ background: meta.gradient, borderBottom:`1px solid ${meta.accent}22` }}>
         <div style={{ maxWidth:'1280px', margin:'0 auto', padding:'48px 24px 40px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'12px' }}>
@@ -96,73 +75,45 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
             <span style={{ color:'#334155' }}>›</span>
             <span style={{ fontSize:'13px', color:meta.accent }}>{meta.name}</span>
           </div>
-          <h1 style={{ fontSize:'clamp(28px,4vw,48px)', fontWeight:900, margin:'0 0 8px', color:'#f1f5f9' }}>
-            {meta.name}
-          </h1>
+          <h1 style={{ fontSize:'clamp(28px,4vw,48px)', fontWeight:900, margin:'0 0 8px', color:'#f1f5f9' }}>{meta.name}</h1>
           <p style={{ margin:0, color:'#64748b', fontSize:'15px' }}>{meta.subtitle}</p>
         </div>
       </div>
 
       <div style={{ maxWidth:'1280px', margin:'0 auto', padding:'40px 24px', display:'flex', flexDirection:'column', gap:'56px' }}>
 
-        {/* Section 1 — Top Tunes */}
+        {/* Top Tunes */}
         <section>
           <Heading emoji="🏆" title="Top Tunes" sub="tune ที่ได้รับ upvote สูงสุดในชุมชน" dot={meta.accent} />
           <TopTunesClient gameSlug={gameSlug} />
         </section>
 
-        {/* Section 2 — Tune Lab CTA */}
+        {/* Tune Lab CTA */}
         <section>
           <Heading emoji="🧮" title="Tune Lab" sub="คำนวณค่า tune จากสเปครถของคุณ" dot="#facc15" />
           <div style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
-
-            {/* Auto Calculator card */}
-            <div style={{ background:'linear-gradient(135deg,#1a1400,#0d0f14)', border:'1px solid rgba(250,204,21,0.15)',
-              borderRadius:'16px', padding:'40px 32px', display:'flex', alignItems:'center',
-              justifyContent:'space-between', flexWrap:'wrap', gap:'24px' }}>
+            <div style={{ background:'linear-gradient(135deg,#1a1400,#0d0f14)', border:'1px solid rgba(250,204,21,0.15)', borderRadius:'16px', padding:'40px 32px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'24px' }}>
               <div>
-                <h3 style={{ margin:'0 0 8px', fontSize:'20px', fontWeight:800, color:'#f1f5f9' }}>
-                  Auto Calculator
-                </h3>
-                <p style={{ margin:0, color:'#64748b', fontSize:'14px', maxWidth:'420px', lineHeight:1.6 }}>
-                  กรอกค่า Balance, Drivetrain, Weight และ Torque
-                  ระบบจะคำนวณค่า Suspension, ARB, Diff และอื่นๆ ให้อัตโนมัติ
-                </p>
+                <h3 style={{ margin:'0 0 8px', fontSize:'20px', fontWeight:800, color:'#f1f5f9' }}>Auto Calculator</h3>
+                <p style={{ margin:0, color:'#64748b', fontSize:'14px', maxWidth:'420px', lineHeight:1.6 }}>กรอกค่า Balance, Drivetrain, Weight และ Torque ระบบจะคำนวณให้อัตโนมัติ</p>
               </div>
-              <Link href="/calculator" style={{ padding:'13px 28px', borderRadius:'10px',
-                background:'#facc15', color:'#0d0f14', fontWeight:800, fontSize:'15px',
-                textDecoration:'none', whiteSpace:'nowrap' }}>
-                เปิด Calculator →
-              </Link>
+              <Link href="/calculator" style={{ padding:'13px 28px', borderRadius:'10px', background:'#facc15', color:'#0d0f14', fontWeight:800, fontSize:'15px', textDecoration:'none', whiteSpace:'nowrap' }}>เปิด Calculator →</Link>
             </div>
-
-            {/* Share Your Tune card */}
-            <div style={{ background:'linear-gradient(135deg,#0f1a0f,#0d0f14)', border:'1px solid rgba(74,222,128,0.15)',
-              borderRadius:'16px', padding:'40px 32px', display:'flex', alignItems:'center',
-              justifyContent:'space-between', flexWrap:'wrap', gap:'24px' }}>
+            <div style={{ background:'linear-gradient(135deg,#0f1a0f,#0d0f14)', border:'1px solid rgba(74,222,128,0.15)', borderRadius:'16px', padding:'40px 32px', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'24px' }}>
               <div>
-                <h3 style={{ margin:'0 0 8px', fontSize:'20px', fontWeight:800, color:'#f1f5f9' }}>
-                  Share Your Tune
-                </h3>
-                <p style={{ margin:0, color:'#64748b', fontSize:'14px', maxWidth:'420px', lineHeight:1.6 }}>
-                  แบ่งปัน tune setup ของคุณให้กับชุมชน — ได้ที่นี่
-                </p>
+                <h3 style={{ margin:'0 0 8px', fontSize:'20px', fontWeight:800, color:'#f1f5f9' }}>Share Your Tune</h3>
+                <p style={{ margin:0, color:'#64748b', fontSize:'14px', maxWidth:'420px', lineHeight:1.6 }}>แบ่งปัน tune setup ของคุณให้กับชุมชน</p>
               </div>
-              <Link href="/tunes/new" style={{ padding:'13px 28px', borderRadius:'10px',
-                background:'#4ade80', color:'#0d0f14', fontWeight:800, fontSize:'15px',
-                border:'none', textDecoration:'none', whiteSpace:'nowrap' }}>
-                แชร์ Tune →
-              </Link>
+              <Link href="/tunes/new" style={{ padding:'13px 28px', borderRadius:'10px', background:'#4ade80', color:'#0d0f14', fontWeight:800, fontSize:'15px', textDecoration:'none', whiteSpace:'nowrap' }}>แชร์ Tune →</Link>
             </div>
-
           </div>
         </section>
 
-        {/* Section 3 — Car Brands (FH5 only) */}
-        {isFH5 && (
+        {/* Car Brands */}
+        {brands.length > 0 && (
           <section>
-            <Heading emoji="🚗" title="Car Brands" sub="ค้นหา tune ตามยี่ห้อรถ — 57 แบรนด์ใน FH5" dot="#4ade80" />
-            <BrandsGrid gameSlug={gameSlug} brands={FH5_BRANDS} />
+            <Heading emoji="🚗" title="Car Brands" sub={`ค้นหา tune ตามยี่ห้อรถ — ${brands.length} แบรนด์`} dot="#4ade80" />
+            <BrandsGrid gameSlug={gameSlug} brands={brands} accent={meta.accent} />
           </section>
         )}
 

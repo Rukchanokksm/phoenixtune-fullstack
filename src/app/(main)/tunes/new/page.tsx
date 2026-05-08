@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FH5_BRANDS, FH5_MODELS } from '@/data/cars/fh5'
+
+type CarBrand = { id: string; name: string }
+type CarModel = { id: string; year: number; model: string; label: string; drivetrain: string }
 
 const CAR_CLASSES = [
   { id: 'sub500', label: '< 500', color: '#94a3b8' },
@@ -118,11 +120,29 @@ function Chip({ label, active, onClick, color }: {
 export default function ShareTunePage() {
   const router = useRouter()
 
+  // Car data from API
+  const [brands, setBrands]           = useState<CarBrand[]>([])
+  const [modelsByBrand, setModelsByBrand] = useState<Record<string, CarModel[]>>({})
+  const [carsLoading, setCarsLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/cars?game=forza-horizon-5')
+      .then(r => r.json())
+      .then(data => {
+        setBrands(data.brands ?? [])
+        setModelsByBrand(data.modelsByBrand ?? {})
+      })
+      .catch(console.error)
+      .finally(() => setCarsLoading(false))
+  }, [])
+
   const [brand, setBrand]       = useState('')
   const [modelId, setModelId]   = useState('')
   const [carClass, setCarClass] = useState('')
   const carSelected = !!(brand && modelId && carClass)
-  const models = FH5_MODELS[brand] ?? []
+  // find make name from brand id, then get models
+  const selectedBrandName = brands.find(b => b.id === brand)?.name ?? ''
+  const models: CarModel[] = modelsByBrand[selectedBrandName] ?? []
 
   const [tF, setTF] = useState(''); const [tR, setTR] = useState('')
 
@@ -160,6 +180,98 @@ export default function ShareTunePage() {
   const [bPre, setBPre]       = useState('')
 
   const [diffOn, setDiffOn]     = useState(false)
+
+  // Tune meta
+  const [tuneTitle, setTuneTitle]     = useState('')
+  const [tuneDesc, setTuneDesc]       = useState('')
+  const [discipline, setDiscipline]   = useState('')
+  const [shareCode, setShareCode]     = useState('')
+  const [submitting, setSubmitting]   = useState(false)
+  const [submitError, setSubmitError] = useState('')
+
+  // Map carClass chip id -> pi_class enum
+  const piClassMap: Record<string, string> = {
+    sub500: 'D', D: 'D', C: 'C', B: 'B', A: 'A', S1: 'S1', X: 'X',
+  }
+
+  async function handleSubmit() {
+    if (!discipline) { setSubmitError('กรุณาเลือก Discipline'); return }
+    if (!tuneTitle.trim()) { setSubmitError('กรุณาใส่ชื่อ Tune'); return }
+    setSubmitting(true); setSubmitError('')
+
+    const selectedModel = models.find(m => m.id === modelId)
+    const selectedBrand = brands.find(b => b.id === brand)
+
+    const parameters: Record<string, unknown> = {}
+    if (tF) parameters.tirePressureF = parseFloat(tF)
+    if (tR) parameters.tirePressureR = parseFloat(tR)
+    if (springOn) {
+      if (spF) parameters.springRateF = parseFloat(spF)
+      if (spR) parameters.springRateR = parseFloat(spR)
+      if (rhF) parameters.rideHeightF = parseFloat(rhF)
+      if (rhR) parameters.rideHeightR = parseFloat(rhR)
+    }
+    if (dampOn) {
+      if (rbF) parameters.reboundF = parseFloat(rbF)
+      if (rbR) parameters.reboundR = parseFloat(rbR)
+      if (buF) parameters.bumpF    = parseFloat(buF)
+      if (buR) parameters.bumpR    = parseFloat(buR)
+    }
+    if (alignOn) {
+      if (camberOn) { if (cF) parameters.camberF = parseFloat(cF); if (cR) parameters.camberR = parseFloat(cR) }
+      if (toeOn)    { if (toF) parameters.toeF = parseFloat(toF); if (toR) parameters.toeR = parseFloat(toR) }
+      if (castOn && cast) parameters.caster = parseFloat(cast)
+    }
+    if (arbOn) {
+      if (aF) parameters.arbF = parseFloat(aF)
+      if (aR) parameters.arbR = parseFloat(aR)
+    }
+    if (diffOn) {
+      if (dAccel)  parameters.diffAccel  = parseFloat(dAccel)
+      if (dCenter) parameters.diffCenter = parseFloat(dCenter)
+    }
+    if (aeroOn) {
+      if (arF) parameters.aeroF = parseFloat(arF)
+      if (arR) parameters.aeroR = parseFloat(arR)
+    }
+    if (brakeOn) {
+      parameters.brakeBias     = parseFloat(bBal)
+      if (bPre) parameters.brakePressure = parseFloat(bPre)
+    }
+    if (gearOn) {
+      if (gearFinal) parameters.finalDrive = parseFloat(gearFinal)
+      if (gearType === 'full') {
+        gears.slice(0, gearCount).forEach((v, i) => { if (v) parameters['gear' + (i + 1)] = parseFloat(v) })
+      }
+    }
+
+    try {
+      const res = await fetch('/api/tunes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title:      tuneTitle.trim(),
+          discipline,
+          description: tuneDesc.trim() || undefined,
+          shareCode:  shareCode.trim() || undefined,
+          parameters,
+          gameSlug:   'forza-horizon-5',
+          carMake:    selectedBrand?.name ?? brand,
+          carModel:   selectedModel?.model ?? modelId,
+          carYear:    selectedModel?.year,
+          piClass:    piClassMap[carClass] ?? 'A',
+          drivetrain: diffOn ? diffType : 'RWD',
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setSubmitError(json.error ?? 'เกิดข้อผิดพลาด'); return }
+      router.push('/tunes/' + json.id)
+    } catch {
+      setSubmitError('เกิดข้อผิดพลาด กรุณาลองใหม่')
+    } finally {
+      setSubmitting(false)
+    }
+  }
   const [diffType, setDiffType] = useState<'AWD' | 'RWD' | 'FWD'>('RWD')
   const [dAccel, setDAccel]     = useState('')
   const [dCenter, setDCenter]   = useState('')
@@ -193,14 +305,14 @@ export default function ShareTunePage() {
             <div style={{ flex: 1, minWidth: '180px' }}>
               <label style={S.label}>Brand</label>
               <select value={brand} onChange={e => { setBrand(e.target.value); setModelId('') }}
-                style={{ ...S.input, cursor: 'pointer' }}>
-                <option value="">-- เลือก Brand --</option>
-                {FH5_BRANDS.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                style={{ ...S.input, cursor: 'pointer' }} disabled={carsLoading}>
+                <option value="">{carsLoading ? '⏳ กำลังโหลด...' : '-- เลือก Brand --'}</option>
+                {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
             </div>
             <div style={{ flex: 2, minWidth: '220px' }}>
               <label style={S.label}>รุ่น</label>
-              <select value={modelId} onChange={e => setModelId(e.target.value)} disabled={!brand}
+              <select value={modelId} onChange={e => setModelId(e.target.value)} disabled={!brand || carsLoading}
                 style={{ ...S.input, cursor: brand ? 'pointer' : 'not-allowed', opacity: brand ? 1 : 0.4 }}>
                 <option value="">-- เลือกรุ่น --</option>
                 {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
@@ -520,22 +632,84 @@ export default function ShareTunePage() {
               </div>
             </div>
 
+            {/* Tune Info */}
+            <div style={S.card}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                <span style={{ fontSize: '20px' }}>📝</span>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#f1f5f9' }}>ข้อมูล Tune</h3>
+              </div>
+
+              {/* Discipline */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={S.label}>Discipline *</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {(['street','track','drift','rally','offroad','drag'] as const).map(d => {
+                    const colors: Record<string, string> = {
+                      street:'#4ade80', track:'#60a5fa', drift:'#f472b6',
+                      rally:'#fb923c', offroad:'#fbbf24', drag:'#f87171',
+                    }
+                    return (
+                      <Chip key={d} label={d.charAt(0).toUpperCase()+d.slice(1)}
+                        active={discipline === d} color={colors[d]}
+                        onClick={() => setDiscipline(discipline === d ? '' : d)} />
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Title */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={S.label}>ชื่อ Tune *</label>
+                <input value={tuneTitle} onChange={e => setTuneTitle(e.target.value)}
+                  placeholder="เช่น: RWD Drift Setup — S1 900 Drift Build"
+                  maxLength={120}
+                  style={{ ...S.input }} />
+              </div>
+
+              {/* Description */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={S.label}>คำอธิบาย (optional)</label>
+                <textarea value={tuneDesc} onChange={e => setTuneDesc(e.target.value)}
+                  placeholder="บอกรายละเอียด tune เพิ่มเติม เช่น สภาพถนนที่เหมาะสม, upgrade ที่ต้องใส่..."
+                  rows={3}
+                  style={{ ...S.input, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }} />
+              </div>
+
+              {/* Share Code */}
+              <div>
+                <label style={S.label}>Share Code (optional)</label>
+                <input value={shareCode} onChange={e => setShareCode(e.target.value.toUpperCase())}
+                  placeholder="เช่น: 123 456 789"
+                  maxLength={20}
+                  style={{ ...S.input, fontFamily: 'monospace', letterSpacing: '0.08em', maxWidth: '220px' }} />
+              </div>
+            </div>
+
             {/* Submit */}
+            {submitError && (
+              <div style={{ padding: '12px 16px', borderRadius: '10px',
+                background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)',
+                color: '#f87171', fontSize: '13px' }}>
+                {submitError}
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', padding: '8px 0 16px' }}>
               <button onClick={() => router.back()}
-                style={{ padding: '13px 28px', borderRadius: '10px', cursor: 'pointer',
-                  background: 'transparent', color: '#64748b', fontWeight: 700,
-                  border: '1px solid #2a2f3f', fontSize: '15px' }}>
+                style={{ padding: '13px 28px', borderRadius: '10px', fontSize: '14px', fontWeight: 700,
+                  background: 'none', border: '1px solid #2a2f3f', color: '#64748b', cursor: 'pointer' }}>
                 ยกเลิก
               </button>
-              <button style={{ padding: '13px 32px', borderRadius: '10px', cursor: 'pointer',
-                background: '#4ade80', color: '#0d0f14', fontWeight: 800, border: 'none', fontSize: '15px' }}>
-                แชร์ Tune 🚀
+              <button onClick={handleSubmit} disabled={submitting || !carSelected}
+                style={{ padding: '13px 32px', borderRadius: '10px', fontSize: '14px', fontWeight: 700,
+                  background: carSelected ? '#6366f1' : '#1e2330',
+                  color: carSelected ? '#fff' : '#475569',
+                  border: 'none', cursor: carSelected ? 'pointer' : 'not-allowed',
+                  opacity: submitting ? 0.6 : 1 }}>
+                {submitting ? '⏳ กำลัง Upload...' : '🚀 Share Tune'}
               </button>
             </div>
           </>
         )}
-
       </div>
     </div>
   )
