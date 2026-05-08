@@ -108,7 +108,7 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
         {/* Section 1 — Top Tunes */}
         <section>
           <Heading emoji="🏆" title="Top Tunes" sub="tune ที่ได้รับ upvote สูงสุดในชุมชน" dot={meta.accent} />
-          <TopTunesClient gameSlug={gameSlug} accent={meta.accent} />
+          <TopTunesClient gameSlug={gameSlug} />
         </section>
 
         {/* Section 2 — Tune Lab CTA */}
@@ -148,12 +148,11 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
                   แบ่งปัน tune setup ของคุณให้กับชุมชน — ได้ที่นี่
                 </p>
               </div>
-              <button disabled style={{ padding:'13px 28px', borderRadius:'10px',
-                background:'rgba(74,222,128,0.12)', color:'#4ade80', fontWeight:800, fontSize:'15px',
-                border:'1px solid rgba(74,222,128,0.3)', cursor:'not-allowed', whiteSpace:'nowrap',
-                opacity:0.7 }}>
-                เร็วๆ นี้ ✦
-              </button>
+              <Link href="/tunes/new" style={{ padding:'13px 28px', borderRadius:'10px',
+                background:'#4ade80', color:'#0d0f14', fontWeight:800, fontSize:'15px',
+                border:'none', textDecoration:'none', whiteSpace:'nowrap' }}>
+                แชร์ Tune →
+              </Link>
             </div>
 
           </div>
