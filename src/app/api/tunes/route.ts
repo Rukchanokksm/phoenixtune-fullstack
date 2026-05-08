@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-// ─── GET /api/tunes ───────────────────────────────────────────────────────────
+// GET /api/tunes
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl
     const gameId     = searchParams.get('gameId')
+    const carId      = searchParams.get('carId')
     const discipline = searchParams.get('discipline')
     const piClass    = searchParams.get('piClass')
     const drivetrain = searchParams.get('drivetrain')
@@ -28,79 +29,117 @@ export async function GET(req: NextRequest) {
         user:user_profiles(id, username, avatar_url, is_premium)
       `, { count: 'exact' })
 
-    // ── Filters ──
     if (gameId)     query = query.eq('game_id', gameId)
+    if (carId)      query = query.eq('car_id', carId)
     if (discipline) query = query.eq('discipline', discipline)
     if (piClass)    query = query.eq('cars.pi_class', piClass)
     if (drivetrain) query = query.eq('cars.drivetrain', drivetrain)
 
-    // ── Full-text search ──
     if (search) {
-      query = query.textSearch('title', search, {
-        type: 'websearch',
-        config: 'english',
-      })
+      query = query.textSearch('title', search, { type: 'websearch', config: 'english' })
     }
 
-    // ── Sort ──
     switch (sortBy) {
       case 'popular':  query = query.order('upvotes',     { ascending: false }); break
       case 'trending': query = query.order('view_count',  { ascending: false }); break
       default:         query = query.order('created_at',  { ascending: false }); break
     }
 
-    // ── Pagination ──
     query = query.range(from, to)
-
     const { data, count, error } = await query
     if (error) throw error
 
-    return NextResponse.json({
-      data:    data ?? [],
-      total:   count ?? 0,
-      page,
-      perPage,
-      hasMore: (count ?? 0) > to + 1,
-    })
+    return NextResponse.json({ data: data ?? [], total: count ?? 0, page, perPage })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error'
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 
-// ─── POST /api/tunes ──────────────────────────────────────────────────────────
+// POST /api/tunes
+// Accepts car details — upserts the car row, then inserts the tune
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
 
-    // Auth check
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await req.json()
-    const { title, carId, gameId, discipline, parameters, description, shareCode, gameVersion } = body
+    const {
+      title, discipline, description, shareCode, gameVersion, parameters,
+      // Car details (new approach — no pre-seed needed)
+      gameSlug, carMake, carModel, carYear, piClass, drivetrain,
+      // Legacy approach — accept direct carId + gameId if provided
+      carId: legacyCarId, gameId: legacyGameId,
+    } = body
 
     // Validation
-    const missing: string[] = []
-    if (!title?.trim())   missing.push('title')
-    if (!carId)           missing.push('carId')
-    if (!gameId)          missing.push('gameId')
-    if (!discipline)      missing.push('discipline')
-    if (!parameters)      missing.push('parameters')
-    if (missing.length > 0) {
-      return NextResponse.json(
-        { error: `Missing required fields: ${missing.join(', ')}` },
-        { status: 400 }
-      )
-    }
+    if (!title?.trim())   return NextResponse.json({ error: 'title is required' }, { status: 400 })
+    if (!discipline)      return NextResponse.json({ error: 'discipline is required' }, { status: 400 })
+    if (!parameters)      return NextResponse.json({ error: 'parameters is required' }, { status: 400 })
 
     const validDisciplines = ['street', 'track', 'rally', 'offroad', 'drift', 'drag']
     if (!validDisciplines.includes(discipline)) {
       return NextResponse.json({ error: `Invalid discipline: ${discipline}` }, { status: 400 })
     }
 
+    let carId  = legacyCarId  as string | undefined
+    let gameId = legacyGameId as string | undefined
+
+    // --- Resolve game -------------------------------------------------------
+    if (!gameId) {
+      if (!gameSlug) return NextResponse.json({ error: 'gameSlug is required' }, { status: 400 })
+      const { data: game } = await supabase
+        .from('games').select('id').eq('slug', gameSlug).single()
+      if (!game) return NextResponse.json({ error: `Game not found: ${gameSlug}` }, { status: 400 })
+      gameId = game.id
+    }
+
+    // --- Resolve / upsert car -----------------------------------------------
+    if (!carId) {
+      if (!carMake || !carModel)
+        return NextResponse.json({ error: 'carMake and carModel are required' }, { status: 400 })
+
+      const validPiClasses  = ['D', 'C', 'B', 'A', 'S1', 'S2', 'X']
+      const validDrivetrains = ['FWD', 'RWD', 'AWD']
+      const safePiClass    = validPiClasses.includes(piClass)    ? piClass    : 'A'
+      const safeDrivetrain = validDrivetrains.includes(drivetrain) ? drivetrain : 'RWD'
+
+      // Try to find existing car (same game + make + model + year)
+      const { data: existing } = await supabase
+        .from('cars')
+        .select('id')
+        .eq('game_id', gameId)
+        .eq('make', carMake)
+        .eq('model', carModel)
+        .eq('year', carYear ?? 0)
+        .maybeSingle()
+
+      if (existing) {
+        carId = existing.id
+      } else {
+        // Insert new car
+        const { data: newCar, error: carErr } = await supabase
+          .from('cars')
+          .insert({
+            game_id:    gameId,
+            make:       carMake,
+            model:      carModel,
+            year:       carYear ?? null,
+            pi_class:   safePiClass,
+            drivetrain: safeDrivetrain,
+          })
+          .select('id')
+          .single()
+        if (carErr) throw carErr
+        carId = newCar.id
+      }
+    }
+
+    // --- Insert tune --------------------------------------------------------
     const { data, error } = await supabase
       .from('tunes')
       .insert({
@@ -123,7 +162,6 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (error) throw error
-
     return NextResponse.json(data, { status: 201 })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error'
