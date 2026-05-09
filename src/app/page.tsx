@@ -108,6 +108,22 @@ export default async function HomePage() {
     ]
 
     return (
+        <>
+        <style>{`
+          .game-card {
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+          }
+          .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 14px 40px rgba(0,0,0,0.55);
+          }
+          .game-card .game-banner img {
+            transition: transform 0.35s ease;
+          }
+          .game-card:hover .game-banner img {
+            transform: scale(1.07);
+          }
+        `}</style>
         <div
             style={{
                 background: "#0d0f14",
@@ -299,6 +315,7 @@ export default async function HomePage() {
                             <Link
                                 key={game.id}
                                 href={clickable ? `/games/${game.slug}` : "#"}
+                                className={clickable ? "game-card" : undefined}
                                 style={{
                                     display: "block",
                                     textDecoration: "none",
@@ -312,6 +329,7 @@ export default async function HomePage() {
                             >
                                 {/* Card banner */}
                                 <div
+                                    className="game-banner"
                                     style={{
                                         height: "140px",
                                         background:
@@ -535,6 +553,7 @@ export default async function HomePage() {
                 )}
             </section>
         </div>
+        </>
     )
 }
 
