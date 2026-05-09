@@ -1,6 +1,9 @@
 import Link from "next/link"
+import Image from "next/image"
 import { createClient } from "@/lib/supabase/server"
 import { AdUnit } from "@/components/ads/AdUnit"
+
+const STORAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/image-games`
 
 type LatestPost = {
     id: string
@@ -350,17 +353,12 @@ export default async function HomePage() {
                                 >
                                     {/* Cover image (if available) */}
                                     {game.cover_url && (
-                                        <img
-                                            src={game.cover_url}
+                                        <Image
+                                            src={`${STORAGE_BASE}/${game.cover_url}`}
                                             alt={game.name}
-                                            style={{
-                                                width: "100%",
-                                                height: "100%",
-                                                objectFit: "cover",
-                                                position: "absolute",
-                                                inset: 0,
-                                                opacity: 0.75,
-                                            }}
+                                            fill
+                                            sizes="(max-width:600px) 100vw, 280px"
+                                            style={{ objectFit: "cover", opacity: 0.75 }}
                                         />
                                     )}
                                     {/* Radial highlight overlay */}
