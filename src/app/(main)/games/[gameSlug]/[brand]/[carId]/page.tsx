@@ -187,9 +187,18 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
 
         {/* Tunes list */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: '#475569' }}>
-            <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
-            <p>กำลังโหลด...</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderRadius: '10px', background: '#13151c', border: '1px solid rgba(255,255,255,0.04)', opacity: 1 - i * 0.15 }}>
+                <div style={{ height: '36px', width: '36px', borderRadius: '8px', background: '#1e2130', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ height: '14px', borderRadius: '4px', background: '#1e2130', marginBottom: '6px', width: `${50 + (i % 3) * 15}%` }} />
+                  <div style={{ height: '11px', borderRadius: '4px', background: '#161820', width: '35%' }} />
+                </div>
+                <div style={{ height: '11px', width: '60px', borderRadius: '4px', background: '#161820' }} />
+                <div style={{ height: '11px', width: '40px', borderRadius: '4px', background: '#161820' }} />
+              </div>
+            ))}
           </div>
         ) : tunes.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: '#475569' }}>

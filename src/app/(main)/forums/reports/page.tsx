@@ -95,8 +95,17 @@ export default function ReportsForumPage() {
         </div>
 
         {loading ? (
-          <div style={{ padding: '48px 20px', textAlign: 'center', color: '#374151', fontSize: '13px' }}>
-            กำลังโหลด...
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ padding: '13px 20px', borderTop: '1px solid #1a1d24', display: 'flex', alignItems: 'center', gap: '16px', opacity: 1 - i * 0.12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ height: '14px', borderRadius: '4px', background: '#1e2130', marginBottom: '8px', width: `${55 + (i % 3) * 15}%` }} />
+                  <div style={{ height: '11px', borderRadius: '4px', background: '#161820', width: '30%' }} />
+                </div>
+                <div style={{ height: '11px', borderRadius: '4px', background: '#161820', width: '40px' }} />
+                <div style={{ height: '11px', borderRadius: '4px', background: '#161820', width: '28px' }} />
+              </div>
+            ))}
           </div>
         ) : posts.length === 0 ? (
           <div style={{ padding: '48px 20px', textAlign: 'center', color: '#374151', fontSize: '13px' }}>
