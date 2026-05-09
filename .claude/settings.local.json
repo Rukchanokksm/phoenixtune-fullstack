@@ -31,7 +31,19 @@
       "Bash(ls \"C:\\\\Users\\\\pepoi\\\\.claude\\\\plugins\\\\marketplaces\\\\\")",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\pepoi\\\\.claude\\\\\" -Directory | ForEach-Object { $_.FullName })",
       "Bash(gh pr *)",
-      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue)",
+      "Bash(ls \"E:\\\\my_code\\\\phoenixtune\\\\phoenixtune\\\\src\\\\app\\\\api\\\\tunes\\\\\")",
+      "Bash(where gh *)",
+      "Read(//usr/local/bin/**)",
+      "Bash(mkdir -p \"E:\\\\my_code\\\\phoenixtune\\\\phoenixtune\\\\src\\\\app\\\\api\\\\cron\\\\cleanup-temp-images\" 2>/dev/null; echo done)",
+      "PowerShell(cd \"E:\\\\my_code\\\\phoenixtune\\\\phoenixtune\"; npx tsc --noEmit; echo \"Exit: $LASTEXITCODE\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git add *)",
+      "Bash(cd \"E:\\\\my_code\\\\phoenixtune\\\\phoenixtune\" && cat src/app/\\\\\\(main\\\\\\)/games/\\\\[gameSlug\\\\]/page.tsx | tail -80)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://jixmjuqurzlqgpyxizhp.supabase.co/storage/v1/object/public/image-games/cover/forza-horizon-5\")",
+      "Bash(curl -s https://jixmjuqurzlqgpyxizhp.supabase.co/storage/v1/object/list/image-games -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppeG1qdXF1cnpscWdweXhpemhwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Nzg3MjczOCwiZXhwIjoyMDkzNDQ4NzM4fQ.H1nuKEgrUpomVTdutQI9d2f-JE92bWRkdfKg1cBxuIA' -H 'Content-Type: application/json' -d '{\"prefix\":\"cover/\",\"limit\":20}')",
+      "Bash(git log *)"
     ]
   }
 }
