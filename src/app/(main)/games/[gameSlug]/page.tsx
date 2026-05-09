@@ -5,27 +5,12 @@ import { TopTunesClient } from '@/components/game/TopTunesClient'
 import { BrandsGrid } from '@/components/game/BrandsGrid'
 import { AdUnit } from '@/components/ads/AdUnit'
 
-const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const STORAGE_BASE  = `${SUPABASE_URL}/storage/v1/object/public/image-games`
-const COVER_BUCKET  = 'image-games'
+const STORAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/image-games`
 
 const GAME_META: Record<string, { name:string; subtitle:string; gradient:string; accent:string; available:boolean }> = {
   'forza-horizon-5': { name:'Forza Horizon 5', subtitle:'Mexico Open World · 500+ Cars', gradient:'linear-gradient(135deg,#1e3a5f,#0f2040,#0d0f1e)', accent:'#60a5fa', available:true },
   'forza-horizon-6': { name:'Forza Horizon 6', subtitle:'Coming Soon', gradient:'linear-gradient(135deg,#2a1f3a,#1a0f2a,#0d0f1e)', accent:'#c084fc', available:false },
   'nfs-unbound':     { name:'Need for Speed Unbound', subtitle:'Lakeshore City · Street Racing', gradient:'linear-gradient(135deg,#2a0f0f,#1a0808,#150a0a)', accent:'#f87171', available:true },
-}
-
-/** List the cover folder for this game slug and return the public URL of the first file found. */
-async function getGameCoverUrl(supabase: Awaited<ReturnType<typeof createClient>>, gameSlug: string): Promise<string | null> {
-  const prefix = `cover/${gameSlug}/`
-  const { data } = await supabase.storage
-    .from(COVER_BUCKET)
-    .list(prefix, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } })
-
-  const file = data?.find(f => f.id !== null) // skip folder placeholders
-  if (!file) return null
-
-  return `${STORAGE_BASE}/${prefix}${file.name}`
 }
 
 function Heading({ emoji, title, sub, dot }: { emoji:string; title:string; sub:string; dot:string }) {
@@ -57,13 +42,18 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
     )
   }
 
+  // Single query: id + cover_url path (no extra storage API call)
   const supabase = await createClient()
+  const { data: gameRow } = await supabase
+    .from('games')
+    .select('id, cover_url')
+    .eq('slug', gameSlug)
+    .single()
 
-  // Fetch cover from bucket + game id (both in parallel)
-  const [coverUrl, gameRow] = await Promise.all([
-    getGameCoverUrl(supabase, gameSlug),
-    supabase.from('games').select('id').eq('slug', gameSlug).single().then(r => r.data),
-  ])
+  const game = gameRow as { id: string; cover_url: string | null } | null
+
+  // Build public URL from stored path — pure string concat, zero network cost
+  const coverUrl = game?.cover_url ? `${STORAGE_BASE}/${game.cover_url}` : null
 
   if (!meta.available) {
     return (
@@ -85,11 +75,11 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
 
   // Fetch brands
   let brands: string[] = []
-  if (gameRow) {
+  if (game) {
     const { data: cars } = await supabase
       .from('cars')
       .select('make')
-      .eq('game_id', gameRow.id)
+      .eq('game_id', game.id)
       .order('make', { ascending: true })
     if (cars) brands = [...new Set(cars.map(c => c.make))]
   }
