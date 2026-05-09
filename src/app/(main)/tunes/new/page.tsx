@@ -256,6 +256,12 @@ export default function ShareTunePage() {
       }
     }
 
+    if (Object.keys(parameters).length === 0) {
+      setSubmitError('กรุณากรอกค่า tune อย่างน้อย 1 ค่า (เช่น ความดันยาง หรือ ค่า suspension)')
+      setSubmitting(false)
+      return
+    }
+
     try {
       const res = await fetch('/api/tunes', {
         method: 'POST',
@@ -271,7 +277,7 @@ export default function ShareTunePage() {
           carModel:   selectedModel?.model ?? modelId,
           carYear:    selectedModel?.year,
           piClass:    piClassMap[carClass] ?? 'A',
-          drivetrain: diffOn ? diffType : 'RWD',
+          drivetrain: diffOn ? diffType : (models.find(m => m.id === modelId)?.drivetrain ?? 'RWD'),
         }),
       })
       const json = await res.json()
