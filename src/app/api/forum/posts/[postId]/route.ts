@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 const POST_SELECT = `
-  id, title, body, category, upvotes, comment_count, created_at, updated_at,
+  id, title, body, category, upvotes, comment_count, images, created_at, updated_at,
   game:games!forum_posts_game_id_fkey(id, name, slug),
   user:user_profiles!forum_posts_user_id_fkey(id, username)
 `

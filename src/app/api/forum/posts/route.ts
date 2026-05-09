@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 const POST_SELECT = `
-  id, title, category, upvotes, comment_count, created_at, updated_at,
+  id, title, category, upvotes, comment_count, images, created_at, updated_at,
   game:games!forum_posts_game_id_fkey(id, name, slug),
   user:user_profiles!forum_posts_user_id_fkey(id, username)
 `
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
-    const { title, body: postBody, category, gameId } = body
+    const { title, body: postBody, category, gameId, images } = body
 
     if (!title?.trim())    return NextResponse.json({ error: 'title is required' }, { status: 400 })
     if (!postBody?.trim()) return NextResponse.json({ error: 'body is required' }, { status: 400 })
@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
         category: category ?? 'general',
         title:    title.trim(),
         body:     postBody.trim(),
+        images:   Array.isArray(images) ? images.filter((u: string) => typeof u === 'string').slice(0, 10) : [],
       })
       .select(POST_SELECT)
       .single()
