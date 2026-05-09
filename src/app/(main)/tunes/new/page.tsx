@@ -181,6 +181,9 @@ export default function ShareTunePage() {
 
   const [diffOn, setDiffOn]     = useState(false)
 
+  const [aeroFrontOn, setAeroFrontOn] = useState(true)
+  const [aeroRearOn,  setAeroRearOn]  = useState(true)
+
   // Tune meta
   const [tuneTitle, setTuneTitle]     = useState('')
   const [tuneDesc, setTuneDesc]       = useState('')
@@ -227,12 +230,20 @@ export default function ShareTunePage() {
       if (aR) parameters.arbR = parseFloat(aR)
     }
     if (diffOn) {
-      if (dAccel)  parameters.diffAccel  = parseFloat(dAccel)
-      if (dCenter) parameters.diffCenter = parseFloat(dCenter)
+      if (diffType === 'AWD') {
+        if (dFrontAccel) parameters.diffFrontAccel = parseFloat(dFrontAccel)
+        if (dFrontDecel) parameters.diffFrontDecel = parseFloat(dFrontDecel)
+        if (dRearAccel)  parameters.diffRearAccel  = parseFloat(dRearAccel)
+        if (dRearDecel)  parameters.diffRearDecel  = parseFloat(dRearDecel)
+        if (dCenter)     parameters.diffCenter     = parseFloat(dCenter)
+      } else {
+        if (dAccel) parameters.diffAccel = parseFloat(dAccel)
+        if (dDecel) parameters.diffDecel = parseFloat(dDecel)
+      }
     }
     if (aeroOn) {
-      if (arF) parameters.aeroF = parseFloat(arF)
-      if (arR) parameters.aeroR = parseFloat(arR)
+      if (aeroFrontOn && arF) parameters.aeroF = parseFloat(arF)
+      if (aeroRearOn  && arR) parameters.aeroR = parseFloat(arR)
     }
     if (brakeOn) {
       parameters.brakeBias     = parseFloat(bBal)
@@ -272,9 +283,16 @@ export default function ShareTunePage() {
       setSubmitting(false)
     }
   }
-  const [diffType, setDiffType] = useState<'AWD' | 'RWD' | 'FWD'>('RWD')
-  const [dAccel, setDAccel]     = useState('')
-  const [dCenter, setDCenter]   = useState('')
+  const [diffType, setDiffType]         = useState<'AWD' | 'RWD' | 'FWD'>('RWD')
+  // RWD / FWD
+  const [dAccel, setDAccel]             = useState('')
+  const [dDecel, setDDecel]             = useState('')
+  // AWD only
+  const [dFrontAccel, setDFrontAccel]   = useState('')
+  const [dFrontDecel, setDFrontDecel]   = useState('')
+  const [dRearAccel,  setDRearAccel]    = useState('')
+  const [dRearDecel,  setDRearDecel]    = useState('')
+  const [dCenter, setDCenter]           = useState('')
 
   return (
     <div style={{ background: '#0d0f14', minHeight: '100vh', color: '#e2e8f0' }}>
@@ -521,14 +539,38 @@ export default function ShareTunePage() {
 
             {/* Aero */}
             <div style={S.card}>
-              <SectionHeader emoji="💨" title="Aero" dot="#34d399"
+              <SectionHeader emoji="💨" title="Aero — Downforce" dot="#34d399"
                 enabled={aeroOn} onToggle={() => setAeroOn(p => !p)} />
               {aeroOn && (
-                <div style={S.row}>
-                  <NumInput label="Front  (0 – 999)" value={arF} min={0} max={999} step={1}
-                    onChange={setArF} onBlur={() => setArF(clamp(arF, 0, 999, 0))} />
-                  <NumInput label="Rear  (0 – 999)"  value={arR} min={0} max={999} step={1}
-                    onChange={setArR} onBlur={() => setArR(clamp(arR, 0, 999, 0))} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* Front */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={S.sub}>Front Downforce</span>
+                      <span style={S.hint}>(0 – 999)</span>
+                      <SubToggle label="ใส่มาด้วย" enabled={aeroFrontOn}
+                        onToggle={() => setAeroFrontOn(p => !p)} />
+                    </div>
+                    <div style={{ maxWidth: '200px' }}>
+                      <NumInput value={arF} unit="df" min={0} max={999} step={1}
+                        disabled={!aeroFrontOn}
+                        onChange={setArF} onBlur={() => setArF(clamp(arF, 0, 999, 0))} />
+                    </div>
+                  </div>
+                  {/* Rear */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={S.sub}>Rear Downforce</span>
+                      <span style={S.hint}>(0 – 999)</span>
+                      <SubToggle label="ใส่มาด้วย" enabled={aeroRearOn}
+                        onToggle={() => setAeroRearOn(p => !p)} />
+                    </div>
+                    <div style={{ maxWidth: '200px' }}>
+                      <NumInput value={arR} unit="df" min={0} max={999} step={1}
+                        disabled={!aeroRearOn}
+                        onChange={setArR} onBlur={() => setArR(clamp(arR, 0, 999, 0))} />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -582,7 +624,8 @@ export default function ShareTunePage() {
               <SectionHeader emoji="🔩" title="Differential" dot="#fbbf24"
                 enabled={diffOn} onToggle={() => setDiffOn(p => !p)} />
               {diffOn && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {/* Drivetrain selector */}
                   <div>
                     <label style={S.label}>Drivetrain</label>
                     <div style={{ display: 'flex', gap: '10px' }}>
@@ -592,14 +635,63 @@ export default function ShareTunePage() {
                       ))}
                     </div>
                   </div>
-                  <div style={{ maxWidth: '180px' }}>
-                    <NumInput label="Acceleration  (0 – 100%)" value={dAccel} unit="%" min={0} max={100} step={1}
-                      onChange={setDAccel} onBlur={() => setDAccel(clamp(dAccel, 0, 100, 0))} />
-                  </div>
+
+                  {/* RWD / FWD — 2 fields */}
+                  {diffType !== 'AWD' && (
+                    <div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <span style={S.sub}>{diffType} Differential</span>
+                        <span style={S.hint}>0 – 100 %</span>
+                      </div>
+                      <div style={S.row}>
+                        <NumInput label="Acceleration" value={dAccel} unit="%" min={0} max={100} step={1}
+                          onChange={setDAccel} onBlur={() => setDAccel(clamp(dAccel, 0, 100, 0))} />
+                        <NumInput label="Deceleration" value={dDecel} unit="%" min={0} max={100} step={1}
+                          onChange={setDDecel} onBlur={() => setDDecel(clamp(dDecel, 0, 100, 0))} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AWD — 5 fields: Front, Rear, Center */}
                   {diffType === 'AWD' && (
-                    <div style={{ maxWidth: '180px' }}>
-                      <NumInput label="Center Balance  (0 – 100%)" value={dCenter} unit="%" min={0} max={100} step={1}
-                        onChange={setDCenter} onBlur={() => setDCenter(clamp(dCenter, 0, 100, 0))} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      {/* Front diff */}
+                      <div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <span style={{ ...S.sub, color: '#60a5fa' }}>Front Differential</span>
+                          <span style={S.hint}>0 – 100 %</span>
+                        </div>
+                        <div style={S.row}>
+                          <NumInput label="Acceleration" value={dFrontAccel} unit="%" min={0} max={100} step={1}
+                            onChange={setDFrontAccel} onBlur={() => setDFrontAccel(clamp(dFrontAccel, 0, 100, 0))} />
+                          <NumInput label="Deceleration" value={dFrontDecel} unit="%" min={0} max={100} step={1}
+                            onChange={setDFrontDecel} onBlur={() => setDFrontDecel(clamp(dFrontDecel, 0, 100, 0))} />
+                        </div>
+                      </div>
+                      {/* Rear diff */}
+                      <div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <span style={{ ...S.sub, color: '#fb923c' }}>Rear Differential</span>
+                          <span style={S.hint}>0 – 100 %</span>
+                        </div>
+                        <div style={S.row}>
+                          <NumInput label="Acceleration" value={dRearAccel} unit="%" min={0} max={100} step={1}
+                            onChange={setDRearAccel} onBlur={() => setDRearAccel(clamp(dRearAccel, 0, 100, 0))} />
+                          <NumInput label="Deceleration" value={dRearDecel} unit="%" min={0} max={100} step={1}
+                            onChange={setDRearDecel} onBlur={() => setDRearDecel(clamp(dRearDecel, 0, 100, 0))} />
+                        </div>
+                      </div>
+                      {/* Center balance */}
+                      <div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <span style={{ ...S.sub, color: '#c084fc' }}>Center Balance</span>
+                          <span style={S.hint}>0 = Full Front · 100 = Full Rear</span>
+                        </div>
+                        <div style={{ maxWidth: '200px' }}>
+                          <NumInput value={dCenter} unit="%" min={0} max={100} step={1}
+                            onChange={setDCenter} onBlur={() => setDCenter(clamp(dCenter, 0, 100, 0))} />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
