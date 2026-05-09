@@ -117,6 +117,36 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
           </section>
         )}
 
+        {/* All Tunes CTA */}
+        <section>
+          <Heading emoji="📋" title="ดู Tune ทั้งหมด" sub={`รวม tune ทุก discipline สำหรับ ${meta.name}`} dot={meta.accent} />
+          <Link href={`/tunes?gameSlug=${gameSlug}`} style={{ textDecoration:'none', display:'block' }}>
+            <div style={{
+              background: `linear-gradient(135deg,${meta.accent}0d,#0d0f14)`,
+              border: `1px solid ${meta.accent}33`,
+              borderRadius:'16px', padding:'36px 32px',
+              display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'20px',
+              transition:'border-color 0.2s',
+            }}>
+              <div>
+                <h3 style={{ margin:'0 0 8px', fontSize:'20px', fontWeight:800, color:'#f1f5f9' }}>
+                  Tune ทั้งหมดของ {meta.name}
+                </h3>
+                <p style={{ margin:0, color:'#64748b', fontSize:'14px', lineHeight:1.6, maxWidth:'420px' }}>
+                  ค้นหา กรอง และเรียงดู tune จากชุมชน — ตาม discipline, class, drivetrain และอื่นๆ
+                </p>
+              </div>
+              <div style={{
+                padding:'13px 28px', borderRadius:'10px',
+                background: meta.accent, color:'#0d0f14',
+                fontWeight:800, fontSize:'15px', whiteSpace:'nowrap', flexShrink:0,
+              }}>
+                ดู Tune ทั้งหมด →
+              </div>
+            </div>
+          </Link>
+        </section>
+
       </div>
     </div>
   )
