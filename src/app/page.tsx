@@ -87,7 +87,7 @@ export default async function HomePage() {
 
     const { data: latestPosts } = await supabase
         .from("forum_posts")
-        .select("id, title, category, created_at, user:user_profiles!forum_posts_user_id_fkey(username)")
+        .select("id, title, category, created_at, user:user_profiles!forum_posts_user_id_fkey(username), game:games!forum_posts_game_id_fkey(name)")
         .order("created_at", { ascending: false })
         .limit(3)
 
@@ -493,6 +493,7 @@ export default async function HomePage() {
                             }
                             const meta  = catMeta[post.category] ?? { label: post.category, color:"#94a3b8", bg:"rgba(148,163,184,0.08)" }
                             const user  = (post.user as unknown as { username: string } | null)
+                            const game  = (post.game as unknown as { name: string } | null)
                             const diff  = Date.now() - new Date(post.created_at).getTime()
                             const mins  = Math.floor(diff / 60000)
                             const timeStr = mins < 60
@@ -511,6 +512,7 @@ export default async function HomePage() {
                                                 <span style={{ fontSize:"11px", fontWeight:700, color:meta.color, background:meta.bg, padding:"1px 7px", borderRadius:"4px" }}>
                                                     {meta.label}
                                                 </span>
+                                                {game && <span style={{ fontSize:"11px", fontWeight:600, color:"#60a5fa", background:"rgba(96,165,250,0.08)", padding:"1px 7px", borderRadius:"4px" }}>{game.name}</span>}
                                                 {user && <span style={{ fontSize:"11px", color:"#475569" }}>@{user.username}</span>}
                                                 <span style={{ fontSize:"11px", color:"#374151" }}>{timeStr}</span>
                                             </div>
