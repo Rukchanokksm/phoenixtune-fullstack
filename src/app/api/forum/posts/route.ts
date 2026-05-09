@@ -8,6 +8,14 @@ const POST_SELECT = `
 `
 const BUCKET = 'forum-images'
 
+type ApiBlock =
+  | { type: 'text';  content: string }
+  | { type: 'image'; tempPath: string }
+
+type StoredBlock =
+  | { type: 'text';  content: string }
+  | { type: 'image'; url: string }
+
 // GET /api/forum/posts?category=general&gameId=...&page=1&sortBy=latest
 export async function GET(req: NextRequest) {
   try {
@@ -53,12 +61,18 @@ export async function POST(req: NextRequest) {
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
-    const { title, body: postBody, category, gameId, tempPaths } = body
+    const { title, category, gameId, blocks } = body
 
-    if (!title?.trim())    return NextResponse.json({ error: 'title is required' }, { status: 400 })
-    if (!postBody?.trim()) return NextResponse.json({ error: 'body is required' }, { status: 400 })
+    if (!title?.trim()) return NextResponse.json({ error: 'title is required' }, { status: 400 })
 
-    // Validate category / announcement admin check
+    const apiBlocks: ApiBlock[] = Array.isArray(blocks) ? blocks : []
+    const hasContent = apiBlocks.some(b =>
+      (b.type === 'text'  && b.content?.trim()) ||
+      (b.type === 'image' && b.tempPath?.startsWith('temps/'))
+    )
+    if (!hasContent) return NextResponse.json({ error: 'เนื้อหาหรือรูปภาพจำเป็นต้องมีอย่างน้อยหนึ่งรายการ' }, { status: 400 })
+
+    // Validate category
     const validCategories = ['general', 'report']
     if (!validCategories.includes(category)) {
       if (category === 'announcement') {
@@ -82,7 +96,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Insert post first (images will be updated after move)
+    // Insert post with empty body first (we need the postId to build storage paths)
     const { data: post, error: insertErr } = await supabase
       .from('forum_posts')
       .insert({
@@ -90,7 +104,7 @@ export async function POST(req: NextRequest) {
         game_id:  gameId ?? null,
         category: category ?? 'general',
         title:    title.trim(),
-        body:     postBody.trim(),
+        body:     '[]',
         images:   [],
       })
       .select('id')
@@ -98,41 +112,43 @@ export async function POST(req: NextRequest) {
 
     if (insertErr) throw insertErr
 
-    // Move temp images → posts/{postId}/ and collect permanent URLs
-    const permanentUrls: string[] = []
-    const validPaths = Array.isArray(tempPaths)
-      ? tempPaths.filter((p: unknown) => typeof p === 'string' && p.startsWith('temps/')).slice(0, 10)
-      : []
+    // Move temp images → posts/{postId}/ and build final stored blocks
+    const storedBlocks: StoredBlock[] = []
+    const imageUrls:    string[]      = []
 
-    for (const tempPath of validPaths) {
-      const filename      = tempPath.split('/').pop() ?? `${Date.now()}.jpg`
+    for (const block of apiBlocks) {
+      if (block.type === 'text') {
+        if (block.content?.trim()) storedBlocks.push({ type: 'text', content: block.content.trim() })
+        continue
+      }
+
+      // Image block — move from temps/ to posts/{postId}/
+      if (!block.tempPath?.startsWith('temps/')) continue
+
+      const filename      = block.tempPath.split('/').pop() ?? `${Date.now()}.jpg`
       const permanentPath = `posts/${post.id}/${filename}`
 
       const { error: moveErr } = await adminClient.storage
         .from(BUCKET)
-        .move(tempPath, permanentPath)
+        .move(block.tempPath, permanentPath)
 
       if (moveErr) {
-        console.error('[forum/posts] move failed:', tempPath, moveErr.message)
+        console.error('[forum/posts] move failed:', block.tempPath, moveErr.message)
         continue
       }
 
-      const { data: { publicUrl } } = adminClient.storage
-        .from(BUCKET)
-        .getPublicUrl(permanentPath)
-
-      permanentUrls.push(publicUrl)
+      const { data: { publicUrl } } = adminClient.storage.from(BUCKET).getPublicUrl(permanentPath)
+      storedBlocks.push({ type: 'image', url: publicUrl })
+      imageUrls.push(publicUrl)
     }
 
-    // Update post with permanent image URLs (only if there are images)
-    if (permanentUrls.length > 0) {
-      await adminClient
-        .from('forum_posts')
-        .update({ images: permanentUrls })
-        .eq('id', post.id)
-    }
+    // Update post with final body (JSON blocks) and image URLs
+    await adminClient
+      .from('forum_posts')
+      .update({ body: JSON.stringify(storedBlocks), images: imageUrls })
+      .eq('id', post.id)
 
-    // Return full post data
+    // Return full post
     const { data: fullPost, error: fetchErr } = await supabase
       .from('forum_posts')
       .select(POST_SELECT)

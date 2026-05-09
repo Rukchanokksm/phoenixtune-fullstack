@@ -7,138 +7,240 @@ import { createClient } from '@/lib/supabase/client'
 
 type Game = { id: string; name: string; slug: string }
 
-// ── image upload constants ──────────────────────────────────────
-// MAX_IMAGES will be enforced per-role server-side in a future update.
-// For now all authenticated users share this limit.
 const MAX_IMAGES     = 5
-const MAX_SIZE_BYTES = 5 * 1024 * 1024          // 5 MB
+const MAX_SIZE_BYTES = 5 * 1024 * 1024
 const ALLOWED_TYPES  = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const BUCKET         = 'forum-images'
 
-type PendingImage = {
-  tempPath: string   // storage path relative to bucket, e.g. "temps/uid_ts_rand.jpg"
-  preview:  string   // local blob URL for preview
-  name:     string
+type TextBlock  = { id: string; type: 'text'; content: string }
+type ImageBlock = { id: string; type: 'image'; tempPath: string; preview: string; uploading: boolean; error: string }
+type FormBlock  = TextBlock | ImageBlock
+
+function uid() { return Math.random().toString(36).slice(2, 10) }
+
+// ── sub-components ──────────────────────────────────────────────
+
+function AddBar({ onText, onImage, canImage }: { onText: () => void; onImage: () => void; canImage: boolean }) {
+  return (
+    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', padding: '2px 0' }}>
+      <button type="button" onClick={onText}
+        style={{ padding: '4px 12px', borderRadius: '5px', fontSize: '11px', cursor: 'pointer', border: '1px solid #1e2130', background: '#0d0f14', color: '#475569' }}>
+        + ข้อความ
+      </button>
+      <button type="button" onClick={onImage} disabled={!canImage}
+        style={{ padding: '4px 12px', borderRadius: '5px', fontSize: '11px', cursor: canImage ? 'pointer' : 'not-allowed', border: '1px solid #1e2130', background: '#0d0f14', color: canImage ? '#475569' : '#2a2d35', opacity: canImage ? 1 : 0.5 }}>
+        + รูปภาพ
+      </button>
+    </div>
+  )
 }
 
-export default function NewForumPostPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const defaultCategory = searchParams.get('category') ?? 'general'
-  const fileInputRef = useRef<HTMLInputElement>(null)
+function TextBlockEditor({ block, onChange, onRemove, canRemove }: {
+  block: TextBlock; onChange: (v: string) => void; onRemove: () => void; canRemove: boolean
+}) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <textarea
+        value={block.content}
+        onChange={e => onChange(e.target.value)}
+        placeholder="เขียนเนื้อหาที่นี่..."
+        rows={4}
+        style={{ width: '100%', padding: '10px 36px 10px 14px', borderRadius: '8px', background: '#0d0f14', border: '1px solid #1e2130', color: '#e2e8f0', fontSize: '14px', outline: 'none', resize: 'vertical', lineHeight: '1.65', fontFamily: 'inherit', boxSizing: 'border-box' }}
+      />
+      {canRemove && (
+        <button type="button" onClick={onRemove}
+          style={{ position: 'absolute', top: '8px', right: '8px', width: '20px', height: '20px', borderRadius: '4px', background: 'transparent', border: 'none', color: '#374151', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+          ×
+        </button>
+      )}
+    </div>
+  )
+}
 
-  const [games,    setGames]    = useState<Game[]>([])
-  const [title,    setTitle]    = useState('')
-  const [body,     setBody]     = useState('')
-  const [tag,      setTag]      = useState<'general' | 'report' | 'game' | 'announcement'>(
-    defaultCategory === 'announcement' ? 'announcement'
-    : defaultCategory === 'report'     ? 'report'
+function ImageBlockEditor({ block, onUpload, onRemove }: {
+  block: ImageBlock; onUpload: () => void; onRemove: () => void
+}) {
+  const [drag, setDrag] = useState(false)
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {block.preview ? (
+        <div style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', background: '#0d0f14', border: '1px solid #1e2130', cursor: 'pointer' }} onClick={onUpload}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={block.preview} alt="" style={{ width: '100%', maxHeight: '360px', objectFit: 'contain', display: 'block', background: '#0d0f14' }} />
+          <div
+            onMouseEnter={e => (e.currentTarget.style.opacity = '1') }
+            onMouseLeave={e => (e.currentTarget.style.opacity = '0') }
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s' }}>
+            <span style={{ color: '#fff', fontSize: '13px', fontWeight: 600 }}>เปลี่ยนรูป</span>
+          </div>
+        </div>
+      ) : (
+        <div
+          onDragOver={e => { e.preventDefault(); setDrag(true) }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={e => { e.preventDefault(); setDrag(false); onUpload() }}
+          onClick={onUpload}
+          style={{ border: `2px dashed ${drag ? '#6366f1' : '#1e2130'}`, borderRadius: '8px', padding: '32px 16px', textAlign: 'center', cursor: 'pointer', background: drag ? 'rgba(99,102,241,0.04)' : 'transparent', transition: 'border-color 0.15s' }}>
+          {block.uploading ? (
+            <span style={{ color: '#475569', fontSize: '13px' }}>กำลังอัปโหลด...</span>
+          ) : (
+            <span style={{ color: '#475569', fontSize: '13px' }}>
+              วางรูปหรือ <span style={{ color: '#6366f1', fontWeight: 600 }}>เลือกไฟล์</span>
+              <br />
+              <span style={{ color: '#374151', fontSize: '11px' }}>JPG PNG WebP GIF · สูงสุด 5 MB</span>
+            </span>
+          )}
+        </div>
+      )}
+      {block.error && (
+        <div style={{ color: '#fbbf24', fontSize: '11px', marginTop: '4px' }}>{block.error}</div>
+      )}
+      <button type="button" onClick={onRemove}
+        style={{ position: 'absolute', top: '8px', right: '8px', width: '22px', height: '22px', borderRadius: '4px', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#e2e8f0', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, zIndex: 1 }}>
+        ×
+      </button>
+    </div>
+  )
+}
+
+// ── main page ───────────────────────────────────────────────────
+
+export default function NewForumPostPage() {
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const defaultCat   = searchParams.get('category') ?? 'general'
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const activeBlock  = useRef<string>('')
+
+  const [games,   setGames]   = useState<Game[]>([])
+  const [title,   setTitle]   = useState('')
+  const [blocks,  setBlocks]  = useState<FormBlock[]>([{ id: uid(), type: 'text', content: '' }])
+  const [tag,     setTag]     = useState<'general' | 'report' | 'game' | 'announcement'>(
+    defaultCat === 'announcement' ? 'announcement'
+    : defaultCat === 'report'    ? 'report'
     : 'general'
   )
-  const [gameId,      setGameId]      = useState('')
-  const [images,      setImages]      = useState<PendingImage[]>([])
-  const [uploading,   setUploading]   = useState(false)
-  const [uploadError, setUploadError] = useState('')
-  const [loading,     setLoading]     = useState(false)
-  const [error,       setError]       = useState('')
-  const [dragOver,    setDragOver]    = useState(false)
+  const [gameId,  setGameId]  = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
 
   useEffect(() => {
     fetch('/api/games').then(r => r.json()).then(d => setGames(d.games ?? [])).catch(() => {})
   }, [])
 
-  const category = tag === 'game' ? 'general' : tag
+  const category   = tag === 'game' ? 'general' : tag
+  const imageCount = blocks.filter(b => b.type === 'image').length
+  const canImage   = imageCount < MAX_IMAGES
 
-  async function uploadFiles(files: FileList | File[]) {
-    // Convert to plain array BEFORE any await — FileList is a live object tied to
-    // the input element. Once onFileInput clears e.target.value the list empties.
-    const allFiles = Array.from(files)
+  // ── block mutations ──────────────────────────────────────────
 
-    setUploadError('')
-    const supabase = createClient()
+  function insertAfter(afterId: string, block: FormBlock) {
+    setBlocks(prev => {
+      const i    = prev.findIndex(b => b.id === afterId)
+      const next = [...prev]
+      next.splice(i + 1, 0, block)
+      return next
+    })
+  }
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setUploadError('กรุณาเข้าสู่ระบบก่อนอัปโหลดรูป'); return }
+  function removeBlock(id: string) {
+    setBlocks(prev => {
+      const next = prev.filter(b => b.id !== id)
+      return next.length === 0 ? [{ id: uid(), type: 'text', content: '' }] : next
+    })
+  }
 
-    const remaining = MAX_IMAGES - images.length
-    if (remaining <= 0) {
-      setUploadError(`ใส่รูปได้สูงสุด ${MAX_IMAGES} รูปต่อ post`)
+  function updateText(id: string, content: string) {
+    setBlocks(prev => prev.map(b => b.id === id ? { ...b, content } : b))
+  }
+
+  function updateImageBlock(id: string, patch: Partial<ImageBlock>) {
+    setBlocks(prev => prev.map(b => b.id === id ? { ...b, ...patch } as ImageBlock : b))
+  }
+
+  // ── image upload ─────────────────────────────────────────────
+
+  function triggerUpload(blockId: string) {
+    activeBlock.current = blockId
+    fileInputRef.current?.click()
+  }
+
+  async function uploadFile(blockId: string, file: File) {
+    // Snapshot immediately — before any await invalidates the reference
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      updateImageBlock(blockId, { error: 'ไม่รองรับ — ใช้ได้เฉพาะ JPG, PNG, WebP, GIF', uploading: false })
+      return
+    }
+    if (file.size > MAX_SIZE_BYTES) {
+      updateImageBlock(blockId, { error: `ใหญ่เกิน 5 MB (${(file.size / 1024 / 1024).toFixed(1)} MB)`, uploading: false })
       return
     }
 
-    const fileArr = allFiles.slice(0, remaining)
-    const skipped = allFiles.length - fileArr.length
-    if (skipped > 0) setUploadError(`เลือกได้อีกแค่ ${remaining} รูป — ไฟล์ที่เกินถูกข้ามไป`)
+    const preview = URL.createObjectURL(file)
+    updateImageBlock(blockId, { uploading: true, error: '', preview, tempPath: '' })
 
-    setUploading(true)
-    const results: PendingImage[] = []
-
-    for (const file of fileArr) {
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        setUploadError(`"${file.name}" ไม่รองรับ — ใช้ได้เฉพาะ JPG, PNG, WebP, GIF`)
-        continue
-      }
-      if (file.size > MAX_SIZE_BYTES) {
-        setUploadError(`"${file.name}" ใหญ่เกิน 5 MB (${(file.size / 1024 / 1024).toFixed(1)} MB)`)
-        continue
-      }
-
-      const ext      = file.name.split('.').pop() ?? 'jpg'
-      const rand     = Math.random().toString(36).slice(2, 8)
-      // Store under temps/ — treated as disposable until post is created
-      const tempPath = `temps/${user.id}_${Date.now()}_${rand}.${ext}`
-
-      const { error: upErr } = await supabase.storage
-        .from(BUCKET)
-        .upload(tempPath, file, { cacheControl: '3600', upsert: false })
-
-      if (upErr) {
-        setUploadError(`อัปโหลด "${file.name}" ไม่สำเร็จ: ${upErr.message}`)
-        continue
-      }
-
-      results.push({ tempPath, preview: URL.createObjectURL(file), name: file.name })
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      updateImageBlock(blockId, { uploading: false, error: 'กรุณาเข้าสู่ระบบ' })
+      return
     }
 
-    setImages(prev => [...prev, ...results])
-    setUploading(false)
-  }
+    const ext      = file.name.split('.').pop() ?? 'jpg'
+    const rand     = Math.random().toString(36).slice(2, 8)
+    const tempPath = `temps/${user.id}_${Date.now()}_${rand}.${ext}`
 
-  function removeImage(idx: number) {
-    // Note: temp file stays in storage until the daily cron cleans it up
-    setImages(prev => prev.filter((_, i) => i !== idx))
+    const { error: upErr } = await supabase.storage
+      .from(BUCKET)
+      .upload(tempPath, file, { cacheControl: '3600', upsert: false })
+
+    if (upErr) {
+      updateImageBlock(blockId, { uploading: false, error: upErr.message })
+      return
+    }
+
+    updateImageBlock(blockId, { uploading: false, tempPath })
   }
 
   function onFileInput(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files?.length) uploadFiles(e.target.files)
+    const files = Array.from(e.target.files ?? [])   // snapshot before reset
     e.target.value = ''
+    if (files[0] && activeBlock.current) {
+      uploadFile(activeBlock.current, files[0])
+    }
   }
 
-  function onDrop(e: React.DragEvent) {
-    e.preventDefault()
-    setDragOver(false)
-    if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files)
-  }
+  // ── submit ───────────────────────────────────────────────────
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     if (!title.trim()) { setError('กรุณาใส่หัวข้อ'); return }
-    if (!body.trim())  { setError('กรุณาใส่เนื้อหา'); return }
+
+    const hasContent = blocks.some(b =>
+      (b.type === 'text'  && b.content.trim()) ||
+      (b.type === 'image' && b.tempPath)
+    )
+    if (!hasContent) { setError('กรุณาใส่เนื้อหาหรือรูปภาพอย่างน้อยหนึ่งรายการ'); return }
+
+    if (blocks.some(b => b.type === 'image' && (b as ImageBlock).uploading)) {
+      setError('รอรูปภาพอัปโหลดเสร็จก่อน')
+      return
+    }
 
     setLoading(true)
     try {
+      const apiBlocks = blocks
+        .filter(b => b.type === 'text' ? (b as TextBlock).content.trim() : (b as ImageBlock).tempPath)
+        .map(b => b.type === 'text'
+          ? { type: 'text',  content: (b as TextBlock).content.trim() }
+          : { type: 'image', tempPath: (b as ImageBlock).tempPath })
+
       const res = await fetch('/api/forum/posts', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title:     title.trim(),
-          body:      body.trim(),
-          category,
-          gameId:    tag === 'game' ? gameId || null : null,
-          // Send storage paths so the server can move them to permanent location
-          tempPaths: images.map(i => i.tempPath),
-        }),
+        body:    JSON.stringify({ title: title.trim(), category, gameId: tag === 'game' ? gameId || null : null, blocks: apiBlocks }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'เกิดข้อผิดพลาด'); return }
@@ -150,16 +252,10 @@ export default function NewForumPostPage() {
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 14px', borderRadius: '8px',
-    background: '#0d0f14', border: '1px solid #1e2130',
-    color: '#e2e8f0', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
-  }
-  const labelStyle: React.CSSProperties = {
-    display: 'block', color: '#94a3b8', fontSize: '12px',
-    fontWeight: 600, marginBottom: '6px', letterSpacing: '0.04em',
-  }
-  const canAddMore = images.length < MAX_IMAGES
+  // ── render ───────────────────────────────────────────────────
+
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 14px', borderRadius: '8px', background: '#0d0f14', border: '1px solid #1e2130', color: '#e2e8f0', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }
+  const labelStyle: React.CSSProperties = { display: 'block', color: '#94a3b8', fontSize: '12px', fontWeight: 600, marginBottom: '6px', letterSpacing: '0.04em' }
 
   return (
     <div style={{ maxWidth: '700px', margin: '0 auto', padding: '40px 24px 80px', color: '#e2e8f0' }}>
@@ -171,27 +267,20 @@ export default function NewForumPostPage() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div style={{ background: '#111318', border: '1px solid #1e2130', borderRadius: '10px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ background: '#111318', border: '1px solid #1e2130', borderRadius: '10px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Tag */}
           <div>
             <label style={labelStyle}>หมวดหมู่</label>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {([
-                { value: 'general',  label: 'ทั่วไป' },
-                { value: 'game',     label: 'เกม' },
-                { value: 'report',   label: 'รายงาน / ปัญหา' },
+                { value: 'general', label: 'ทั่วไป' },
+                { value: 'game',    label: 'เกม' },
+                { value: 'report',  label: 'รายงาน / ปัญหา' },
                 ...(tag === 'announcement' ? [{ value: 'announcement' as const, label: 'ประกาศ' }] : []),
               ] as const).map(opt => (
                 <button key={opt.value} type="button" onClick={() => setTag(opt.value)}
-                  style={{
-                    padding: '7px 16px', borderRadius: '7px', fontSize: '13px', cursor: 'pointer',
-                    border: '1px solid',
-                    borderColor: tag === opt.value ? '#6366f1' : '#1e2130',
-                    background:  tag === opt.value ? 'rgba(99,102,241,0.12)' : '#0d0f14',
-                    color:       tag === opt.value ? '#818cf8' : '#64748b',
-                    fontWeight:  tag === opt.value ? 700 : 400,
-                  }}>
+                  style={{ padding: '7px 16px', borderRadius: '7px', fontSize: '13px', cursor: 'pointer', border: '1px solid', borderColor: tag === opt.value ? '#6366f1' : '#1e2130', background: tag === opt.value ? 'rgba(99,102,241,0.12)' : '#0d0f14', color: tag === opt.value ? '#818cf8' : '#64748b', fontWeight: tag === opt.value ? 700 : 400 }}>
                   {opt.label}
                 </button>
               ))}
@@ -202,8 +291,7 @@ export default function NewForumPostPage() {
           {tag === 'game' && (
             <div>
               <label style={labelStyle}>เกม</label>
-              <select value={gameId} onChange={e => setGameId(e.target.value)}
-                style={{ ...inputStyle, cursor: 'pointer' }}>
+              <select value={gameId} onChange={e => setGameId(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
                 <option value="">เลือกเกม (ไม่บังคับ)</option>
                 {games.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
@@ -217,75 +305,42 @@ export default function NewForumPostPage() {
               placeholder="หัวข้อของ post..." maxLength={200} style={inputStyle} />
           </div>
 
-          {/* Body */}
+          {/* Block editor */}
           <div>
             <label style={labelStyle}>เนื้อหา</label>
-            <textarea value={body} onChange={e => setBody(e.target.value)}
-              placeholder="เขียนเนื้อหาที่นี่..." rows={10}
-              style={{ ...inputStyle, resize: 'vertical', lineHeight: '1.6', fontFamily: 'inherit' }} />
-          </div>
-
-          {/* Image upload */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
-              <label style={labelStyle}>รูปภาพ</label>
-              <span style={{ color: '#374151', fontSize: '11px' }}>
-                {images.length}/{MAX_IMAGES} · สูงสุด 5 MB · JPG PNG WebP GIF
-              </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {blocks.map((block, idx) => (
+                <div key={block.id}>
+                  {block.type === 'text' ? (
+                    <TextBlockEditor
+                      block={block}
+                      onChange={v => updateText(block.id, v)}
+                      onRemove={() => removeBlock(block.id)}
+                      canRemove={blocks.length > 1}
+                    />
+                  ) : (
+                    <ImageBlockEditor
+                      block={block as ImageBlock}
+                      onUpload={() => triggerUpload(block.id)}
+                      onRemove={() => removeBlock(block.id)}
+                    />
+                  )}
+                  <AddBar
+                    onText={()  => insertAfter(block.id, { id: uid(), type: 'text',  content: '' })}
+                    onImage={() => insertAfter(block.id, { id: uid(), type: 'image', tempPath: '', preview: '', uploading: false, error: '' })}
+                    canImage={canImage}
+                  />
+                </div>
+              ))}
             </div>
-
-            {/* Preview grid */}
-            {images.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '8px', marginBottom: '10px' }}>
-                {images.map((img, i) => (
-                  <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: '6px', overflow: 'hidden', background: '#0d0f14', border: '1px solid #1e2130' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.preview} alt={img.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <button type="button" onClick={() => removeImage(i)}
-                      style={{ position: 'absolute', top: '4px', right: '4px', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(0,0,0,0.75)', border: 'none', color: '#e2e8f0', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}
-                      title="ลบรูป">
-                      ×
-                    </button>
-                  </div>
-                ))}
+            {!canImage && (
+              <div style={{ color: '#374151', fontSize: '11px', marginTop: '2px', textAlign: 'center' }}>
+                ใส่รูปได้สูงสุด {MAX_IMAGES} รูปต่อ post
               </div>
-            )}
-
-            {/* Drop zone */}
-            {canAddMore && (
-              <div
-                onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={onDrop}
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  border: `2px dashed ${dragOver ? '#6366f1' : '#1e2130'}`,
-                  borderRadius: '8px', padding: '24px 16px', textAlign: 'center', cursor: 'pointer',
-                  background: dragOver ? 'rgba(99,102,241,0.04)' : 'transparent',
-                  transition: 'border-color 0.15s, background 0.15s',
-                }}>
-                {uploading ? (
-                  <span style={{ color: '#475569', fontSize: '13px' }}>กำลังอัปโหลด...</span>
-                ) : (
-                  <>
-                    <div style={{ color: '#475569', fontSize: '13px' }}>
-                      วางรูปที่นี่ หรือ <span style={{ color: '#6366f1', fontWeight: 600 }}>เลือกไฟล์</span>
-                    </div>
-                    <div style={{ color: '#374151', fontSize: '11px', marginTop: '4px' }}>
-                      เพิ่มได้อีก {MAX_IMAGES - images.length} รูป
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            <input ref={fileInputRef} type="file" accept={ALLOWED_TYPES.join(',')}
-              multiple onChange={onFileInput} style={{ display: 'none' }} />
-
-            {uploadError && (
-              <div style={{ color: '#fbbf24', fontSize: '12px', marginTop: '6px' }}>{uploadError}</div>
             )}
           </div>
+
+          <input ref={fileInputRef} type="file" accept={ALLOWED_TYPES.join(',')} onChange={onFileInput} style={{ display: 'none' }} />
 
           {error && (
             <div style={{ color: '#f87171', fontSize: '13px', padding: '10px 14px', background: 'rgba(248,113,113,0.08)', borderRadius: '6px', border: '1px solid rgba(248,113,113,0.2)' }}>
@@ -297,8 +352,8 @@ export default function NewForumPostPage() {
             <Link href="/forums" style={{ padding: '10px 20px', borderRadius: '7px', background: '#1a1d24', color: '#64748b', fontSize: '13px', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
               ยกเลิก
             </Link>
-            <button type="submit" disabled={loading || uploading}
-              style={{ padding: '10px 24px', borderRadius: '7px', background: loading ? '#3730a3' : '#6366f1', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: loading || uploading ? 'not-allowed' : 'pointer', border: 'none', opacity: uploading ? 0.6 : 1 }}>
+            <button type="submit" disabled={loading}
+              style={{ padding: '10px 24px', borderRadius: '7px', background: loading ? '#3730a3' : '#6366f1', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', border: 'none' }}>
               {loading ? 'กำลังบันทึก...' : 'สร้าง Post'}
             </button>
           </div>
