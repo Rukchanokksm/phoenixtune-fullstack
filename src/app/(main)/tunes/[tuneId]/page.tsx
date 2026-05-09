@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
+import { AdUnit } from '@/components/ads/AdUnit'
 
 // Types
 interface Comment {
@@ -515,9 +516,11 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
             </div>
           )}
 
+          <AdUnit slot="tune-detail-banner" format="horizontal" style={{ margin: '20px 0' }} />
+
           <div style={{
             background: '#13151c', border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: '14px', padding: '20px 22px', marginTop: '20px',
+            borderRadius: '14px', padding: '20px 22px', marginTop: '0',
           }}>
             <div style={{ fontSize: '15px', fontWeight: 700, color: '#f1f5f9', marginBottom: '16px' }}>
               Comments {comments.length > 0 && `(${comments.length})`}
@@ -671,6 +674,8 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
               )}
             </div>
           </div>
+
+          <AdUnit slot="tune-detail-sidebar" format="rectangle" style={{ marginTop: '16px' }} />
 
         </div>
       </div>
