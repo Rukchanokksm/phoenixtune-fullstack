@@ -9,26 +9,6 @@ interface DbGame {
     is_active: boolean
     tune_count: { count: number }[]
 }
-interface DbTune {
-    id: string
-    discipline: string
-    title: string
-    upvotes: number
-    car: { make: string; model: string; pi_class: string }[]
-    user: { username: string }[]
-}
-
-const DISCIPLINE_STYLE: Record<
-    string,
-    { bg: string; color: string; label: string }
-> = {
-    drift: { bg: "#2a0f1a", color: "#f472b6", label: "Drift" },
-    track: { bg: "#0f1a2a", color: "#60a5fa", label: "Track" },
-    street: { bg: "#0f2a1a", color: "#4ade80", label: "Street" },
-    rally: { bg: "#2a1f0f", color: "#fb923c", label: "Rally" },
-    offroad: { bg: "#2a2010", color: "#fbbf24", label: "Offroad" },
-    drag: { bg: "#2a1010", color: "#f87171", label: "Drag" },
-}
 
 const GAME_META: Record<
     string,
@@ -60,59 +40,6 @@ const GAME_META: Record<
     },
 }
 
-function DisciplineBadge({ discipline }: { discipline: string }) {
-    const s = DISCIPLINE_STYLE[discipline] ?? {
-        bg: "#1e293b",
-        color: "#94a3b8",
-        label: discipline,
-    }
-    return (
-        <span
-            style={{
-                display: "inline-block",
-                padding: "2px 8px",
-                borderRadius: "5px",
-                fontSize: "11px",
-                fontWeight: 700,
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-                background: s.bg,
-                color: s.color,
-                whiteSpace: "nowrap",
-            }}
-        >
-            {s.label}
-        </span>
-    )
-}
-
-function PIBadge({ piClass }: { piClass: string }) {
-    const colors: Record<string, string> = {
-        D: "#94a3b8",
-        C: "#fbbf24",
-        B: "#4ade80",
-        A: "#60a5fa",
-        S1: "#c084fc",
-        S2: "#f472b6",
-        X: "#f87171",
-    }
-    return (
-        <span
-            style={{
-                display: "inline-block",
-                padding: "1px 6px",
-                borderRadius: "4px",
-                fontSize: "11px",
-                fontWeight: 800,
-                background: "rgba(255,255,255,0.06)",
-                color: colors[piClass] ?? "#94a3b8",
-                fontFamily: "monospace",
-            }}
-        >
-            {piClass}
-        </span>
-    )
-}
 
 function GameStatusBadge({
     isActive,
@@ -158,13 +85,6 @@ export default async function HomePage() {
         .select("*, tune_count:tunes(count)")
         .order("created_at", { ascending: false })
 
-    const { data: recentTunes } = await supabase
-        .from("tunes")
-        .select(
-            "id, discipline, title, upvotes, car:cars(make,model,pi_class), user:user_profiles(username)",
-        )
-        .order("created_at", { ascending: false })
-        .limit(8)
 
     const stats = [
         { value: (tuneCount ?? 0).toLocaleString(), label: "Tunes" },
@@ -537,7 +457,7 @@ export default async function HomePage() {
                 </div>
             </section>
 
-            {/* RECENT TUNES */}
+            {/* RECENT ARTICLES */}
             <section
                 style={{
                     maxWidth: "1280px",
@@ -545,185 +465,39 @@ export default async function HomePage() {
                     padding: "0 24px 80px",
                 }}
             >
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "baseline",
-                        justifyContent: "space-between",
-                        marginBottom: "20px",
-                    }}
-                >
-                    <h2
-                        style={{
-                            fontSize: "20px",
-                            fontWeight: 700,
-                            color: "#f1f5f9",
-                            margin: 0,
-                        }}
-                    >
-                        Recent Tunes
+                <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:"20px" }}>
+                    <h2 style={{ fontSize:"20px", fontWeight:700, color:"#f1f5f9", margin:0 }}>
+                        📰 บทความล่าสุด
                     </h2>
-                    <Link
-                        href="/tunes"
-                        style={{
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            color: "#facc15",
-                            textDecoration: "none",
-                            padding: "5px 12px",
-                            borderRadius: "7px",
-                            border: "1px solid rgba(250,204,21,0.25)",
-                        }}
-                    >
+                    <Link href="/forums" style={{ fontSize:"13px", fontWeight:600, color:"#facc15", textDecoration:"none", padding:"5px 12px", borderRadius:"7px", border:"1px solid rgba(250,204,21,0.25)" }}>
                         ดูทั้งหมด →
                     </Link>
                 </div>
 
-                <div
-                    style={{
-                        background: "#13151c",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        borderRadius: "12px",
-                        overflow: "hidden",
-                    }}
-                >
-                    <div
-                        style={{
-                            ...rowStyle,
-                            background: "rgba(255,255,255,0.03)",
-                        }}
-                    >
-                        {[
-                            "Discipline",
-                            "รถ",
-                            "Tune Title",
-                            "Tuner",
-                            "Upvotes",
-                        ].map((h, i) => (
-                            <span
-                                key={h}
-                                style={
-                                    {
-                                        fontSize: "11px",
-                                        fontWeight: 600,
-                                        letterSpacing: "0.06em",
-                                        textTransform: "uppercase",
-                                        color: "#475569",
-                                        textAlign: i === 4 ? "right" : "left",
-                                    } as React.CSSProperties
-                                }
-                            >
-                                {h}
-                            </span>
-                        ))}
-                    </div>
-
-                    {!(recentTunes as DbTune[])?.length ? (
-                        <div
-                            style={{
-                                padding: "48px 24px",
-                                textAlign: "center",
-                                color: "#475569",
-                                fontSize: "14px",
-                            }}
-                        >
-                            ยังไม่มี tune — เป็นคนแรกที่ upload!
+                <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
+                    {[
+                        { title:"เริ่มต้นกับ Forza Horizon 5 — ตั้งค่า tune ยังไงให้ดี?", tag:"Guide", date:"เร็วๆ นี้" },
+                        { title:"AWD vs RWD Drift Build — เลือกแบบไหนถึงเหมาะกับสไตล์คุณ", tag:"Tips", date:"เร็วๆ นี้" },
+                        { title:"รวม tune ที่ดีที่สุดของ Supra MK4 ประจำ Season นี้", tag:"Roundup", date:"เร็วๆ นี้" },
+                    ].map((article, i) => (
+                        <div key={i} style={{ display:"flex", alignItems:"center", gap:"16px", padding:"16px 20px", background:"#111318", border:"1px solid #1e2130", borderRadius:"10px" }}>
+                            <div style={{ width:"36px", height:"36px", borderRadius:"8px", background:"rgba(250,204,21,0.08)", border:"1px solid rgba(250,204,21,0.15)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px", flexShrink:0 }}>
+                                📄
+                            </div>
+                            <div style={{ flex:1, minWidth:0 }}>
+                                <div style={{ color:"#e2e8f0", fontWeight:600, fontSize:"14px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                                    {article.title}
+                                </div>
+                                <div style={{ display:"flex", gap:"8px", marginTop:"4px", alignItems:"center" }}>
+                                    <span style={{ fontSize:"11px", fontWeight:700, color:"#facc15", background:"rgba(250,204,21,0.08)", padding:"1px 7px", borderRadius:"4px" }}>{article.tag}</span>
+                                    <span style={{ fontSize:"11px", color:"#374151" }}>{article.date}</span>
+                                </div>
+                            </div>
                         </div>
-                    ) : (
-                        (recentTunes as DbTune[]).map((tune) => {
-                            const car = tune.car?.[0] ?? null
-                            const user = tune.user?.[0] ?? null
-                            return (
-                                <Link
-                                    key={tune.id}
-                                    href={`/tunes/${tune.id}`}
-                                    style={{
-                                        ...rowStyle,
-                                        borderTop:
-                                            "1px solid rgba(255,255,255,0.05)",
-                                        textDecoration: "none",
-                                    }}
-                                >
-                                    <span>
-                                        <DisciplineBadge
-                                            discipline={tune.discipline}
-                                        />
-                                    </span>
-                                    <span
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "6px",
-                                        }}
-                                    >
-                                        {car ? (
-                                            <>
-                                                <span
-                                                    style={{
-                                                        fontSize: "13px",
-                                                        color: "#cbd5e1",
-                                                    }}
-                                                >
-                                                    {car.make} {car.model}
-                                                </span>
-                                                <PIBadge
-                                                    piClass={car.pi_class}
-                                                />
-                                            </>
-                                        ) : (
-                                            <span style={{ color: "#475569" }}>
-                                                —
-                                            </span>
-                                        )}
-                                    </span>
-                                    <span
-                                        style={{
-                                            fontSize: "13.5px",
-                                            color: "#e2e8f0",
-                                            fontWeight: 500,
-                                        }}
-                                    >
-                                        {tune.title}
-                                    </span>
-                                    <span
-                                        style={{
-                                            fontSize: "13px",
-                                            color: "#64748b",
-                                        }}
-                                    >
-                                        {user?.username ?? "—"}
-                                    </span>
-                                    <span
-                                        style={{
-                                            fontSize: "13px",
-                                            color: "#94a3b8",
-                                            textAlign: "right",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "flex-end",
-                                            gap: "4px",
-                                        }}
-                                    >
-                                        <span style={{ color: "#facc15" }}>
-                                            ▲
-                                        </span>
-                                        {tune.upvotes}
-                                    </span>
-                                </Link>
-                            )
-                        })
-                    )}
+                    ))}
                 </div>
             </section>
         </div>
     )
 }
 
-const rowStyle: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "100px 1fr 1.5fr 120px 64px",
-    alignItems: "center",
-    gap: "12px",
-    padding: "12px 20px",
-    color: "#e2e8f0",
-}
