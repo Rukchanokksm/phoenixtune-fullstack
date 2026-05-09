@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { TopTunesClient } from '@/components/game/TopTunesClient'
 import { BrandsGrid } from '@/components/game/BrandsGrid'
+import { AdUnit } from '@/components/ads/AdUnit'
 
 const GAME_META: Record<string, { name:string; subtitle:string; gradient:string; accent:string; available:boolean }> = {
   'forza-horizon-5': { name:'Forza Horizon 5', subtitle:'Mexico Open World · 500+ Cars', gradient:'linear-gradient(135deg,#1e3a5f,#0f2040,#0d0f1e)', accent:'#60a5fa', available:true },
@@ -88,6 +89,8 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
           <TopTunesClient gameSlug={gameSlug} />
         </section>
 
+        <AdUnit slot={`game-${gameSlug}-mid`} format="horizontal" />
+
         {/* Tune Lab CTA */}
         <section>
           <Heading emoji="🧮" title="Tune Lab" sub="คำนวณค่า tune จากสเปครถของคุณ" dot="#facc15" />
@@ -116,6 +119,8 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
             <BrandsGrid gameSlug={gameSlug} brands={brands} accent={meta.accent} />
           </section>
         )}
+
+        <AdUnit slot={`game-${gameSlug}-bottom`} format="horizontal" />
 
         {/* All Tunes CTA */}
         <section>
