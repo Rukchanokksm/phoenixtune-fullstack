@@ -20,6 +20,33 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ pos
   return NextResponse.json(data)
 }
 
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ postId: string }> }) {
+  const { postId } = await params
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { title, body } = await req.json()
+  if (!title?.trim() && body === undefined)
+    return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
+
+  const updates: Record<string, string> = { updated_at: new Date().toISOString() }
+  if (title?.trim()) updates.title = title.trim()
+  if (body !== undefined) updates.body = body
+
+  const { data, error } = await supabase
+    .from('forum_posts')
+    .update(updates)
+    .eq('id', postId)
+    .eq('user_id', user.id)
+    .select(POST_SELECT)
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!data) return NextResponse.json({ error: 'Not found or not owner' }, { status: 404 })
+  return NextResponse.json(data)
+}
+
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ postId: string }> }) {
   const { postId } = await params
   const supabase = await createClient()

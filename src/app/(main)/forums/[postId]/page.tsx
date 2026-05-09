@@ -13,9 +13,14 @@ type Post = {
   user: { id: string; username: string } | null
 }
 type Comment = {
-  id: string; body: string; created_at: string
+  id: string; body: string; created_at: string; updated_at: string | null
   user: { id: string; username: string } | null
 }
+type StoredBlock =
+  | { type: 'text';  content: string }
+  | { type: 'image'; url: string }
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -25,29 +30,35 @@ function timeAgo(dateStr: string) {
   const h = Math.floor(m / 60)
   if (h < 24) return `${h} ชั่วโมงที่แล้ว`
   const d = Math.floor(h / 24)
-  return d < 30 ? `${d} วันที่แล้ว`
+  return d < 30
+    ? `${d} วันที่แล้ว`
     : new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
 }
 
-type StoredBlock =
-  | { type: 'text';  content: string }
-  | { type: 'image'; url: string }
+function wasEdited(created: string, updated: string | null) {
+  if (!updated) return false
+  return Math.abs(new Date(updated).getTime() - new Date(created).getTime()) > 2000
+}
+
+function parseBlocks(body: string): StoredBlock[] | null {
+  try {
+    const p = JSON.parse(body)
+    if (Array.isArray(p)) return p
+  } catch { /* */ }
+  return null
+}
+
+// ─── Post body (read-only) ────────────────────────────────────────────────────
 
 function PostBody({ body }: { body: string }) {
-  // Try block format first (new posts), fall back to plain text (old posts)
-  let blocks: StoredBlock[] | null = null
-  try {
-    const parsed = JSON.parse(body)
-    if (Array.isArray(parsed)) blocks = parsed
-  } catch { /* plain text fallback */ }
-
+  const blocks = parseBlocks(body)
   if (blocks) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
         {blocks.map((block, i) => {
           if (block.type === 'text') {
             return (
-              <div key={i} style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: '1.75', whiteSpace: 'pre-wrap' }}>
+              <div key={i} style={{ color:'#cbd5e1', fontSize:'14px', lineHeight:'1.75', whiteSpace:'pre-wrap' }}>
                 {block.content}
               </div>
             )
@@ -55,9 +66,9 @@ function PostBody({ body }: { body: string }) {
           if (block.type === 'image') {
             return (
               <a key={i} href={block.url} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'block', borderRadius: '8px', overflow: 'hidden', border: '1px solid #1a1d24', background: '#0d0f14' }}>
+                style={{ display:'block', borderRadius:'8px', overflow:'hidden', border:'1px solid #1a1d24', background:'#0d0f14' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={block.url} alt="" style={{ width: '100%', maxHeight: '600px', objectFit: 'contain', display: 'block' }} />
+                <img src={block.url} alt="" style={{ width:'100%', maxHeight:'600px', objectFit:'contain', display:'block' }} />
               </a>
             )
           }
@@ -66,14 +77,40 @@ function PostBody({ body }: { body: string }) {
       </div>
     )
   }
-
-  // Plain text fallback for posts created before block format
   return (
-    <div style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: '1.75', whiteSpace: 'pre-wrap' }}>
+    <div style={{ color:'#cbd5e1', fontSize:'14px', lineHeight:'1.75', whiteSpace:'pre-wrap' }}>
       {body}
     </div>
   )
 }
+
+// ─── Shared textarea style ────────────────────────────────────────────────────
+
+const TA: React.CSSProperties = {
+  width:'100%', padding:'10px 14px', borderRadius:'8px',
+  background:'#0d0f14', border:'1px solid #2d3142',
+  color:'#e2e8f0', fontSize:'13px', outline:'none',
+  resize:'vertical', fontFamily:'inherit', boxSizing:'border-box',
+  lineHeight:1.7,
+}
+const INPUT: React.CSSProperties = {
+  width:'100%', padding:'9px 14px', borderRadius:'8px',
+  background:'#0d0f14', border:'1px solid #2d3142',
+  color:'#f1f5f9', fontSize:'15px', fontWeight:700,
+  outline:'none', boxSizing:'border-box',
+}
+const BtnSave: React.CSSProperties = {
+  padding:'6px 16px', borderRadius:'6px', border:'none',
+  background:'#6366f1', color:'#fff', fontSize:'12px',
+  fontWeight:700, cursor:'pointer',
+}
+const BtnCancel: React.CSSProperties = {
+  padding:'6px 14px', borderRadius:'6px',
+  background:'transparent', border:'1px solid #2d3142',
+  color:'#64748b', fontSize:'12px', cursor:'pointer',
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ForumPostPage() {
   const { postId } = useParams<{ postId: string }>()
@@ -87,28 +124,85 @@ export default function ForumPostPage() {
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState('')
 
+  // ── Post edit state
+  const [editingPost,  setEditingPost]  = useState(false)
+  const [editTitle,    setEditTitle]    = useState('')
+  const [editBodyText, setEditBodyText] = useState('')
+  const [editImages,   setEditImages]   = useState<string[]>([])
+  const [savingPost,   setSavingPost]   = useState(false)
+
+  // ── Comment edit state
+  const [editingCommentId,   setEditingCommentId]   = useState<string | null>(null)
+  const [editCommentBody,    setEditCommentBody]    = useState('')
+  const [savingComment,      setSavingComment]      = useState(false)
+
+  // ── Fetch ─────────────────────────────────────────────────────────────────
+
   const fetchPost = useCallback(async () => {
     const res = await fetch(`/api/forum/posts/${postId}`)
     if (!res.ok) { setLoading(false); return }
-    const data = await res.json()
-    setPost(data)
+    setPost(await res.json())
     setLoading(false)
   }, [postId])
 
   const fetchComments = useCallback(async () => {
     const res = await fetch(`/api/forum/comments?postId=${postId}`)
-    if (res.ok) {
-      const data = await res.json()
-      setComments(data.data ?? [])
-    }
+    if (res.ok) setComments((await res.json()).data ?? [])
   }, [postId])
 
   useEffect(() => {
     fetchPost()
     fetchComments()
-    // Get current user
     fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => setMe(d?.user ?? null)).catch(() => {})
   }, [fetchPost, fetchComments])
+
+  // ── Post actions ──────────────────────────────────────────────────────────
+
+  function enterEditPost() {
+    if (!post) return
+    setEditTitle(post.title)
+    // Extract text + images from blocks
+    const blocks = parseBlocks(post.body)
+    if (blocks) {
+      setEditBodyText(blocks.filter(b => b.type === 'text').map(b => (b as {type:'text';content:string}).content).join('\n\n'))
+      setEditImages(blocks.filter(b => b.type === 'image').map(b => (b as {type:'image';url:string}).url))
+    } else {
+      setEditBodyText(post.body)
+      setEditImages([])
+    }
+    setEditingPost(true)
+  }
+
+  async function savePost() {
+    if (!post) return
+    setSavingPost(true)
+    try {
+      // Reconstruct blocks: text block first, then image blocks
+      const newBlocks: StoredBlock[] = []
+      if (editBodyText.trim()) newBlocks.push({ type: 'text', content: editBodyText.trim() })
+      editImages.forEach(url => newBlocks.push({ type: 'image', url }))
+
+      const res = await fetch(`/api/forum/posts/${postId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: editTitle, body: JSON.stringify(newBlocks) }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'เกิดข้อผิดพลาด'); return }
+      setPost(data)
+      setEditingPost(false)
+    } finally {
+      setSavingPost(false)
+    }
+  }
+
+  async function deletePost() {
+    if (!confirm('ลบ post นี้?')) return
+    const res = await fetch(`/api/forum/posts/${postId}`, { method: 'DELETE' })
+    if (res.ok) router.push('/forums')
+  }
+
+  // ── Comment actions ───────────────────────────────────────────────────────
 
   async function submitComment(e: React.FormEvent) {
     e.preventDefault()
@@ -130,48 +224,60 @@ export default function ForumPostPage() {
     }
   }
 
+  function enterEditComment(c: Comment) {
+    setEditingCommentId(c.id)
+    setEditCommentBody(c.body)
+  }
+
+  async function saveComment(id: string) {
+    setSavingComment(true)
+    try {
+      const res = await fetch('/api/forum/comments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, body: editCommentBody }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error ?? 'เกิดข้อผิดพลาด'); return }
+      setComments(prev => prev.map(c => c.id === id ? data : c))
+      setEditingCommentId(null)
+    } finally {
+      setSavingComment(false)
+    }
+  }
+
   async function deleteComment(id: string) {
     await fetch(`/api/forum/comments?id=${id}`, { method: 'DELETE' })
     setComments(prev => prev.filter(c => c.id !== id))
   }
 
-  async function deletePost() {
-    if (!confirm('ลบ post นี้?')) return
-    const res = await fetch(`/api/forum/posts/${postId}`, { method: 'DELETE' })
-    if (res.ok) router.push('/forums')
-  }
+  // ── Constants ─────────────────────────────────────────────────────────────
 
   const categoryLabel: Record<string, string> = {
     general: 'ทั่วไป', report: 'รายงาน', announcement: 'ประกาศ',
   }
 
+  // ── Skeleton loading ──────────────────────────────────────────────────────
+
   if (loading) {
     return (
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 24px 80px' }}>
-        <div style={{ background: '#111318', border: '1px solid #1e2130', borderRadius: '10px', padding: '24px 28px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-            <div style={{ height: '18px', width: '50px', borderRadius: '4px', background: '#1e2130' }} />
-            <div style={{ height: '18px', width: '80px', borderRadius: '4px', background: '#161820' }} />
+      <div style={{ maxWidth:'800px', margin:'0 auto', padding:'40px 24px 80px' }}>
+        <div style={{ background:'#111318', border:'1px solid #1e2130', borderRadius:'10px', padding:'24px 28px', marginBottom:'20px' }}>
+          <div style={{ display:'flex', gap:'8px', marginBottom:'12px' }}>
+            <div style={{ height:'18px', width:'50px', borderRadius:'4px', background:'#1e2130' }} />
+            <div style={{ height:'18px', width:'80px', borderRadius:'4px', background:'#161820' }} />
           </div>
-          <div style={{ height: '22px', borderRadius: '5px', background: '#1e2130', marginBottom: '8px', width: '75%' }} />
-          <div style={{ height: '22px', borderRadius: '5px', background: '#1a1d24', marginBottom: '20px', width: '50%' }} />
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-            <div style={{ height: '13px', width: '80px', borderRadius: '4px', background: '#161820' }} />
-            <div style={{ height: '13px', width: '60px', borderRadius: '4px', background: '#161820' }} />
-          </div>
+          <div style={{ height:'22px', borderRadius:'5px', background:'#1e2130', marginBottom:'8px', width:'75%' }} />
+          <div style={{ height:'22px', borderRadius:'5px', background:'#1a1d24', marginBottom:'20px', width:'50%' }} />
           {[100, 90, 95, 70].map((w, i) => (
-            <div key={i} style={{ height: '14px', borderRadius: '4px', background: '#161820', marginBottom: '10px', width: `${w}%` }} />
+            <div key={i} style={{ height:'14px', borderRadius:'4px', background:'#161820', marginBottom:'10px', width:`${w}%` }} />
           ))}
         </div>
-        <div style={{ background: '#111318', border: '1px solid #1e2130', borderRadius: '10px', overflow: 'hidden' }}>
-          <div style={{ padding: '14px 24px', borderBottom: '1px solid #1a1d24' }}>
-            <div style={{ height: '12px', width: '100px', borderRadius: '4px', background: '#1e2130' }} />
-          </div>
+        <div style={{ background:'#111318', border:'1px solid #1e2130', borderRadius:'10px', overflow:'hidden' }}>
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} style={{ padding: '16px 24px', borderBottom: '1px solid #0d0f14', opacity: 1 - i * 0.25 }}>
-              <div style={{ height: '13px', width: '100px', borderRadius: '4px', background: '#1e2130', marginBottom: '8px' }} />
-              <div style={{ height: '14px', borderRadius: '4px', background: '#161820', marginBottom: '6px', width: '85%' }} />
-              <div style={{ height: '14px', borderRadius: '4px', background: '#161820', width: '60%' }} />
+            <div key={i} style={{ padding:'16px 24px', borderBottom:'1px solid #0d0f14', opacity: 1 - i * 0.25 }}>
+              <div style={{ height:'13px', width:'100px', borderRadius:'4px', background:'#1e2130', marginBottom:'8px' }} />
+              <div style={{ height:'14px', borderRadius:'4px', background:'#161820', marginBottom:'6px', width:'85%' }} />
             </div>
           ))}
         </div>
@@ -181,71 +287,147 @@ export default function ForumPostPage() {
 
   if (!post) {
     return (
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '80px 24px', textAlign: 'center', color: '#374151' }}>
+      <div style={{ maxWidth:'800px', margin:'0 auto', padding:'80px 24px', textAlign:'center', color:'#374151' }}>
         ไม่พบ post นี้
       </div>
     )
   }
 
-  const isOwner = me && post.user?.id === me.id
+  const isOwner = !!(me && post.user?.id === me.id)
+  const postEdited = wasEdited(post.created_at, post.updated_at)
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 24px 80px', color: '#e2e8f0' }}>
+    <div style={{ maxWidth:'800px', margin:'0 auto', padding:'40px 24px 80px', color:'#e2e8f0' }}>
 
       {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <Link href="/forums" style={{ color: '#475569', fontSize: '13px', textDecoration: 'none' }}>Forums</Link>
-        <span style={{ color: '#334155' }}>›</span>
+      <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'24px', flexWrap:'wrap' }}>
+        <Link href="/forums" style={{ color:'#475569', fontSize:'13px', textDecoration:'none' }}>Forums</Link>
+        <span style={{ color:'#334155' }}>›</span>
         <Link
           href={post.category === 'report' ? '/forums/reports' : post.category === 'announcement' ? '/forums/announcements' : '/forums/general'}
-          style={{ color: '#475569', fontSize: '13px', textDecoration: 'none' }}
+          style={{ color:'#475569', fontSize:'13px', textDecoration:'none' }}
         >
           {categoryLabel[post.category] ?? post.category}
         </Link>
       </div>
 
-      {/* Post */}
-      <div style={{ background: '#111318', border: '1px solid #1e2130', borderRadius: '10px', overflow: 'hidden', marginBottom: '20px' }}>
-        <div style={{ padding: '24px 28px' }}>
+      {/* ── Post card ── */}
+      <div style={{ background:'#111318', border:'1px solid #1e2130', borderRadius:'10px', overflow:'hidden', marginBottom:'20px' }}>
+        <div style={{ padding:'24px 28px' }}>
 
-          {/* Tags row */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
-            <span style={{ color: '#64748b', fontSize: '11px', fontWeight: 700, background: '#1a1d24', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          {/* Tags */}
+          <div style={{ display:'flex', gap:'8px', alignItems:'center', marginBottom:'12px', flexWrap:'wrap' }}>
+            <span style={{ color:'#64748b', fontSize:'11px', fontWeight:700, background:'#1a1d24',
+              padding:'2px 8px', borderRadius:'4px', textTransform:'uppercase', letterSpacing:'0.05em' }}>
               {categoryLabel[post.category] ?? post.category}
             </span>
             {post.game && (
-              <span style={{ color: '#60a5fa', fontSize: '11px', background: 'rgba(96,165,250,0.08)', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+              <span style={{ color:'#60a5fa', fontSize:'11px', background:'rgba(96,165,250,0.08)',
+                padding:'2px 8px', borderRadius:'4px', fontWeight:600 }}>
                 {post.game.name}
               </span>
             )}
           </div>
 
-          <h1 style={{ margin: '0 0 16px', fontSize: '20px', fontWeight: 800, lineHeight: 1.3, color: '#f1f5f9' }}>
-            {post.title}
-          </h1>
+          {/* ── Edit mode ── */}
+          {editingPost ? (
+            <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
+              <input
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                maxLength={200}
+                style={INPUT}
+                placeholder="หัวข้อ"
+              />
+              <textarea
+                value={editBodyText}
+                onChange={e => setEditBodyText(e.target.value)}
+                rows={8}
+                style={TA}
+                placeholder="เนื้อหา..."
+              />
+              {/* Image blocks — read-only preview with remove button */}
+              {editImages.length > 0 && (
+                <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                  {editImages.map((url, i) => (
+                    <div key={i} style={{ position:'relative', borderRadius:'8px', overflow:'hidden',
+                      border:'1px solid #2d3142', background:'#0d0f14' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt="" style={{ width:'100%', maxHeight:'300px', objectFit:'contain', display:'block' }} />
+                      <button
+                        onClick={() => setEditImages(prev => prev.filter((_, j) => j !== i))}
+                        style={{ position:'absolute', top:'8px', right:'8px', background:'rgba(0,0,0,0.7)',
+                          border:'none', color:'#f87171', cursor:'pointer', borderRadius:'4px',
+                          padding:'3px 8px', fontSize:'11px', fontWeight:700 }}
+                      >
+                        ลบรูป
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+                <button onClick={() => setEditingPost(false)} style={BtnCancel}>ยกเลิก</button>
+                <button
+                  onClick={savePost}
+                  disabled={savingPost || !editTitle.trim()}
+                  style={{ ...BtnSave, opacity: savingPost || !editTitle.trim() ? 0.5 : 1 }}
+                >
+                  {savingPost ? 'กำลังบันทึก...' : 'บันทึก'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* ── View mode ── */
+            <>
+              <h1 style={{ margin:'0 0 16px', fontSize:'20px', fontWeight:800, lineHeight:1.3, color:'#f1f5f9' }}>
+                {post.title}
+              </h1>
 
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
-            {post.user ? (
-              <Link href={`/profile/${post.user.username}`} style={{ color: '#475569', fontSize: '13px', textDecoration: 'none' }}>
-                @{post.user.username}
-              </Link>
-            ) : (
-              <span style={{ color: '#475569', fontSize: '13px' }}>—</span>
-            )}
-            <span style={{ color: '#1e2130' }}>·</span>
-            <span style={{ color: '#374151', fontSize: '12px' }}>{timeAgo(post.created_at)}</span>
-            <span style={{ color: '#1e2130' }}>·</span>
-            <span style={{ color: '#374151', fontSize: '12px' }}>▲ {post.upvotes}</span>
-          </div>
+              {/* Meta row */}
+              <div style={{ display:'flex', gap:'12px', alignItems:'center', marginBottom:'20px', flexWrap:'wrap' }}>
+                {post.user ? (
+                  <Link href={`/profile/${post.user.username}`}
+                    style={{ color:'#475569', fontSize:'13px', textDecoration:'none' }}>
+                    @{post.user.username}
+                  </Link>
+                ) : <span style={{ color:'#475569', fontSize:'13px' }}>—</span>}
+                <span style={{ color:'#1e2130' }}>·</span>
+                <span style={{ color:'#374151', fontSize:'12px' }}>{timeAgo(post.created_at)}</span>
+                {postEdited && (
+                  <>
+                    <span style={{ color:'#1e2130' }}>·</span>
+                    <span style={{ color:'#334155', fontSize:'11px', fontStyle:'italic' }}>
+                      แก้ไขเมื่อ {timeAgo(post.updated_at)}
+                    </span>
+                  </>
+                )}
+                <span style={{ color:'#1e2130' }}>·</span>
+                <span style={{ color:'#374151', fontSize:'12px' }}>▲ {post.upvotes}</span>
+              </div>
 
-          <PostBody body={post.body} />
+              <PostBody body={post.body} />
+            </>
+          )}
         </div>
 
-        {isOwner && (
-          <div style={{ padding: '12px 28px', borderTop: '1px solid #1a1d24', display: 'flex', justifyContent: 'flex-end' }}>
+        {/* Owner actions (ไม่แสดงตอน edit mode) */}
+        {isOwner && !editingPost && (
+          <div style={{ padding:'12px 28px', borderTop:'1px solid #1a1d24',
+            display:'flex', justifyContent:'flex-end', gap:'8px' }}>
+            <button
+              onClick={enterEditPost}
+              style={{ padding:'6px 14px', borderRadius:'6px', background:'transparent',
+                border:'1px solid #2d3142', color:'#94a3b8', fontSize:'12px', cursor:'pointer' }}
+            >
+              แก้ไข post
+            </button>
             <button
               onClick={deletePost}
-              style={{ padding: '6px 14px', borderRadius: '6px', background: 'transparent', border: '1px solid #3b1a1a', color: '#ef4444', fontSize: '12px', cursor: 'pointer' }}
+              style={{ padding:'6px 14px', borderRadius:'6px', background:'transparent',
+                border:'1px solid #3b1a1a', color:'#ef4444', fontSize:'12px', cursor:'pointer' }}
             >
               ลบ post
             </button>
@@ -253,69 +435,114 @@ export default function ForumPostPage() {
         )}
       </div>
 
-      <AdUnit slot="forum-post-banner" format="horizontal" style={{ margin: '0 0 20px' }} />
+      <AdUnit slot="forum-post-banner" format="horizontal" style={{ margin:'0 0 20px' }} />
 
-      {/* Comments */}
-      <div style={{ background: '#111318', border: '1px solid #1e2130', borderRadius: '10px', overflow: 'hidden' }}>
-        <div style={{ padding: '14px 24px', borderBottom: '1px solid #1a1d24' }}>
-          <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+      {/* ── Comments ── */}
+      <div style={{ background:'#111318', border:'1px solid #1e2130', borderRadius:'10px', overflow:'hidden' }}>
+        <div style={{ padding:'14px 24px', borderBottom:'1px solid #1a1d24' }}>
+          <span style={{ color:'#94a3b8', fontSize:'12px', fontWeight:600,
+            letterSpacing:'0.06em', textTransform:'uppercase' }}>
             ความคิดเห็น ({comments.length})
           </span>
         </div>
 
         {comments.length === 0 ? (
-          <div style={{ padding: '32px 24px', color: '#374151', fontSize: '13px', textAlign: 'center' }}>
+          <div style={{ padding:'32px 24px', color:'#374151', fontSize:'13px', textAlign:'center' }}>
             ยังไม่มีความคิดเห็น — เป็นคนแรก
           </div>
         ) : (
-          comments.map(c => (
-            <div key={c.id} style={{ padding: '16px 24px', borderBottom: '1px solid #0d0f14', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
+          comments.map(c => {
+            const isMine = !!(me && c.user?.id === me.id)
+            const isEditingThis = editingCommentId === c.id
+            const commentEdited = wasEdited(c.created_at, c.updated_at)
+
+            return (
+              <div key={c.id} style={{ padding:'16px 24px', borderBottom:'1px solid #0d0f14' }}>
+                {/* Comment meta */}
+                <div style={{ display:'flex', gap:'10px', alignItems:'center', marginBottom:'8px', flexWrap:'wrap' }}>
                   {c.user ? (
-                    <Link href={`/profile/${c.user.username}`} style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>
+                    <Link href={`/profile/${c.user.username}`}
+                      style={{ color:'#64748b', fontSize:'13px', fontWeight:600, textDecoration:'none' }}>
                       @{c.user.username}
                     </Link>
-                  ) : (
-                    <span style={{ color: '#64748b', fontSize: '13px', fontWeight: 600 }}>—</span>
+                  ) : <span style={{ color:'#64748b', fontSize:'13px', fontWeight:600 }}>—</span>}
+                  <span style={{ color:'#374151', fontSize:'11px' }}>{timeAgo(c.created_at)}</span>
+                  {commentEdited && (
+                    <span style={{ color:'#334155', fontSize:'11px', fontStyle:'italic' }}>
+                      · แก้ไขเมื่อ {timeAgo(c.updated_at!)}
+                    </span>
                   )}
-                  <span style={{ color: '#374151', fontSize: '11px' }}>{timeAgo(c.created_at)}</span>
+                  {/* Owner buttons */}
+                  {isMine && !isEditingThis && (
+                    <div style={{ marginLeft:'auto', display:'flex', gap:'6px' }}>
+                      <button
+                        onClick={() => enterEditComment(c)}
+                        style={{ background:'transparent', border:'1px solid #2d3142',
+                          color:'#64748b', fontSize:'11px', cursor:'pointer',
+                          padding:'2px 10px', borderRadius:'5px' }}
+                      >
+                        แก้ไข
+                      </button>
+                      <button
+                        onClick={() => deleteComment(c.id)}
+                        style={{ background:'transparent', border:'1px solid #3b1a1a',
+                          color:'#ef4444', fontSize:'11px', cursor:'pointer',
+                          padding:'2px 10px', borderRadius:'5px' }}
+                      >
+                        ลบ
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: '1.65', whiteSpace: 'pre-wrap' }}>
-                  {c.body}
-                </div>
+
+                {/* Body / edit textarea */}
+                {isEditingThis ? (
+                  <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                    <textarea
+                      value={editCommentBody}
+                      onChange={e => setEditCommentBody(e.target.value)}
+                      rows={3}
+                      autoFocus
+                      style={TA}
+                    />
+                    <div style={{ display:'flex', gap:'8px', justifyContent:'flex-end' }}>
+                      <button onClick={() => setEditingCommentId(null)} style={BtnCancel}>ยกเลิก</button>
+                      <button
+                        onClick={() => saveComment(c.id)}
+                        disabled={savingComment || !editCommentBody.trim()}
+                        style={{ ...BtnSave, opacity: savingComment || !editCommentBody.trim() ? 0.5 : 1 }}
+                      >
+                        {savingComment ? 'กำลังบันทึก...' : 'บันทึก'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ color:'#cbd5e1', fontSize:'14px', lineHeight:'1.65', whiteSpace:'pre-wrap' }}>
+                    {c.body}
+                  </div>
+                )}
               </div>
-              {me && c.user?.id === me.id && (
-                <button
-                  onClick={() => deleteComment(c.id)}
-                  style={{ flexShrink: 0, background: 'transparent', border: 'none', color: '#374151', fontSize: '12px', cursor: 'pointer', padding: '2px 6px' }}
-                  title="ลบ"
-                >
-                  ลบ
-                </button>
-              )}
-            </div>
-          ))
+            )
+          })
         )}
 
         {/* Add comment */}
         {me ? (
-          <form onSubmit={submitComment} style={{ padding: '16px 24px', borderTop: '1px solid #1a1d24', display: 'flex', gap: '10px' }}>
+          <form onSubmit={submitComment}
+            style={{ padding:'16px 24px', borderTop:'1px solid #1a1d24', display:'flex', gap:'10px' }}>
             <textarea
               value={newComment}
               onChange={e => setNewComment(e.target.value)}
               placeholder="เขียนความคิดเห็น..."
               rows={3}
-              style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', background: '#0d0f14',
-                border: '1px solid #1e2130', color: '#e2e8f0', fontSize: '13px',
-                outline: 'none', resize: 'vertical', fontFamily: 'inherit' }}
+              style={{ flex:1, ...TA }}
             />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
               <button
                 type="submit"
                 disabled={submitting || !newComment.trim()}
-                style={{ padding: '10px 18px', borderRadius: '7px', background: '#6366f1',
-                  color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', border: 'none',
+                style={{ padding:'10px 18px', borderRadius:'7px', background:'#6366f1',
+                  color:'#fff', fontSize:'13px', fontWeight:700, cursor:'pointer', border:'none',
                   opacity: submitting || !newComment.trim() ? 0.5 : 1 }}
               >
                 ส่ง
@@ -323,14 +550,15 @@ export default function ForumPostPage() {
             </div>
           </form>
         ) : (
-          <div style={{ padding: '16px 24px', borderTop: '1px solid #1a1d24', color: '#475569', fontSize: '13px', textAlign: 'center' }}>
-            <Link href="/login" style={{ color: '#6366f1', textDecoration: 'none' }}>เข้าสู่ระบบ</Link>{' '}
+          <div style={{ padding:'16px 24px', borderTop:'1px solid #1a1d24',
+            color:'#475569', fontSize:'13px', textAlign:'center' }}>
+            <Link href="/login" style={{ color:'#6366f1', textDecoration:'none' }}>เข้าสู่ระบบ</Link>{' '}
             เพื่อแสดงความคิดเห็น
           </div>
         )}
 
         {error && (
-          <div style={{ padding: '8px 24px', color: '#f87171', fontSize: '13px' }}>{error}</div>
+          <div style={{ padding:'8px 24px', color:'#f87171', fontSize:'13px' }}>{error}</div>
         )}
       </div>
     </div>

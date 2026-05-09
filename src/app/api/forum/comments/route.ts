@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 const COMMENT_SELECT = `
-  id, body, created_at,
+  id, body, created_at, updated_at,
   user:user_profiles!forum_comments_user_id_fkey(id, username)
 `
 
@@ -43,6 +43,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: pgErr?.message ?? 'Internal server error' }, { status: 500 })
   }
   return NextResponse.json(data, { status: 201 })
+}
+
+// PATCH /api/forum/comments — edit a comment (owner only)
+export async function PATCH(req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id, body } = await req.json()
+  if (!id)          return NextResponse.json({ error: 'id required' }, { status: 400 })
+  if (!body?.trim()) return NextResponse.json({ error: 'body required' }, { status: 400 })
+
+  const { data, error } = await supabase
+    .from('forum_comments')
+    .update({ body: body.trim(), updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select(COMMENT_SELECT)
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!data) return NextResponse.json({ error: 'Not found or not owner' }, { status: 404 })
+  return NextResponse.json(data)
 }
 
 // DELETE /api/forum/comments?id=...
