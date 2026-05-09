@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Fragment } from 'react'
 import Link from 'next/link'
 import { AdUnit } from '@/components/ads/AdUnit'
 
@@ -364,12 +364,12 @@ export default function TunesPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {tunes.map((tune, i) => (
-              <>
-                <TuneCardRow key={tune.id} tune={tune} />
+              <Fragment key={tune.id}>
+                <TuneCardRow tune={tune} />
                 {(i + 1) % 8 === 0 && i < tunes.length - 1 && (
-                  <AdUnit key={`ad-${i}`} slot="tune-list-infeed" format="infeed" style={{ margin: '4px 0' }} />
+                  <AdUnit slot="tune-list-infeed" format="infeed" style={{ margin: '4px 0' }} />
                 )}
-              </>
+              </Fragment>
             ))}
           </div>
         )}

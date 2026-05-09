@@ -1,0 +1,26 @@
+## Summary
+
+- **Forums feature** — 3-segment hub (announcements / general / reports), full list pages with pagination and game filter, create-post form with tag selection, post detail page with comments, profile link on author/comment usernames
+- **API routes added** — `/api/forum/posts`, `/api/forum/posts/[postId]`, `/api/forum/comments`, `/api/games`, `/api/auth/me`
+- **Profile page** — real tune/upvote/view stats and per-game breakdown
+- **Game page** — added "ดู Tune ทั้งหมด" segment below Car Brands
+- **Homepage** — games sorted newest-first; Recent Tunes replaced with article placeholder
+- **Brands grid** — removed flag emoji, show brand name only
+- **Tune creation** — redirect to car's tune list after save
+- **Bug fixes** — PGRST201 FK disambiguation on all user_profiles joins, Supabase PostgrestError extraction in catch blocks, DELETE handler for upvote route
+
+## DB migration required
+
+Apply `supabase/migrations/006_forums.sql` in Supabase Dashboard SQL editor before forums will work (creates `forum_posts`, `forum_comments` tables with RLS + trigger).
+
+## Test plan
+
+- [ ] Apply `006_forums.sql` migration in Supabase Dashboard
+- [ ] Create a forum post (general, report, game-tagged)
+- [ ] View post detail — add comment, delete own post/comment
+- [ ] Click author/commenter username goes to profile
+- [ ] Admin account: verify announcement tab and add-announcement link visible
+- [ ] Games sorted FH6 first on homepage
+- [ ] Tune save redirects to car tune list
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
