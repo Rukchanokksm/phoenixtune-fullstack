@@ -10,7 +10,7 @@ import type { UserProfile, UserRole, Gender, TitleId } from '@/types'
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 
 export const metadata: Metadata = {
-  title: { template: '%s | PhoenixTune', default: 'PhoenixTune — Community Tuning Platform' },
+  title: { template: '%s | PeonixTune', default: 'PeonixTune — Community Tuning Platform' },
   description: 'Free tune settings สำหรับ Forza, The Crew และ NFS — ตั้งค่าง่าย แชร์ฟรี',
 }
 
