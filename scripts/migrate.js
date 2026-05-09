@@ -26,6 +26,7 @@ const MIGRATIONS = [
     "002_user_extended.sql",
     "003_fix_trigger.sql",
     "004_cars_indexes.sql",
+    "005_games_sort_order.sql",
 ]
 
 // Direct connection — avoids URL encoding issues, username is just "postgres"

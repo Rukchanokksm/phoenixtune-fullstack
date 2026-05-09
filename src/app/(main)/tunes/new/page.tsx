@@ -282,7 +282,10 @@ export default function ShareTunePage() {
       })
       const json = await res.json()
       if (!res.ok) { setSubmitError(json.error ?? 'เกิดข้อผิดพลาด'); return }
-      router.push('/tunes/' + json.id)
+      const gameSlug  = json.game?.slug  ?? 'forza-horizon-5'
+      const carMake   = json.car?.make   ?? selectedBrand?.name ?? brand
+      const carUUID   = json.car?.id     ?? ''
+      router.push(`/games/${gameSlug}/${encodeURIComponent(carMake)}/${carUUID}`)
     } catch {
       setSubmitError('เกิดข้อผิดพลาด กรุณาลองใหม่')
     } finally {

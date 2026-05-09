@@ -66,7 +66,37 @@ export async function POST(req: NextRequest, { params }: Params) {
       upvotes: updated?.upvotes ?? tune.upvotes,
     })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    const pgErr = err as { message?: string; code?: string }
+    const message = pgErr?.message ?? (err instanceof Error ? err.message : 'Internal server error')
+    return NextResponse.json({ error: message, code: pgErr?.code }, { status: 500 })
+  }
+}
+
+// ─── DELETE /api/tunes/[id]/upvote — remove upvote ───────────────────────────
+export async function DELETE(req: NextRequest, { params }: Params) {
+  try {
+    const { id: tuneId } = await params
+    const supabase = await createClient()
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { error } = await supabase
+      .from('upvotes')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('tune_id', tuneId)
+    if (error) throw error
+
+    const { data: updated } = await supabase
+      .from('tunes').select('upvotes').eq('id', tuneId).single()
+
+    return NextResponse.json({ upvoted: false, upvotes: updated?.upvotes ?? 0 })
+  } catch (err) {
+    const pgErr = err as { message?: string; code?: string }
+    const message = pgErr?.message ?? (err instanceof Error ? err.message : 'Internal server error')
+    return NextResponse.json({ error: message, code: pgErr?.code }, { status: 500 })
   }
 }
