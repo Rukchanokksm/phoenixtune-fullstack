@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { TopTunesClient } from '@/components/game/TopTunesClient'
 import { BrandsGrid } from '@/components/game/BrandsGrid'
@@ -39,10 +40,26 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
     )
   }
 
+  // Fetch game data (cover_url + id)
+  const supabase = await createClient()
+  const { data: game } = await supabase
+    .from('games')
+    .select('id, cover_url')
+    .eq('slug', gameSlug)
+    .single()
+
+  const coverUrl: string | null = (game as { id: string; cover_url: string | null } | null)?.cover_url ?? null
+
   if (!meta.available) {
     return (
       <div style={{ background:'#0d0f14', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <div style={{ textAlign:'center' }}>
+        {/* faded cover bg for coming-soon page */}
+        {coverUrl && (
+          <div style={{ position:'fixed', inset:0, zIndex:0, pointerEvents:'none' }}>
+            <Image src={coverUrl} alt="" fill style={{ objectFit:'cover', opacity:0.06, filter:'blur(2px)' }} priority />
+          </div>
+        )}
+        <div style={{ textAlign:'center', position:'relative', zIndex:1 }}>
           <div style={{ fontSize:'48px', marginBottom:'16px' }}>🔜</div>
           <h1 style={{ color:'#e2e8f0', marginBottom:'8px' }}>{meta.name}</h1>
           <p style={{ color:'#475569', marginBottom:'20px' }}>เร็วๆ นี้ — อยู่ระหว่างพัฒนา</p>
@@ -52,9 +69,7 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
     )
   }
 
-  // Fetch brands from DB
-  const supabase = await createClient()
-  const { data: game } = await supabase.from('games').select('id').eq('slug', gameSlug).single()
+  // Fetch brands
   let brands: string[] = []
   if (game) {
     const { data: cars } = await supabase
@@ -68,16 +83,56 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
   return (
     <div style={{ background:'#0d0f14', minHeight:'100vh', color:'#e2e8f0' }}>
 
-      {/* Hero */}
-      <div style={{ background: meta.gradient, borderBottom:`1px solid ${meta.accent}22` }}>
-        <div style={{ maxWidth:'1280px', margin:'0 auto', padding:'48px 24px 40px' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'12px' }}>
+      {/* ─── Hero with cover image background ─── */}
+      <div style={{ position:'relative', borderBottom:`1px solid ${meta.accent}22`, overflow:'hidden' }}>
+
+        {/* Cover image — faded behind gradient */}
+        {coverUrl && (
+          <Image
+            src={coverUrl}
+            alt={meta.name}
+            fill
+            style={{ objectFit:'cover', objectPosition:'center 30%', opacity:0.18 }}
+            priority
+          />
+        )}
+
+        {/* Gradient overlay — darkens image and keeps text readable */}
+        <div style={{
+          position:'absolute', inset:0,
+          background: coverUrl
+            ? `linear-gradient(to bottom, ${meta.gradient.replace('linear-gradient(135deg,','').replace(')','')} at 40%, rgba(13,15,20,0.97))`
+            : meta.gradient,
+          zIndex:1,
+        }} />
+
+        {/* Hero content */}
+        <div style={{ position:'relative', zIndex:2, maxWidth:'1280px', margin:'0 auto', padding:'56px 24px 48px' }}>
+          {/* Breadcrumb */}
+          <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'16px' }}>
             <Link href="/" style={{ fontSize:'13px', color:'#64748b', textDecoration:'none' }}>Home</Link>
             <span style={{ color:'#334155' }}>›</span>
             <span style={{ fontSize:'13px', color:meta.accent }}>{meta.name}</span>
           </div>
-          <h1 style={{ fontSize:'clamp(28px,4vw,48px)', fontWeight:900, margin:'0 0 8px', color:'#f1f5f9' }}>{meta.name}</h1>
-          <p style={{ margin:0, color:'#64748b', fontSize:'15px' }}>{meta.subtitle}</p>
+
+          {/* Title row */}
+          <div style={{ display:'flex', alignItems:'flex-end', gap:'24px', flexWrap:'wrap' }}>
+            <div>
+              <h1 style={{ fontSize:'clamp(28px,4vw,52px)', fontWeight:900, margin:'0 0 8px', color:'#f1f5f9', letterSpacing:'-0.02em' }}>
+                {meta.name}
+              </h1>
+              <p style={{ margin:0, color:'#64748b', fontSize:'15px' }}>{meta.subtitle}</p>
+            </div>
+
+            {/* Tune count badge */}
+            <div style={{
+              marginLeft:'auto', padding:'8px 18px', borderRadius:'10px',
+              background:`${meta.accent}18`, border:`1px solid ${meta.accent}33`,
+              fontSize:'13px', color:meta.accent, fontWeight:700, whiteSpace:'nowrap',
+            }}>
+              {brands.length > 0 ? `${brands.length} brands` : ''}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -131,7 +186,6 @@ export default async function GamePage({ params }: { params: Promise<{ gameSlug:
               border: `1px solid ${meta.accent}33`,
               borderRadius:'16px', padding:'36px 32px',
               display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'20px',
-              transition:'border-color 0.2s',
             }}>
               <div>
                 <h3 style={{ margin:'0 0 8px', fontSize:'20px', fontWeight:800, color:'#f1f5f9' }}>
