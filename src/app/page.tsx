@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import { AdUnit } from "@/components/ads/AdUnit"
 
 type LatestPost = {
     id: string
@@ -279,6 +280,11 @@ export default async function HomePage() {
                     ))}
                 </div>
             </section>
+
+            {/* AD — between hero and games */}
+            <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 24px 32px" }}>
+                <AdUnit slot="homepage-hero-banner" format="horizontal" />
+            </div>
 
             {/* GAMES */}
             <section

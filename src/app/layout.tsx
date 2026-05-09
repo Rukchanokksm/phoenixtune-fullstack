@@ -58,8 +58,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     }
   }
 
+  const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT
+
   return (
     <html lang="th" className={geist.variable}>
+      <head>
+        {adsenseClient && (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+            crossOrigin="anonymous"
+          />
+        )}
+      </head>
       <body style={{ margin: 0, background: '#0d0f14', color: '#e2e8f0', fontFamily: 'var(--font-geist), sans-serif' }}>
         <UserInitializer initialUser={profile} initialSavedIds={savedIds} />
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
