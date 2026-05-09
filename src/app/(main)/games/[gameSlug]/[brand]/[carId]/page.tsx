@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, Fragment } from 'react'
 import Link from 'next/link'
 import { AdUnit } from '@/components/ads/AdUnit'
 
@@ -212,11 +212,12 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {tunes.map((tune, i) => (<>
+            {tunes.map((tune, i) => (
+              <Fragment key={tune.id}>
               {i > 0 && i % 6 === 0 && (
-                <AdUnit key={`ad-${i}`} slot="car-detail-infeed" format="infeed" style={{ margin: '4px 0' }} />
+                <AdUnit slot="car-detail-infeed" format="infeed" style={{ margin: '4px 0' }} />
               )}
-              <Link key={tune.id} href={`/tunes/${tune.id}`} style={{ textDecoration: 'none' }}>
+              <Link href={`/tunes/${tune.id}`} style={{ textDecoration: 'none' }}>
                 <div style={{ background: '#111318', border: '1px solid #1e2130', borderRadius: '12px', padding: '18px 22px',
                   display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', cursor: 'pointer', transition: 'all 0.15s' }}
                   onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = meta.accent + '55'; el.style.background = '#13161f' }}
@@ -263,7 +264,8 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
                   </div>
                 </div>
               </Link>
-            </>))}
+              </Fragment>
+            ))}
           </div>
         )}
 
