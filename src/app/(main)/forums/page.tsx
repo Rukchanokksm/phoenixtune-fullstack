@@ -144,7 +144,7 @@ export default async function ForumsPage() {
         >
           {!announcements?.length
             ? <EmptyState text="ยังไม่มีประกาศ" />
-            : (announcements as Post[]).map(p => <PostRow key={p.id} post={p} />)
+            : (announcements as unknown as Post[]).map(p => <PostRow key={p.id} post={p} />)
           }
         </SegmentCard>
 
@@ -152,7 +152,7 @@ export default async function ForumsPage() {
         <SegmentCard title="พูดคุยทั่วไป" sub="5 กระทู้ล่าสุด" href="/forums/general">
           {!generalPosts?.length
             ? <EmptyState text="ยังไม่มีกระทู้ — เป็นคนแรกที่เริ่มพูดคุย" />
-            : (generalPosts as Post[]).map(p => <PostRow key={p.id} post={p} />)
+            : (generalPosts as unknown as Post[]).map(p => <PostRow key={p.id} post={p} />)
           }
         </SegmentCard>
 
@@ -164,7 +164,7 @@ export default async function ForumsPage() {
         >
           {!reportPosts?.length
             ? <EmptyState text="ไม่มีรายงานที่ค้างอยู่" />
-            : (reportPosts as Post[]).map(p => <PostRow key={p.id} post={p} />)
+            : (reportPosts as unknown as Post[]).map(p => <PostRow key={p.id} post={p} />)
           }
         </SegmentCard>
 
