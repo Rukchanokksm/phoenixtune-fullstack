@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useUserStore } from '@/stores/userStore'
 
 type AdFormat = 'horizontal' | 'rectangle' | 'infeed'
 
@@ -19,18 +20,24 @@ interface Props {
 }
 
 export function AdUnit({ slot, format = 'horizontal', style }: Props) {
-  const ref = useRef<HTMLModElement>(null)
-  const pushed = useRef(false)
+  const user     = useUserStore(s => s.user)
+  const isPremium = useUserStore(s => s.isPremium)
+  const ref      = useRef<HTMLModElement>(null)
+  const pushed   = useRef(false)
+
+  const hide = Boolean(user && (user.role === 'admin' || isPremium()))
 
   useEffect(() => {
-    if (!CLIENT || pushed.current) return
+    if (hide || !CLIENT || pushed.current) return
     try {
       pushed.current = true
       ;(window as unknown as { adsbygoogle: unknown[] }).adsbygoogle =
         (window as unknown as { adsbygoogle: unknown[] }).adsbygoogle ?? []
       ;(window as unknown as { adsbygoogle: unknown[] }).adsbygoogle.push({})
     } catch { /* ignore */ }
-  }, [])
+  }, [hide])
+
+  if (hide) return null
 
   if (!CLIENT) {
     // Dev placeholder — shows layout position without loading AdSense
