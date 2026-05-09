@@ -68,7 +68,7 @@ export default async function AnnouncementsPage() {
             ยังไม่มีประกาศ
           </div>
         ) : (
-          (posts as Post[]).map(p => (
+          (posts as unknown as Post[]).map(p => (
             <Link key={p.id} href={`/forums/${p.id}`} style={{ textDecoration: 'none', display: 'block' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '13px 20px', borderTop: '1px solid #1a1d24' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
