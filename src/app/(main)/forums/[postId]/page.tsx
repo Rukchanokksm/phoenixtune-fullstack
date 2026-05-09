@@ -99,8 +99,34 @@ export default function ForumPostPage() {
 
   if (loading) {
     return (
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '80px 24px', textAlign: 'center', color: '#374151' }}>
-        กำลังโหลด...
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 24px 80px' }}>
+        <div style={{ background: '#111318', border: '1px solid #1e2130', borderRadius: '10px', padding: '24px 28px', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <div style={{ height: '18px', width: '50px', borderRadius: '4px', background: '#1e2130' }} />
+            <div style={{ height: '18px', width: '80px', borderRadius: '4px', background: '#161820' }} />
+          </div>
+          <div style={{ height: '22px', borderRadius: '5px', background: '#1e2130', marginBottom: '8px', width: '75%' }} />
+          <div style={{ height: '22px', borderRadius: '5px', background: '#1a1d24', marginBottom: '20px', width: '50%' }} />
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ height: '13px', width: '80px', borderRadius: '4px', background: '#161820' }} />
+            <div style={{ height: '13px', width: '60px', borderRadius: '4px', background: '#161820' }} />
+          </div>
+          {[100, 90, 95, 70].map((w, i) => (
+            <div key={i} style={{ height: '14px', borderRadius: '4px', background: '#161820', marginBottom: '10px', width: `${w}%` }} />
+          ))}
+        </div>
+        <div style={{ background: '#111318', border: '1px solid #1e2130', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ padding: '14px 24px', borderBottom: '1px solid #1a1d24' }}>
+            <div style={{ height: '12px', width: '100px', borderRadius: '4px', background: '#1e2130' }} />
+          </div>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} style={{ padding: '16px 24px', borderBottom: '1px solid #0d0f14', opacity: 1 - i * 0.25 }}>
+              <div style={{ height: '13px', width: '100px', borderRadius: '4px', background: '#1e2130', marginBottom: '8px' }} />
+              <div style={{ height: '14px', borderRadius: '4px', background: '#161820', marginBottom: '6px', width: '85%' }} />
+              <div style={{ height: '14px', borderRadius: '4px', background: '#161820', width: '60%' }} />
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
