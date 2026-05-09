@@ -63,7 +63,7 @@ export default async function ProfilePage({ params }: Props) {
   type TuneRow = NonNullable<typeof tunes>[number]
   const byGame: Record<string, { gameName: string; gameSlug: string; tunes: TuneRow[] }> = {}
   for (const t of tunes ?? []) {
-    const g = t.game as { id: string; name: string; slug: string } | null
+    const g = t.game as unknown as { id: string; name: string; slug: string } | null
     if (!g) continue
     if (!byGame[g.id]) byGame[g.id] = { gameName: g.name, gameSlug: g.slug, tunes: [] }
     byGame[g.id].tunes.push(t)
@@ -192,7 +192,7 @@ export default async function ProfilePage({ params }: Props) {
             {/* Tune list */}
             <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
               {group.tunes.map(tune => {
-                const car = tune.car as { make: string; model: string; pi_class: string } | null
+                const car = tune.car as unknown as { make: string; model: string; pi_class: string } | null
                 const piColors: Record<string, string> = {
                   D:'#a3e635', C:'#facc15', B:'#fb923c', A:'#f87171', S1:'#c084fc', S2:'#818cf8', X:'#60a5fa'
                 }
