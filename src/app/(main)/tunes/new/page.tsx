@@ -749,8 +749,8 @@ export default function ShareTunePage() {
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {(['street','track','drift','rally','offroad','drag'] as const).map(d => {
                     const colors: Record<string, string> = {
-                      street:'#4ade80', track:'#60a5fa', drift:'#f472b6',
-                      rally:'#fb923c', offroad:'#fbbf24', drag:'#f87171',
+                      street:'#c084fc', track:'#60a5fa', drift:'#facc15',
+                      rally:'#fb923c', offroad:'#4ade80', drag:'#f87171',
                     }
                     return (
                       <Chip key={d} label={d.charAt(0).toUpperCase()+d.slice(1)}

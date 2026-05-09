@@ -75,19 +75,21 @@ function RideHeightBar({ pct }: { pct: number }) {
 
 function ChipSelect<T extends string>({
   options, value, onChange, accent = '#facc15',
-}: { options: { value: T; label: string; emoji?: string }[]; value: T; onChange: (v: T) => void; accent?: string }) {
+}: { options: { value: T; label: string; color?: string }[]; value: T; onChange: (v: T) => void; accent?: string }) {
   return (
     <div style={{ display:'flex', flexWrap:'wrap', gap:'6px' }}>
       {options.map((o) => {
         const active = value === o.value
+        const c = o.color ?? accent
         return (
           <button key={o.value} type="button" onClick={() => onChange(o.value)} style={{
-            padding:'6px 13px', borderRadius:'7px', fontSize:'13px', fontWeight:600, cursor:'pointer',
-            border: active ? `1px solid ${accent}` : '1px solid rgba(255,255,255,0.1)',
-            background: active ? `${accent}22` : 'rgba(255,255,255,0.04)',
-            color: active ? accent : '#94a3b8', transition:'all 0.12s',
+            padding:'7px 16px', borderRadius:'7px', fontSize:'13px', fontWeight:700, cursor:'pointer',
+            border: `1px solid ${active ? c : c + '44'}`,
+            background: active ? c : c + '18',
+            color: active ? '#0d0f14' : c,
+            transition:'all 0.12s',
           }}>
-            {o.emoji && <span style={{ marginRight:'5px' }}>{o.emoji}</span>}{o.label}
+            {o.label}
           </button>
         )
       })}
@@ -130,12 +132,12 @@ export default function CalculatorPage() {
   const DRIVETRAIN: { value: Drivetrain; label: string }[] = [
     { value:'AWD', label:'AWD' }, { value:'FWD', label:'FWD' }, { value:'RWD', label:'RWD' },
   ]
-  const DISCIPLINE: { value: Discipline; label: string; emoji: string }[] = [
-    { value:'street', label:'Street', emoji:'🏙' },
-    { value:'track',  label:'Track',  emoji:'🏁' },
-    { value:'offroad',label:'Offroad',emoji:'🏔' },
-    { value:'rally',  label:'Rally',  emoji:'🌲' },
-    { value:'drift',  label:'Drift',  emoji:'💨' },
+  const DISCIPLINE: { value: Discipline; label: string; color: string }[] = [
+    { value:'street',  label:'Street',  color:'#c084fc' },
+    { value:'track',   label:'Track',   color:'#60a5fa' },
+    { value:'offroad', label:'Offroad', color:'#4ade80' },
+    { value:'rally',   label:'Rally',   color:'#fb923c' },
+    { value:'drift',   label:'Drift',   color:'#facc15' },
   ]
 
   return (
@@ -280,7 +282,7 @@ export default function CalculatorPage() {
                 display:'flex', gap:'16px', flexWrap:'wrap' }}>
                 <span>⚖️ Balance <strong>{form.balanceFront}% F</strong></span>
                 <span>🔧 {form.drivetrain}</span>
-                <span>{DISCIPLINE.find(d => d.value === form.discipline)?.emoji} {form.discipline.toUpperCase()}</span>
+                <span style={{ color: DISCIPLINE.find(d => d.value === form.discipline)?.color }}>{form.discipline.toUpperCase()}</span>
                 <span>⚖️ {form.weightKg} kg</span>
                 <span>⚡ {form.torqueNm} N·m</span>
               </div>
