@@ -48,7 +48,6 @@ const PLATFORM_LINKS = [
   { label: 'Tune Calculator', href: '/calculator' },
   { label: 'Forums', href: '/forums' },
   { label: 'Upload Tune', href: '/tunes/new' },
-  { label: 'Premium', href: '/premium' },
 ]
 
 const GAME_LINKS = [
