@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-// ─── GET /api/saves — get saved tunes (premium only) ─────────────────────────
+// ─── GET /api/saves — get saved tunes (any logged-in user) ───────────────────
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient()
@@ -9,17 +9,6 @@ export async function GET(req: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Premium check
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('is_premium')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile?.is_premium) {
-      return NextResponse.json({ error: 'Premium required' }, { status: 403 })
     }
 
     const folderName = req.nextUrl.searchParams.get('folder')
@@ -63,7 +52,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// ─── POST /api/saves — save a tune (premium only) ────────────────────────────
+// ─── POST /api/saves — save a tune (any logged-in user) ──────────────────────
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
@@ -73,26 +62,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Premium check
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('is_premium')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile?.is_premium) {
-      return NextResponse.json(
-        { error: 'Premium required', upgrade: true },
-        { status: 403 }
-      )
-    }
-
     const { tuneId, folderName } = await req.json()
     if (!tuneId) {
       return NextResponse.json({ error: 'tuneId is required' }, { status: 400 })
     }
 
-    // Verify tune exists
     const { data: tune } = await supabase
       .from('tunes')
       .select('id')

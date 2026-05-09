@@ -184,9 +184,6 @@ function TuneCardRow({ tune }: { tune: TuneRow }) {
             <div style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', lineHeight: 1.2 }}>
               {tune.user?.username ?? 'Unknown'}
             </div>
-            {tune.user?.is_premium && (
-              <div style={{ fontSize: '10px', color: '#facc15', fontWeight: 700 }}>PRO</div>
-            )}
           </div>
         </div>
 

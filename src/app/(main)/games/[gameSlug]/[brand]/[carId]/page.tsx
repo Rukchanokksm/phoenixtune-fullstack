@@ -256,7 +256,6 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
                   {/* Meta */}
                   <div style={{ textAlign: 'right', fontSize: '12px', color: '#475569' }}>
                     <div style={{ marginBottom: '4px' }}>
-                      {tune.user?.is_premium && <span style={{ color: '#facc15', marginRight: '4px' }}>★</span>}
                       <span style={{ color: '#64748b' }}>{tune.user?.username ?? 'Unknown'}</span>
                     </div>
                     <div>{new Date(tune.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}</div>
