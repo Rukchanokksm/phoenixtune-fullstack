@@ -16,10 +16,10 @@ export async function GET(req: NextRequest, { params }: Params) {
         *,
         car:cars(id, make, model, year, pi_class, drivetrain, weight_kg, power_hp),
         game:games(id, name, slug),
-        user:user_profiles(id, username, avatar_url, is_premium),
+        user:user_profiles!tunes_user_id_fkey(id, username, avatar_url, is_premium),
         comments(
           id, body, created_at,
-          user:user_profiles(id, username, avatar_url)
+          user:user_profiles!comments_user_id_fkey(id, username, avatar_url)
         )
       `)
       .eq('id', id)
@@ -53,8 +53,9 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     return NextResponse.json({ ...tune, isSaved, hasUpvoted })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    const pgErr = err as { message?: string; code?: string; details?: string }
+    const message = pgErr?.message ?? (err instanceof Error ? err.message : 'Internal server error')
+    return NextResponse.json({ error: message, code: pgErr?.code }, { status: 500 })
   }
 }
 
@@ -107,7 +108,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         *,
         car:cars(id, make, model, pi_class, drivetrain),
         game:games(id, name, slug),
-        user:user_profiles(id, username, avatar_url)
+        user:user_profiles!tunes_user_id_fkey(id, username, avatar_url)
       `)
       .single()
 
@@ -115,8 +116,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     return NextResponse.json(data)
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    const pgErr = err as { message?: string; code?: string; details?: string }
+    const message = pgErr?.message ?? (err instanceof Error ? err.message : 'Internal server error')
+    return NextResponse.json({ error: message, code: pgErr?.code }, { status: 500 })
   }
 }
 
@@ -151,7 +153,8 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
     return NextResponse.json({ deleted: id })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    const pgErr = err as { message?: string; code?: string; details?: string }
+    const message = pgErr?.message ?? (err instanceof Error ? err.message : 'Internal server error')
+    return NextResponse.json({ error: message, code: pgErr?.code }, { status: 500 })
   }
 }
