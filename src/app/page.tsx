@@ -1,6 +1,15 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 
+type LatestPost = {
+    id: string
+    title: string
+    category: string
+    created_at: string
+    user: { username: string } | null
+    game: { name: string } | null
+}
+
 interface DbGame {
     id: string
     name: string
@@ -85,11 +94,12 @@ export default async function HomePage() {
         .select("*, tune_count:tunes(count)")
         .order("created_at", { ascending: false })
 
-    const { data: latestPosts } = await supabase
+    const { data: latestPostsRaw } = await supabase
         .from("forum_posts")
         .select("id, title, category, created_at, user:user_profiles!forum_posts_user_id_fkey(username), game:games!forum_posts_game_id_fkey(name)")
         .order("created_at", { ascending: false })
         .limit(3)
+    const latestPosts = (latestPostsRaw ?? []) as unknown as LatestPost[]
 
     const stats = [
         { value: (tuneCount ?? 0).toLocaleString(), label: "Tunes" },
@@ -479,7 +489,7 @@ export default async function HomePage() {
                     </Link>
                 </div>
 
-                {!latestPosts?.length ? (
+                {!latestPosts.length ? (
                     <div style={{ padding:"32px 20px", background:"#111318", border:"1px solid #1e2130", borderRadius:"10px", textAlign:"center", color:"#374151", fontSize:"13px" }}>
                         ยังไม่มีกระทู้ — <Link href="/forums/new" style={{ color:"#6366f1", textDecoration:"none" }}>เป็นคนแรกที่โพสต์</Link>
                     </div>
@@ -492,8 +502,8 @@ export default async function HomePage() {
                                 report:       { label:"รายงาน", color:"#f87171", bg:"rgba(248,113,113,0.08)" },
                             }
                             const meta  = catMeta[post.category] ?? { label: post.category, color:"#94a3b8", bg:"rgba(148,163,184,0.08)" }
-                            const user  = (post.user as unknown as { username: string } | null)
-                            const game  = (post.game as unknown as { name: string } | null)
+                            const user  = post.user
+                            const game  = post.game
                             const diff  = Date.now() - new Date(post.created_at).getTime()
                             const mins  = Math.floor(diff / 60000)
                             const timeStr = mins < 60
