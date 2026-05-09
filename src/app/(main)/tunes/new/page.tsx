@@ -7,13 +7,13 @@ type CarBrand = { id: string; name: string }
 type CarModel = { id: string; year: number; model: string; label: string; drivetrain: string }
 
 const CAR_CLASSES = [
-  { id: 'sub500', label: '< 500', color: '#94a3b8' },
-  { id: 'D',      label: '500',   color: '#a3e635' },
-  { id: 'C',      label: '600',   color: '#facc15' },
-  { id: 'B',      label: '700',   color: '#fb923c' },
-  { id: 'A',      label: '800',   color: '#f87171' },
-  { id: 'S1',     label: '900',   color: '#c084fc' },
-  { id: 'X',      label: 'X',     color: '#60a5fa' },
+  { id: 'D',  label: 'D',  color: '#a3e635' },
+  { id: 'C',  label: 'C',  color: '#facc15' },
+  { id: 'B',  label: 'B',  color: '#fb923c' },
+  { id: 'A',  label: 'A',  color: '#f87171' },
+  { id: 'S1', label: 'S1', color: '#c084fc' },
+  { id: 'S2', label: 'S2', color: '#818cf8' },
+  { id: 'X',  label: 'X',  color: '#60a5fa' },
 ]
 
 /* ─── Helpers ────────────────────────────────────────────────── */
@@ -194,7 +194,7 @@ export default function ShareTunePage() {
 
   // Map carClass chip id -> pi_class enum
   const piClassMap: Record<string, string> = {
-    sub500: 'D', D: 'D', C: 'C', B: 'B', A: 'A', S1: 'S1', X: 'X',
+    D: 'D', C: 'C', B: 'B', A: 'A', S1: 'S1', S2: 'S2', X: 'X',
   }
 
   async function handleSubmit() {
