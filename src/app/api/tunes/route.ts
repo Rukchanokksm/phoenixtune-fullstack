@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 // GET /api/tunes
 export async function GET(req: NextRequest) {
@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
     }
 
     switch (sortBy) {
-      case 'popular':  query = query.order('upvotes',     { ascending: false }); break
-      case 'trending': query = query.order('view_count',  { ascending: false }); break
-      default:         query = query.order('created_at',  { ascending: false }); break
+      case 'popular':  query = query.order('upvotes',    { ascending: false }); break
+      case 'trending': query = query.order('view_count', { ascending: false }); break
+      default:         query = query.order('created_at', { ascending: false }); break
     }
 
     query = query.range(from, to)
@@ -79,7 +79,8 @@ export async function POST(req: NextRequest) {
     // Validation
     if (!title?.trim())   return NextResponse.json({ error: 'title is required' }, { status: 400 })
     if (!discipline)      return NextResponse.json({ error: 'discipline is required' }, { status: 400 })
-    if (!parameters)      return NextResponse.json({ error: 'parameters is required' }, { status: 400 })
+    if (!parameters || Object.keys(parameters).length === 0)
+      return NextResponse.json({ error: 'parameters must not be empty' }, { status: 400 })
 
     const validDisciplines = ['street', 'track', 'rally', 'offroad', 'drift', 'drag']
     if (!validDisciplines.includes(discipline)) {
@@ -98,18 +99,20 @@ export async function POST(req: NextRequest) {
       gameId = game.id
     }
 
-    // --- Resolve / upsert car -----------------------------------------------
+    // --- Resolve / upsert car (admin client bypasses RLS) -------------------
+    const adminClient = createAdminClient()
+
     if (!carId) {
       if (!carMake || !carModel)
         return NextResponse.json({ error: 'carMake and carModel are required' }, { status: 400 })
 
-      const validPiClasses  = ['D', 'C', 'B', 'A', 'S1', 'S2', 'X']
+      const validPiClasses   = ['D', 'C', 'B', 'A', 'S1', 'S2', 'X']
       const validDrivetrains = ['FWD', 'RWD', 'AWD']
-      const safePiClass    = validPiClasses.includes(piClass)    ? piClass    : 'A'
+      const safePiClass    = validPiClasses.includes(piClass)      ? piClass    : 'A'
       const safeDrivetrain = validDrivetrains.includes(drivetrain) ? drivetrain : 'RWD'
 
       // Try to find existing car (same game + make + model + year)
-      const { data: existing } = await supabase
+      const { data: existing } = await adminClient
         .from('cars')
         .select('id')
         .eq('game_id', gameId)
@@ -121,8 +124,7 @@ export async function POST(req: NextRequest) {
       if (existing) {
         carId = existing.id
       } else {
-        // Insert new car
-        const { data: newCar, error: carErr } = await supabase
+        const { data: newCar, error: carErr } = await adminClient
           .from('cars')
           .insert({
             game_id:    gameId,
@@ -137,6 +139,25 @@ export async function POST(req: NextRequest) {
         if (carErr) throw carErr
         carId = newCar.id
       }
+    }
+
+    // --- Ensure user_profiles row exists (trigger may have failed silently) -
+    const { data: profile } = await adminClient
+      .from('user_profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!profile) {
+      const username = user.email?.split('@')[0] ?? user.id.slice(0, 8)
+      await adminClient.from('user_profiles').insert({
+        id:             user.id,
+        username,
+        avatar_url:     user.user_metadata?.avatar_url ?? null,
+        role:           'user',
+        active_title:   'newcomer',
+        titles_earned:  ['newcomer'],
+      })
     }
 
     // --- Insert tune --------------------------------------------------------
@@ -161,10 +182,14 @@ export async function POST(req: NextRequest) {
       `)
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('[POST /api/tunes] insert error:', JSON.stringify(error))
+      throw error
+    }
     return NextResponse.json(data, { status: 201 })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error'
+    console.error('[POST /api/tunes] caught error:', err)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
