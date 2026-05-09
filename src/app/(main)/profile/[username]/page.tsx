@@ -96,9 +96,6 @@ export default async function ProfilePage({ params }: Props) {
         <div style={{ flex:1, minWidth:'200px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'10px', flexWrap:'wrap', marginBottom:'6px' }}>
             <h1 style={{ margin:0, color:'#e2e8f0', fontWeight:800, fontSize:'22px' }}>@{profile.username}</h1>
-            {profile.is_premium && (
-              <span style={{ background:'rgba(250,204,21,0.1)', color:'#facc15', padding:'2px 10px', borderRadius:'20px', fontSize:'11px', fontWeight:700 }}>PRO</span>
-            )}
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'12px' }}>
             <span style={{ fontSize:'16px' }}>{activeTitle.icon}</span>
