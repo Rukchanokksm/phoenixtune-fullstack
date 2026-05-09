@@ -151,7 +151,13 @@ export default function ForumPostPage() {
           </h1>
 
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
-            <span style={{ color: '#475569', fontSize: '13px' }}>@{post.user?.username ?? '—'}</span>
+            {post.user ? (
+              <Link href={`/profile/${post.user.username}`} style={{ color: '#475569', fontSize: '13px', textDecoration: 'none' }}>
+                @{post.user.username}
+              </Link>
+            ) : (
+              <span style={{ color: '#475569', fontSize: '13px' }}>—</span>
+            )}
             <span style={{ color: '#1e2130' }}>·</span>
             <span style={{ color: '#374151', fontSize: '12px' }}>{timeAgo(post.created_at)}</span>
             <span style={{ color: '#1e2130' }}>·</span>
@@ -192,7 +198,13 @@ export default function ForumPostPage() {
             <div key={c.id} style={{ padding: '16px 24px', borderBottom: '1px solid #0d0f14', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ color: '#64748b', fontSize: '13px', fontWeight: 600 }}>@{c.user?.username ?? '—'}</span>
+                  {c.user ? (
+                    <Link href={`/profile/${c.user.username}`} style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>
+                      @{c.user.username}
+                    </Link>
+                  ) : (
+                    <span style={{ color: '#64748b', fontSize: '13px', fontWeight: 600 }}>—</span>
+                  )}
                   <span style={{ color: '#374151', fontSize: '11px' }}>{timeAgo(c.created_at)}</span>
                 </div>
                 <div style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: '1.65', whiteSpace: 'pre-wrap' }}>
