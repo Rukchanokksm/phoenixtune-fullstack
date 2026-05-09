@@ -176,7 +176,7 @@ export default function RegisterPage() {
         <div style={{ textAlign:'center', marginBottom:'32px' }}>
           <div style={{ fontSize:'36px', marginBottom:'8px' }}>🏁</div>
           <h1 style={{ fontSize:'24px', fontWeight:800, color:'#e2e8f0', margin:'0 0 6px' }}>
-            สมัคร <span style={{ color:'#facc15' }}>PhoenixTune</span>
+            สมัคร <span style={{ color:'#facc15' }}>PeonixTune</span>
           </h1>
           <p style={{ color:'#475569', fontSize:'14px', margin:0 }}>เข้าร่วมชุมชน tuner และแชร์ setup ของคุณ</p>
         </div>
