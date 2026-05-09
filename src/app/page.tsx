@@ -156,8 +156,7 @@ export default async function HomePage() {
     const { data: games } = await supabase
         .from("games")
         .select("*, tune_count:tunes(count)")
-        .order("is_active", { ascending: false })
-        .order("name")
+        .order("created_at", { ascending: false })
 
     const { data: recentTunes } = await supabase
         .from("tunes")
