@@ -20,12 +20,11 @@ interface Props {
 }
 
 export function AdUnit({ slot, format = 'horizontal', style }: Props) {
-  const user     = useUserStore(s => s.user)
-  const isPremium = useUserStore(s => s.isPremium)
-  const ref      = useRef<HTMLModElement>(null)
-  const pushed   = useRef(false)
+  const user   = useUserStore(s => s.user)
+  const ref    = useRef<HTMLModElement>(null)
+  const pushed = useRef(false)
 
-  const hide = Boolean(user && (user.role === 'admin' || isPremium()))
+  const hide = user?.role === 'admin'
 
   useEffect(() => {
     if (hide || !CLIENT || pushed.current) return
