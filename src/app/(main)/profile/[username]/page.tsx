@@ -70,6 +70,11 @@ export default async function ProfilePage({ params }: Props) {
   }
   const gameGroups = Object.values(byGame)
 
+  // Computed stats from real tune data
+  const totalTunes   = tunes?.length ?? 0
+  const totalUpvotes = tunes?.reduce((s, t) => s + (t.upvotes ?? 0), 0) ?? 0
+  const totalViews   = tunes?.reduce((s, t) => s + (t.view_count ?? 0), 0) ?? 0
+
   const activeTitle = TITLES[profile.active_title as TitleId] ?? TITLES.newcomer
   const earned = (profile.titles_earned as string[]).map(t => TITLES[t as TitleId]).filter(Boolean)
   const joinYear = new Date(profile.created_at).getFullYear()
@@ -109,19 +114,38 @@ export default async function ProfilePage({ params }: Props) {
       </div>
 
       {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'12px', marginBottom:'24px' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'12px', marginBottom:'24px' }}>
         {[
-          { label:'Tunes แชร์', value: profile.tune_share_count, icon:'🔧', color:'#60a5fa' },
-          { label:'Upvotes รับ', value: profile.total_upvotes_received, icon:'▲', color:'#facc15' },
-          { label:'ฉายาสะสม',  value: earned.length, icon:'🏅', color:'#c084fc' },
+          { label:'Tune ทั้งหมด', value: totalTunes,   icon:'🔧', color:'#60a5fa' },
+          { label:'Upvotes รับ',  value: totalUpvotes, icon:'▲',  color:'#facc15' },
+          { label:'ยอดวิวรวม',    value: totalViews,   icon:'👁', color:'#34d399' },
+          { label:'ฉายาสะสม',    value: earned.length, icon:'🏅', color:'#c084fc' },
         ].map(s => (
-          <div key={s.label} style={{ background:'#111318', border:'1px solid #1e2130', borderRadius:'10px', padding:'20px', textAlign:'center' }}>
-            <div style={{ fontSize:'22px', marginBottom:'4px' }}>{s.icon}</div>
-            <div style={{ fontSize:'24px', fontWeight:800, color: s.color, marginBottom:'4px' }}>{s.value}</div>
-            <div style={{ fontSize:'12px', color:'#475569' }}>{s.label}</div>
+          <div key={s.label} style={{ background:'#111318', border:'1px solid #1e2130', borderRadius:'10px', padding:'16px', textAlign:'center' }}>
+            <div style={{ fontSize:'20px', marginBottom:'4px' }}>{s.icon}</div>
+            <div style={{ fontSize:'22px', fontWeight:800, color: s.color, marginBottom:'4px' }}>{s.value.toLocaleString()}</div>
+            <div style={{ fontSize:'11px', color:'#475569' }}>{s.label}</div>
           </div>
         ))}
       </div>
+
+      {/* Per-game tune count */}
+      {gameGroups.length > 0 && (
+        <div style={{ background:'#111318', border:'1px solid #1e2130', borderRadius:'10px', padding:'16px 20px', marginBottom:'24px' }}>
+          <div style={{ fontSize:'12px', color:'#475569', fontWeight:600, marginBottom:'10px' }}>Tune แยกตามเกม</div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:'8px' }}>
+            {gameGroups.map(g => (
+              <div key={g.gameSlug} style={{ display:'flex', alignItems:'center', gap:'6px',
+                padding:'5px 12px', borderRadius:'20px',
+                background:'rgba(96,165,250,0.07)', border:'1px solid rgba(96,165,250,0.2)' }}>
+                <span style={{ fontSize:'12px' }}>🎮</span>
+                <span style={{ color:'#94a3b8', fontSize:'12px', fontWeight:600 }}>{g.gameName}</span>
+                <span style={{ color:'#60a5fa', fontSize:'12px', fontWeight:800 }}>{g.tunes.length}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Titles earned */}
       <div style={{ background:'#111318', border:'1px solid #1e2130', borderRadius:'12px', padding:'24px', marginBottom:'24px' }}>
