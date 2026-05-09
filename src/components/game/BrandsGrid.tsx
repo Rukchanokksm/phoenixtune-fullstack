@@ -42,7 +42,6 @@ export function BrandsGrid({ gameSlug, brands, accent = '#4ade80' }: Props) {
               el.style.background = '#111318'
             }}
           >
-            <span style={{ fontSize:'16px' }}>{BRAND_FLAG[brand] ?? '🏎️'}</span>
             <span style={{ color:'#cbd5e1', fontSize:'13px', fontWeight:500 }}>{brand}</span>
           </div>
         </Link>
