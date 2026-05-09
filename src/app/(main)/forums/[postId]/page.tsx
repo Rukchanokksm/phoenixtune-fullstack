@@ -28,6 +28,52 @@ function timeAgo(dateStr: string) {
     : new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
 }
 
+type StoredBlock =
+  | { type: 'text';  content: string }
+  | { type: 'image'; url: string }
+
+function PostBody({ body }: { body: string }) {
+  // Try block format first (new posts), fall back to plain text (old posts)
+  let blocks: StoredBlock[] | null = null
+  try {
+    const parsed = JSON.parse(body)
+    if (Array.isArray(parsed)) blocks = parsed
+  } catch { /* plain text fallback */ }
+
+  if (blocks) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {blocks.map((block, i) => {
+          if (block.type === 'text') {
+            return (
+              <div key={i} style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: '1.75', whiteSpace: 'pre-wrap' }}>
+                {block.content}
+              </div>
+            )
+          }
+          if (block.type === 'image') {
+            return (
+              <a key={i} href={block.url} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'block', borderRadius: '8px', overflow: 'hidden', border: '1px solid #1a1d24', background: '#0d0f14' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={block.url} alt="" style={{ width: '100%', maxHeight: '600px', objectFit: 'contain', display: 'block' }} />
+              </a>
+            )
+          }
+          return null
+        })}
+      </div>
+    )
+  }
+
+  // Plain text fallback for posts created before block format
+  return (
+    <div style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: '1.75', whiteSpace: 'pre-wrap' }}>
+      {body}
+    </div>
+  )
+}
+
 export default function ForumPostPage() {
   const { postId } = useParams<{ postId: string }>()
   const router = useRouter()
@@ -165,36 +211,7 @@ export default function ForumPostPage() {
             <span style={{ color: '#374151', fontSize: '12px' }}>▲ {post.upvotes}</span>
           </div>
 
-          <div style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: '1.75', whiteSpace: 'pre-wrap' }}>
-            {post.body}
-          </div>
-
-          {/* Image grid */}
-          {post.images?.length > 0 && (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: post.images.length === 1 ? '1fr' : 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '8px',
-              marginTop: '20px',
-            }}>
-              {post.images.map((url, i) => (
-                <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                  style={{ display: 'block', borderRadius: '8px', overflow: 'hidden', background: '#0d0f14', border: '1px solid #1a1d24' }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={url}
-                    alt={`รูปที่ ${i + 1}`}
-                    style={{
-                      width: '100%',
-                      maxHeight: post.images.length === 1 ? '480px' : '220px',
-                      objectFit: 'cover',
-                      display: 'block',
-                    }}
-                  />
-                </a>
-              ))}
-            </div>
-          )}
+          <PostBody body={post.body} />
         </div>
 
         {isOwner && (
