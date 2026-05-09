@@ -8,12 +8,18 @@ import { createClient } from '@/lib/supabase/client'
 type Game = { id: string; name: string; slug: string }
 
 // ── image upload constants ──────────────────────────────────────
-const MAX_IMAGES      = 5          // per post (will be role-based later)
-const MAX_SIZE_BYTES  = 5 * 1024 * 1024   // 5 MB per file
-const ALLOWED_TYPES   = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-const BUCKET          = 'forum-images'
+// MAX_IMAGES will be enforced per-role server-side in a future update.
+// For now all authenticated users share this limit.
+const MAX_IMAGES     = 5
+const MAX_SIZE_BYTES = 5 * 1024 * 1024          // 5 MB
+const ALLOWED_TYPES  = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const BUCKET         = 'forum-images'
 
-type UploadedImage = { url: string; name: string; preview: string }
+type PendingImage = {
+  tempPath: string   // storage path relative to bucket, e.g. "temps/uid_ts_rand.jpg"
+  preview:  string   // local blob URL for preview
+  name:     string
+}
 
 export default function NewForumPostPage() {
   const router = useRouter()
@@ -30,7 +36,7 @@ export default function NewForumPostPage() {
     : 'general'
   )
   const [gameId,      setGameId]      = useState('')
-  const [images,      setImages]      = useState<UploadedImage[]>([])
+  const [images,      setImages]      = useState<PendingImage[]>([])
   const [uploading,   setUploading]   = useState(false)
   const [uploadError, setUploadError] = useState('')
   const [loading,     setLoading]     = useState(false)
@@ -45,52 +51,49 @@ export default function NewForumPostPage() {
 
   async function uploadFiles(files: FileList | File[]) {
     setUploadError('')
-    const fileArr = Array.from(files)
+    const supabase = createClient()
 
-    // Remaining slots
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setUploadError('กรุณาเข้าสู่ระบบก่อนอัปโหลดรูป'); return }
+
     const remaining = MAX_IMAGES - images.length
     if (remaining <= 0) {
       setUploadError(`ใส่รูปได้สูงสุด ${MAX_IMAGES} รูปต่อ post`)
       return
     }
 
-    const toUpload = fileArr.slice(0, remaining)
-    if (fileArr.length > remaining) {
-      setUploadError(`เลือกได้อีกแค่ ${remaining} รูป — ไฟล์ที่เกินถูกข้ามไป`)
-    }
-
-    const supabase = createClient()
+    const fileArr   = Array.from(files).slice(0, remaining)
+    const skipped   = Array.from(files).length - fileArr.length
+    if (skipped > 0) setUploadError(`เลือกได้อีกแค่ ${remaining} รูป — ไฟล์ที่เกินถูกข้ามไป`)
 
     setUploading(true)
-    const results: UploadedImage[] = []
+    const results: PendingImage[] = []
 
-    for (const file of toUpload) {
-      // type check
+    for (const file of fileArr) {
       if (!ALLOWED_TYPES.includes(file.type)) {
         setUploadError(`"${file.name}" ไม่รองรับ — ใช้ได้เฉพาะ JPG, PNG, WebP, GIF`)
         continue
       }
-      // size check
       if (file.size > MAX_SIZE_BYTES) {
         setUploadError(`"${file.name}" ใหญ่เกิน 5 MB (${(file.size / 1024 / 1024).toFixed(1)} MB)`)
         continue
       }
 
-      const ext  = file.name.split('.').pop()
-      const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+      const ext      = file.name.split('.').pop() ?? 'jpg'
+      const rand     = Math.random().toString(36).slice(2, 8)
+      // Store under temps/ — treated as disposable until post is created
+      const tempPath = `temps/${user.id}_${Date.now()}_${rand}.${ext}`
 
       const { error: upErr } = await supabase.storage
         .from(BUCKET)
-        .upload(path, file, { cacheControl: '3600', upsert: false })
+        .upload(tempPath, file, { cacheControl: '3600', upsert: false })
 
       if (upErr) {
         setUploadError(`อัปโหลด "${file.name}" ไม่สำเร็จ: ${upErr.message}`)
         continue
       }
 
-      const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
-      const preview = URL.createObjectURL(file)
-      results.push({ url: publicUrl, name: file.name, preview })
+      results.push({ tempPath, preview: URL.createObjectURL(file), name: file.name })
     }
 
     setImages(prev => [...prev, ...results])
@@ -98,6 +101,7 @@ export default function NewForumPostPage() {
   }
 
   function removeImage(idx: number) {
+    // Note: temp file stays in storage until the daily cron cleans it up
     setImages(prev => prev.filter((_, i) => i !== idx))
   }
 
@@ -124,11 +128,12 @@ export default function NewForumPostPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title:    title.trim(),
-          body:     body.trim(),
+          title:     title.trim(),
+          body:      body.trim(),
           category,
-          gameId:   tag === 'game' ? gameId || null : null,
-          images:   images.map(i => i.url),
+          gameId:    tag === 'game' ? gameId || null : null,
+          // Send storage paths so the server can move them to permanent location
+          tempPaths: images.map(i => i.tempPath),
         }),
       })
       const data = await res.json()
@@ -150,13 +155,11 @@ export default function NewForumPostPage() {
     display: 'block', color: '#94a3b8', fontSize: '12px',
     fontWeight: 600, marginBottom: '6px', letterSpacing: '0.04em',
   }
-
   const canAddMore = images.length < MAX_IMAGES
 
   return (
     <div style={{ maxWidth: '700px', margin: '0 auto', padding: '40px 24px 80px', color: '#e2e8f0' }}>
 
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px', flexWrap: 'wrap' }}>
         <Link href="/forums" style={{ color: '#475569', fontSize: '13px', textDecoration: 'none' }}>Forums</Link>
         <span style={{ color: '#334155' }}>›</span>
@@ -171,15 +174,12 @@ export default function NewForumPostPage() {
             <label style={labelStyle}>หมวดหมู่</label>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {([
-                { value: 'general',      label: 'ทั่วไป' },
-                { value: 'game',         label: 'เกม' },
-                { value: 'report',       label: 'รายงาน / ปัญหา' },
+                { value: 'general',  label: 'ทั่วไป' },
+                { value: 'game',     label: 'เกม' },
+                { value: 'report',   label: 'รายงาน / ปัญหา' },
                 ...(tag === 'announcement' ? [{ value: 'announcement' as const, label: 'ประกาศ' }] : []),
               ] as const).map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setTag(opt.value)}
+                <button key={opt.value} type="button" onClick={() => setTag(opt.value)}
                   style={{
                     padding: '7px 16px', borderRadius: '7px', fontSize: '13px', cursor: 'pointer',
                     border: '1px solid',
@@ -187,8 +187,7 @@ export default function NewForumPostPage() {
                     background:  tag === opt.value ? 'rgba(99,102,241,0.12)' : '#0d0f14',
                     color:       tag === opt.value ? '#818cf8' : '#64748b',
                     fontWeight:  tag === opt.value ? 700 : 400,
-                  }}
-                >
+                  }}>
                   {opt.label}
                 </button>
               ))}
@@ -199,11 +198,8 @@ export default function NewForumPostPage() {
           {tag === 'game' && (
             <div>
               <label style={labelStyle}>เกม</label>
-              <select
-                value={gameId}
-                onChange={e => setGameId(e.target.value)}
-                style={{ ...inputStyle, cursor: 'pointer' }}
-              >
+              <select value={gameId} onChange={e => setGameId(e.target.value)}
+                style={{ ...inputStyle, cursor: 'pointer' }}>
                 <option value="">เลือกเกม (ไม่บังคับ)</option>
                 {games.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
@@ -213,26 +209,16 @@ export default function NewForumPostPage() {
           {/* Title */}
           <div>
             <label style={labelStyle}>หัวข้อ</label>
-            <input
-              type="text"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              placeholder="หัวข้อของ post..."
-              maxLength={200}
-              style={inputStyle}
-            />
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+              placeholder="หัวข้อของ post..." maxLength={200} style={inputStyle} />
           </div>
 
           {/* Body */}
           <div>
             <label style={labelStyle}>เนื้อหา</label>
-            <textarea
-              value={body}
-              onChange={e => setBody(e.target.value)}
-              placeholder="เขียนเนื้อหาที่นี่..."
-              rows={10}
-              style={{ ...inputStyle, resize: 'vertical', lineHeight: '1.6', fontFamily: 'inherit' }}
-            />
+            <textarea value={body} onChange={e => setBody(e.target.value)}
+              placeholder="เขียนเนื้อหาที่นี่..." rows={10}
+              style={{ ...inputStyle, resize: 'vertical', lineHeight: '1.6', fontFamily: 'inherit' }} />
           </div>
 
           {/* Image upload */}
@@ -240,7 +226,7 @@ export default function NewForumPostPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
               <label style={labelStyle}>รูปภาพ</label>
               <span style={{ color: '#374151', fontSize: '11px' }}>
-                {images.length}/{MAX_IMAGES} รูป · สูงสุด 5 MB ต่อไฟล์ · JPG, PNG, WebP, GIF
+                {images.length}/{MAX_IMAGES} · สูงสุด 5 MB · JPG PNG WebP GIF
               </span>
             </div>
 
@@ -250,23 +236,10 @@ export default function NewForumPostPage() {
                 {images.map((img, i) => (
                   <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: '6px', overflow: 'hidden', background: '#0d0f14', border: '1px solid #1e2130' }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={img.preview}
-                      alt={img.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(i)}
-                      style={{
-                        position: 'absolute', top: '4px', right: '4px',
-                        width: '20px', height: '20px', borderRadius: '50%',
-                        background: 'rgba(0,0,0,0.7)', border: 'none',
-                        color: '#e2e8f0', fontSize: '12px', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-                      }}
-                      title="ลบรูป"
-                    >
+                    <img src={img.preview} alt={img.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button type="button" onClick={() => removeImage(i)}
+                      style={{ position: 'absolute', top: '4px', right: '4px', width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(0,0,0,0.75)', border: 'none', color: '#e2e8f0', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}
+                      title="ลบรูป">
                       ×
                     </button>
                   </div>
@@ -283,14 +256,10 @@ export default function NewForumPostPage() {
                 onClick={() => fileInputRef.current?.click()}
                 style={{
                   border: `2px dashed ${dragOver ? '#6366f1' : '#1e2130'}`,
-                  borderRadius: '8px',
-                  padding: '24px 16px',
-                  textAlign: 'center',
-                  cursor: 'pointer',
+                  borderRadius: '8px', padding: '24px 16px', textAlign: 'center', cursor: 'pointer',
                   background: dragOver ? 'rgba(99,102,241,0.04)' : 'transparent',
                   transition: 'border-color 0.15s, background 0.15s',
-                }}
-              >
+                }}>
                 {uploading ? (
                   <span style={{ color: '#475569', fontSize: '13px' }}>กำลังอัปโหลด...</span>
                 ) : (
@@ -306,19 +275,11 @@ export default function NewForumPostPage() {
               </div>
             )}
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={ALLOWED_TYPES.join(',')}
-              multiple
-              onChange={onFileInput}
-              style={{ display: 'none' }}
-            />
+            <input ref={fileInputRef} type="file" accept={ALLOWED_TYPES.join(',')}
+              multiple onChange={onFileInput} style={{ display: 'none' }} />
 
             {uploadError && (
-              <div style={{ color: '#fbbf24', fontSize: '12px', marginTop: '6px' }}>
-                {uploadError}
-              </div>
+              <div style={{ color: '#fbbf24', fontSize: '12px', marginTop: '6px' }}>{uploadError}</div>
             )}
           </div>
 
@@ -332,14 +293,8 @@ export default function NewForumPostPage() {
             <Link href="/forums" style={{ padding: '10px 20px', borderRadius: '7px', background: '#1a1d24', color: '#64748b', fontSize: '13px', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
               ยกเลิก
             </Link>
-            <button
-              type="submit"
-              disabled={loading || uploading}
-              style={{ padding: '10px 24px', borderRadius: '7px', background: loading ? '#3730a3' : '#6366f1',
-                color: '#fff', fontSize: '13px', fontWeight: 700,
-                cursor: loading || uploading ? 'not-allowed' : 'pointer', border: 'none',
-                opacity: uploading ? 0.6 : 1 }}
-            >
+            <button type="submit" disabled={loading || uploading}
+              style={{ padding: '10px 24px', borderRadius: '7px', background: loading ? '#3730a3' : '#6366f1', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: loading || uploading ? 'not-allowed' : 'pointer', border: 'none', opacity: uploading ? 0.6 : 1 }}>
               {loading ? 'กำลังบันทึก...' : 'สร้าง Post'}
             </button>
           </div>

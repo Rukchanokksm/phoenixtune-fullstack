@@ -6,6 +6,7 @@ const POST_SELECT = `
   game:games!forum_posts_game_id_fkey(id, name, slug),
   user:user_profiles!forum_posts_user_id_fkey(id, username)
 `
+const BUCKET = 'forum-images'
 
 // GET /api/forum/posts?category=general&gameId=...&page=1&sortBy=latest
 export async function GET(req: NextRequest) {
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = req.nextUrl
     const category = searchParams.get('category')
     const gameId   = searchParams.get('gameId')
-    const sortBy   = searchParams.get('sortBy') ?? 'latest'   // latest | popular
+    const sortBy   = searchParams.get('sortBy') ?? 'latest'
     const page     = Math.max(1, Number(searchParams.get('page') ?? '1'))
     const perPage  = Math.min(20, Math.max(1, Number(searchParams.get('perPage') ?? '20')))
 
@@ -45,19 +46,21 @@ export async function GET(req: NextRequest) {
 // POST /api/forum/posts
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase    = await createClient()
+    const adminClient = createAdminClient()
+
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
-    const { title, body: postBody, category, gameId, images } = body
+    const { title, body: postBody, category, gameId, tempPaths } = body
 
     if (!title?.trim())    return NextResponse.json({ error: 'title is required' }, { status: 400 })
     if (!postBody?.trim()) return NextResponse.json({ error: 'body is required' }, { status: 400 })
 
+    // Validate category / announcement admin check
     const validCategories = ['general', 'report']
     if (!validCategories.includes(category)) {
-      // announcement: admin only
       if (category === 'announcement') {
         const { data: profile } = await supabase
           .from('user_profiles').select('role').eq('id', user.id).single()
@@ -69,14 +72,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Ensure profile exists
-    const adminClient = createAdminClient()
-    const { data: profile } = await adminClient.from('user_profiles').select('id').eq('id', user.id).maybeSingle()
+    const { data: profile } = await adminClient
+      .from('user_profiles').select('id').eq('id', user.id).maybeSingle()
     if (!profile) {
       const username = user.email?.split('@')[0] ?? user.id.slice(0, 8)
-      await adminClient.from('user_profiles').insert({ id: user.id, username, role: 'user', active_title: 'newcomer', titles_earned: ['newcomer'] })
+      await adminClient.from('user_profiles').insert({
+        id: user.id, username, role: 'user',
+        active_title: 'newcomer', titles_earned: ['newcomer'],
+      })
     }
 
-    const { data, error } = await supabase
+    // Insert post first (images will be updated after move)
+    const { data: post, error: insertErr } = await supabase
       .from('forum_posts')
       .insert({
         user_id:  user.id,
@@ -84,13 +91,56 @@ export async function POST(req: NextRequest) {
         category: category ?? 'general',
         title:    title.trim(),
         body:     postBody.trim(),
-        images:   Array.isArray(images) ? images.filter((u: string) => typeof u === 'string').slice(0, 10) : [],
+        images:   [],
       })
-      .select(POST_SELECT)
+      .select('id')
       .single()
 
-    if (error) throw error
-    return NextResponse.json(data, { status: 201 })
+    if (insertErr) throw insertErr
+
+    // Move temp images → posts/{postId}/ and collect permanent URLs
+    const permanentUrls: string[] = []
+    const validPaths = Array.isArray(tempPaths)
+      ? tempPaths.filter((p: unknown) => typeof p === 'string' && p.startsWith('temps/')).slice(0, 10)
+      : []
+
+    for (const tempPath of validPaths) {
+      const filename      = tempPath.split('/').pop() ?? `${Date.now()}.jpg`
+      const permanentPath = `posts/${post.id}/${filename}`
+
+      const { error: moveErr } = await adminClient.storage
+        .from(BUCKET)
+        .move(tempPath, permanentPath)
+
+      if (moveErr) {
+        console.error('[forum/posts] move failed:', tempPath, moveErr.message)
+        continue
+      }
+
+      const { data: { publicUrl } } = adminClient.storage
+        .from(BUCKET)
+        .getPublicUrl(permanentPath)
+
+      permanentUrls.push(publicUrl)
+    }
+
+    // Update post with permanent image URLs (only if there are images)
+    if (permanentUrls.length > 0) {
+      await adminClient
+        .from('forum_posts')
+        .update({ images: permanentUrls })
+        .eq('id', post.id)
+    }
+
+    // Return full post data
+    const { data: fullPost, error: fetchErr } = await supabase
+      .from('forum_posts')
+      .select(POST_SELECT)
+      .eq('id', post.id)
+      .single()
+
+    if (fetchErr) throw fetchErr
+    return NextResponse.json(fullPost, { status: 201 })
   } catch (err) {
     const pgErr = err as { message?: string; code?: string }
     console.error('[POST /api/forum/posts]', JSON.stringify(err))

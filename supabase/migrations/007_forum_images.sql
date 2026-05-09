@@ -2,22 +2,35 @@
 ALTER TABLE forum_posts ADD COLUMN images TEXT[] NOT NULL DEFAULT '{}';
 
 -- ─────────────────────────────────────────────────────────────────
--- Storage: run these steps manually in Supabase Dashboard
+-- Storage setup — run these steps manually in Supabase Dashboard
 -- ─────────────────────────────────────────────────────────────────
--- 1. Storage → New bucket → name: "forum-images", Public: ON
--- 2. Run the policies below in SQL editor:
+-- Step 1: Storage → New bucket
+--   Name:   forum-images
+--   Public: ON  (so image URLs are publicly accessible)
+--
+-- Step 2: SQL Editor → run the policies below
 
--- INSERT policy: authenticated users only
--- CREATE POLICY "forum_images_auth_upload"
---   ON storage.objects FOR INSERT
---   WITH CHECK (bucket_id = 'forum-images' AND auth.role() = 'authenticated');
+-- Authenticated users may upload ONLY to the temps/ folder.
+-- The server (service role / admin client) moves files to posts/{id}/ —
+-- the service role bypasses RLS so no separate INSERT policy is needed for posts/.
+CREATE POLICY "forum_images_temps_upload"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'forum-images'
+    AND auth.role() = 'authenticated'
+    AND (storage.foldername(name))[1] = 'temps'
+  );
 
--- SELECT policy: public read
--- CREATE POLICY "forum_images_public_read"
---   ON storage.objects FOR SELECT
---   USING (bucket_id = 'forum-images');
+-- Public read for all files in the bucket
+CREATE POLICY "forum_images_public_read"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'forum-images');
 
--- DELETE policy: owner only (auth.uid()::text = owner_id)
--- CREATE POLICY "forum_images_owner_delete"
---   ON storage.objects FOR DELETE
---   USING (bucket_id = 'forum-images' AND owner_id = auth.uid()::text);
+-- Users can delete their own temp files (identified by uid prefix in the filename)
+CREATE POLICY "forum_images_owner_delete_temps"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'forum-images'
+    AND (storage.foldername(name))[1] = 'temps'
+    AND owner_id = auth.uid()::text
+  );
