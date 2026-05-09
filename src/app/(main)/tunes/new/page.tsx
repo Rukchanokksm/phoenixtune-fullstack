@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { AdUnit } from '@/components/ads/AdUnit'
 
 type CarBrand = { id: string; name: string }
 type CarModel = { id: string; year: number; model: string; label: string; drivetrain: string }
@@ -321,6 +322,8 @@ export default function ShareTunePage() {
 
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '32px 24px',
         display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+        <AdUnit slot="tunes-new-top" format="horizontal" />
 
         {/* Car Selection */}
         <div style={S.card}>
@@ -787,6 +790,7 @@ export default function ShareTunePage() {
             </div>
 
             {/* Submit */}
+            <AdUnit slot="tunes-new-bottom" format="horizontal" />
             {submitError && (
               <div style={{ padding: '12px 16px', borderRadius: '10px',
                 background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)',
