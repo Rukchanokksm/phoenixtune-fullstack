@@ -356,13 +356,6 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                 <Link href={`/profile/${tune.user?.username}`} style={{ color: accent, textDecoration: 'none', fontWeight: 600 }}>
                   {tune.user?.username ?? 'Unknown'}
                 </Link>
-                {tune.user?.is_premium && (
-                  <span style={{
-                    marginLeft: '6px', fontSize: '10px', fontWeight: 700,
-                    color: '#facc15', background: 'rgba(250,204,21,0.1)',
-                    padding: '1px 6px', borderRadius: '4px',
-                  }}>PRO</span>
-                )}
               </span>
               <span style={{ color: '#1e293b' }}>{'·'}</span>
               <span style={{ fontSize: '13px', color: '#334155' }}>{timeAgo(tune.created_at)}</span>
