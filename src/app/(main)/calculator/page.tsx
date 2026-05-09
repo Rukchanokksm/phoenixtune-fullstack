@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/stores/userStore'
 import { calculateFH5Tune } from '@/lib/calculator'
 import type { CalcInput, TuneResult, Drivetrain, Discipline } from '@/lib/calculator'
+import { AdUnit } from '@/components/ads/AdUnit'
 
 const clamp = (v: number, mn: number, mx: number) => Math.max(mn, Math.min(mx, v))
 
@@ -257,6 +258,7 @@ export default function CalculatorPage() {
               onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
               {isLoading ? 'กำลังโหลด...' : isLoggedIn ? '🧮 คำนวณ Tune' : '🔒 เข้าสู่ระบบเพื่อใช้งาน'}
             </button>
+            <AdUnit slot="calculator-form-bottom" format="rectangle" style={{ alignSelf: 'center' }} />
           </div>
 
           {/* ── RESULTS ── */}
@@ -421,6 +423,7 @@ export default function CalculatorPage() {
                 </span>
               </div>
 
+              <AdUnit slot="calculator-result-bottom" format="horizontal" />
             </div>
           )}
         </div>
