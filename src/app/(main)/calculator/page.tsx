@@ -1,7 +1,7 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useUserStore } from '@/stores/userStore'
 import { calculateFH5Tune } from '@/lib/calculator'
 import type { CalcInput, TuneResult, Drivetrain, Discipline } from '@/lib/calculator'
 
@@ -106,9 +106,10 @@ const labelSt: React.CSSProperties = {
 
 export default function CalculatorPage() {
   const router = useRouter()
-  const supabase = createClient()
+  const user      = useUserStore((s) => s.user)
+  const isLoading = useUserStore((s) => s.isLoading)
+  const isLoggedIn = !isLoading && !!user
 
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   const [form, setForm] = useState<CalcInput>({
@@ -116,19 +117,11 @@ export default function CalculatorPage() {
   })
   const [result, setResult] = useState<TuneResult | null>(null)
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setIsLoggedIn(!!user))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      setIsLoggedIn(!!session?.user)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
   const set = <K extends keyof CalcInput>(k: K, v: CalcInput[K]) =>
     setForm((f) => ({ ...f, [k]: v }))
 
   const handleCalc = () => {
-    if (!isLoggedIn) { setShowLoginPrompt(true); return }
+    if (!user) { setShowLoginPrompt(true); return }
     setShowLoginPrompt(false)
     setResult(calculateFH5Tune(form))
   }
@@ -253,15 +246,16 @@ export default function CalculatorPage() {
             )}
 
             {/* Calculate button */}
-            <button onClick={handleCalc} style={{
+            <button onClick={handleCalc} disabled={isLoading} style={{
               padding:'13px', borderRadius:'9px', border:'none',
-              background: isLoggedIn === false ? '#1e293b' : '#facc15',
-              color: isLoggedIn === false ? '#475569' : '#0d0f14',
-              fontWeight:800, fontSize:'15px', cursor:'pointer', transition:'opacity 0.15s',
+              background: isLoading ? '#1e293b' : isLoggedIn ? '#facc15' : '#1e293b',
+              color: isLoading ? '#475569' : isLoggedIn ? '#0d0f14' : '#475569',
+              fontWeight:800, fontSize:'15px', cursor: isLoading ? 'default' : 'pointer',
+              transition:'opacity 0.15s',
             }}
-              onMouseEnter={e => { if (isLoggedIn !== false) e.currentTarget.style.opacity = '0.85' }}
+              onMouseEnter={e => { if (isLoggedIn) e.currentTarget.style.opacity = '0.85' }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
-              {isLoggedIn === null ? 'กำลังโหลด...' : isLoggedIn ? '🧮 คำนวณ Tune' : '🔒 เข้าสู่ระบบเพื่อใช้งาน'}
+              {isLoading ? 'กำลังโหลด...' : isLoggedIn ? '🧮 คำนวณ Tune' : '🔒 เข้าสู่ระบบเพื่อใช้งาน'}
             </button>
           </div>
 
