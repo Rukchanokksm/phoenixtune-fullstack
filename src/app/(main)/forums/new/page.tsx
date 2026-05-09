@@ -50,6 +50,10 @@ export default function NewForumPostPage() {
   const category = tag === 'game' ? 'general' : tag
 
   async function uploadFiles(files: FileList | File[]) {
+    // Convert to plain array BEFORE any await — FileList is a live object tied to
+    // the input element. Once onFileInput clears e.target.value the list empties.
+    const allFiles = Array.from(files)
+
     setUploadError('')
     const supabase = createClient()
 
@@ -62,8 +66,8 @@ export default function NewForumPostPage() {
       return
     }
 
-    const fileArr   = Array.from(files).slice(0, remaining)
-    const skipped   = Array.from(files).length - fileArr.length
+    const fileArr = allFiles.slice(0, remaining)
+    const skipped = allFiles.length - fileArr.length
     if (skipped > 0) setUploadError(`เลือกได้อีกแค่ ${remaining} รูป — ไฟล์ที่เกินถูกข้ามไป`)
 
     setUploading(true)
