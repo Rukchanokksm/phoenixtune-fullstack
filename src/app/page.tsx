@@ -85,6 +85,11 @@ export default async function HomePage() {
         .select("*, tune_count:tunes(count)")
         .order("created_at", { ascending: false })
 
+    const { data: latestPosts } = await supabase
+        .from("forum_posts")
+        .select("id, title, category, created_at, user:user_profiles!forum_posts_user_id_fkey(username)")
+        .order("created_at", { ascending: false })
+        .limit(3)
 
     const stats = [
         { value: (tuneCount ?? 0).toLocaleString(), label: "Tunes" },
@@ -457,7 +462,7 @@ export default async function HomePage() {
                 </div>
             </section>
 
-            {/* RECENT ARTICLES */}
+            {/* RECENT POSTS */}
             <section
                 style={{
                     maxWidth: "1280px",
@@ -467,35 +472,55 @@ export default async function HomePage() {
             >
                 <div style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", marginBottom:"20px" }}>
                     <h2 style={{ fontSize:"20px", fontWeight:700, color:"#f1f5f9", margin:0 }}>
-                        📰 บทความล่าสุด
+                        กระทู้ล่าสุด
                     </h2>
                     <Link href="/forums" style={{ fontSize:"13px", fontWeight:600, color:"#facc15", textDecoration:"none", padding:"5px 12px", borderRadius:"7px", border:"1px solid rgba(250,204,21,0.25)" }}>
                         ดูทั้งหมด →
                     </Link>
                 </div>
 
-                <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-                    {[
-                        { title:"เริ่มต้นกับ Forza Horizon 5 — ตั้งค่า tune ยังไงให้ดี?", tag:"Guide", date:"เร็วๆ นี้" },
-                        { title:"AWD vs RWD Drift Build — เลือกแบบไหนถึงเหมาะกับสไตล์คุณ", tag:"Tips", date:"เร็วๆ นี้" },
-                        { title:"รวม tune ที่ดีที่สุดของ Supra MK4 ประจำ Season นี้", tag:"Roundup", date:"เร็วๆ นี้" },
-                    ].map((article, i) => (
-                        <div key={i} style={{ display:"flex", alignItems:"center", gap:"16px", padding:"16px 20px", background:"#111318", border:"1px solid #1e2130", borderRadius:"10px" }}>
-                            <div style={{ width:"36px", height:"36px", borderRadius:"8px", background:"rgba(250,204,21,0.08)", border:"1px solid rgba(250,204,21,0.15)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"18px", flexShrink:0 }}>
-                                📄
-                            </div>
-                            <div style={{ flex:1, minWidth:0 }}>
-                                <div style={{ color:"#e2e8f0", fontWeight:600, fontSize:"14px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                                    {article.title}
-                                </div>
-                                <div style={{ display:"flex", gap:"8px", marginTop:"4px", alignItems:"center" }}>
-                                    <span style={{ fontSize:"11px", fontWeight:700, color:"#facc15", background:"rgba(250,204,21,0.08)", padding:"1px 7px", borderRadius:"4px" }}>{article.tag}</span>
-                                    <span style={{ fontSize:"11px", color:"#374151" }}>{article.date}</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                {!latestPosts?.length ? (
+                    <div style={{ padding:"32px 20px", background:"#111318", border:"1px solid #1e2130", borderRadius:"10px", textAlign:"center", color:"#374151", fontSize:"13px" }}>
+                        ยังไม่มีกระทู้ — <Link href="/forums/new" style={{ color:"#6366f1", textDecoration:"none" }}>เป็นคนแรกที่โพสต์</Link>
+                    </div>
+                ) : (
+                    <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                        {latestPosts.map((post) => {
+                            const catMeta: Record<string, { label: string; color: string; bg: string }> = {
+                                announcement: { label:"ประกาศ", color:"#facc15", bg:"rgba(250,204,21,0.08)" },
+                                general:      { label:"ทั่วไป", color:"#60a5fa", bg:"rgba(96,165,250,0.08)" },
+                                report:       { label:"รายงาน", color:"#f87171", bg:"rgba(248,113,113,0.08)" },
+                            }
+                            const meta  = catMeta[post.category] ?? { label: post.category, color:"#94a3b8", bg:"rgba(148,163,184,0.08)" }
+                            const user  = (post.user as unknown as { username: string } | null)
+                            const diff  = Date.now() - new Date(post.created_at).getTime()
+                            const mins  = Math.floor(diff / 60000)
+                            const timeStr = mins < 60
+                                ? `${mins} นาทีที่แล้ว`
+                                : mins < 1440
+                                ? `${Math.floor(mins/60)} ชั่วโมงที่แล้ว`
+                                : `${Math.floor(mins/1440)} วันที่แล้ว`
+                            return (
+                                <Link key={post.id} href={`/forums/${post.id}`} style={{ textDecoration:"none", display:"block" }}>
+                                    <div style={{ display:"flex", alignItems:"center", gap:"16px", padding:"14px 20px", background:"#111318", border:"1px solid #1e2130", borderRadius:"10px" }}>
+                                        <div style={{ flex:1, minWidth:0 }}>
+                                            <div style={{ color:"#e2e8f0", fontWeight:600, fontSize:"14px", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                                                {post.title}
+                                            </div>
+                                            <div style={{ display:"flex", gap:"8px", marginTop:"4px", alignItems:"center" }}>
+                                                <span style={{ fontSize:"11px", fontWeight:700, color:meta.color, background:meta.bg, padding:"1px 7px", borderRadius:"4px" }}>
+                                                    {meta.label}
+                                                </span>
+                                                {user && <span style={{ fontSize:"11px", color:"#475569" }}>@{user.username}</span>}
+                                                <span style={{ fontSize:"11px", color:"#374151" }}>{timeStr}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            )
+                        })}
+                    </div>
+                )}
             </section>
         </div>
     )
