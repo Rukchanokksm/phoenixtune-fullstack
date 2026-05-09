@@ -31,7 +31,15 @@
       "Bash(ls \"C:\\\\Users\\\\pepoi\\\\.claude\\\\plugins\\\\marketplaces\\\\\")",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\pepoi\\\\.claude\\\\\" -Directory | ForEach-Object { $_.FullName })",
       "Bash(gh pr *)",
-      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-Command gh -ErrorAction SilentlyContinue)",
+      "Bash(ls \"E:\\\\my_code\\\\phoenixtune\\\\phoenixtune\\\\src\\\\app\\\\api\\\\tunes\\\\\")",
+      "Bash(where gh *)",
+      "Read(//usr/local/bin/**)",
+      "Bash(mkdir -p \"E:\\\\my_code\\\\phoenixtune\\\\phoenixtune\\\\src\\\\app\\\\api\\\\cron\\\\cleanup-temp-images\" 2>/dev/null; echo done)",
+      "PowerShell(cd \"E:\\\\my_code\\\\phoenixtune\\\\phoenixtune\"; npx tsc --noEmit; echo \"Exit: $LASTEXITCODE\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git add *)"
     ]
   }
 }
