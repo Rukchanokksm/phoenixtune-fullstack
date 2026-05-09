@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { AdUnit } from '@/components/ads/AdUnit'
 
 const POST_SELECT = `
   id, title, category, upvotes, comment_count, created_at, updated_at,
@@ -147,6 +148,8 @@ export default async function ForumsPage() {
             : (announcements as unknown as Post[]).map(p => <PostRow key={p.id} post={p} />)
           }
         </SegmentCard>
+
+        <AdUnit slot="forums-hub-banner" format="horizontal" />
 
         {/* Segment 2: General Discussion */}
         <SegmentCard title="พูดคุยทั่วไป" sub="5 กระทู้ล่าสุด" href="/forums/general">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
+import { AdUnit } from '@/components/ads/AdUnit'
 
 const GAME_META: Record<string, { name: string; accent: string }> = {
   'forza-horizon-5': { name: 'Forza Horizon 5', accent: '#60a5fa' },
@@ -211,7 +212,10 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {tunes.map(tune => (
+            {tunes.map((tune, i) => (<>
+              {i > 0 && i % 6 === 0 && (
+                <AdUnit key={`ad-${i}`} slot="car-detail-infeed" format="infeed" style={{ margin: '4px 0' }} />
+              )}
               <Link key={tune.id} href={`/tunes/${tune.id}`} style={{ textDecoration: 'none' }}>
                 <div style={{ background: '#111318', border: '1px solid #1e2130', borderRadius: '12px', padding: '18px 22px',
                   display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', cursor: 'pointer', transition: 'all 0.15s' }}
@@ -260,7 +264,7 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
                   </div>
                 </div>
               </Link>
-            ))}
+            </>))}
           </div>
         )}
 
