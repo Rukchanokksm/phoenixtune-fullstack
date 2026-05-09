@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { AdUnit } from '@/components/ads/AdUnit'
 
 // Types
 interface TuneRow {
@@ -365,7 +366,14 @@ export default function TunesPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {tunes.map(tune => <TuneCardRow key={tune.id} tune={tune} />)}
+            {tunes.map((tune, i) => (
+              <>
+                <TuneCardRow key={tune.id} tune={tune} />
+                {(i + 1) % 8 === 0 && i < tunes.length - 1 && (
+                  <AdUnit key={`ad-${i}`} slot="tune-list-infeed" format="infeed" style={{ margin: '4px 0' }} />
+                )}
+              </>
+            ))}
           </div>
         )}
 

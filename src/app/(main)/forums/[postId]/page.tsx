@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
+import { AdUnit } from '@/components/ads/AdUnit'
 
 type Post = {
   id: string; title: string; body: string; category: string
@@ -206,6 +207,8 @@ export default function ForumPostPage() {
           </div>
         )}
       </div>
+
+      <AdUnit slot="forum-post-banner" format="horizontal" style={{ margin: '0 0 20px' }} />
 
       {/* Comments */}
       <div style={{ background: '#111318', border: '1px solid #1e2130', borderRadius: '10px', overflow: 'hidden' }}>
