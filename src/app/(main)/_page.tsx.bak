@@ -203,7 +203,7 @@ export default async function HomePage() {
           maxWidth: '520px',
           margin: '0 auto 40px',
         }}>
-          แหล่งรวม tune setting สำหรับ Forza, The Crew และ NFS
+          แหล่งรวม tune setting สำหรับ Forza Horizon, The Crew และ NFS
           ค้นหา แชร์ และ rate tune จากชุมชน tuner ทั่วโลก
         </p>
 
