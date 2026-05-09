@@ -188,7 +188,6 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json(data, { status: 201 })
   } catch (err) {
-    // Supabase PostgrestError is a plain object, not an Error instance
     const pgErr = err as { message?: string; code?: string; details?: string }
     const message = pgErr?.message ?? (err instanceof Error ? err.message : 'Internal server error')
     console.error('[POST /api/tunes] caught error:', JSON.stringify(err))
