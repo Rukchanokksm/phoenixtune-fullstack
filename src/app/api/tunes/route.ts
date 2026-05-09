@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         share_code, game_version, is_featured, created_at, updated_at,
         car:cars(id, make, model, pi_class, drivetrain, weight_kg, power_hp),
         game:games(id, name, slug),
-        user:user_profiles(id, username, avatar_url, is_premium)
+        user:user_profiles!tunes_user_id_fkey(id, username, avatar_url, is_premium)
       `, { count: 'exact' })
 
     if (gameId)     query = query.eq('game_id', gameId)
@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
         *,
         car:cars(id, make, model, pi_class, drivetrain),
         game:games(id, name, slug),
-        user:user_profiles(id, username, avatar_url)
+        user:user_profiles!tunes_user_id_fkey(id, username, avatar_url)
       `)
       .single()
 
