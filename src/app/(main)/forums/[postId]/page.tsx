@@ -6,7 +6,8 @@ import { useParams, useRouter } from 'next/navigation'
 
 type Post = {
   id: string; title: string; body: string; category: string
-  upvotes: number; comment_count: number; created_at: string; updated_at: string
+  upvotes: number; comment_count: number; images: string[]
+  created_at: string; updated_at: string
   game: { id: string; name: string; slug: string } | null
   user: { id: string; username: string } | null
 }
@@ -167,6 +168,33 @@ export default function ForumPostPage() {
           <div style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: '1.75', whiteSpace: 'pre-wrap' }}>
             {post.body}
           </div>
+
+          {/* Image grid */}
+          {post.images?.length > 0 && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: post.images.length === 1 ? '1fr' : 'repeat(auto-fill, minmax(200px, 1fr))',
+              gap: '8px',
+              marginTop: '20px',
+            }}>
+              {post.images.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'block', borderRadius: '8px', overflow: 'hidden', background: '#0d0f14', border: '1px solid #1a1d24' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`รูปที่ ${i + 1}`}
+                    style={{
+                      width: '100%',
+                      maxHeight: post.images.length === 1 ? '480px' : '220px',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         {isOwner && (
