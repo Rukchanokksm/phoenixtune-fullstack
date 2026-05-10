@@ -75,18 +75,37 @@ export default function RegisterPage() {
     username: '', email: '', password: '',
     gender: 'unspecified' as Gender, country: '', birthday: '',
   })
-  const [avatarFile,    setAvatarFile]    = useState<File | null>(null)
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-  const [errors,        setErrors]        = useState<Record<string, string>>({})
-  const [loading,       setLoading]       = useState(false)
-  const [serverError,   setServerError]   = useState('')
-  const [showPassword,  setShowPassword]  = useState(false)
+  const [avatarFile,        setAvatarFile]        = useState<File | null>(null)
+  const [avatarPreview,     setAvatarPreview]     = useState<string | null>(null)
+  const [errors,            setErrors]            = useState<Record<string, string>>({})
+  const [loading,           setLoading]           = useState(false)
+  const [serverError,       setServerError]       = useState('')
+  const [showPassword,      setShowPassword]      = useState(false)
+  const [usernameTaken,     setUsernameTaken]     = useState(false)
+  const [checkingUsername,  setCheckingUsername]  = useState(false)
 
   const strength = calcStrength(form.password)
 
   function setField<K extends keyof typeof form>(k: K, v: typeof form[K]) {
     setForm(f => ({ ...f, [k]: v }))
     setErrors(e => { const n = { ...e }; delete n[k]; return n })
+    if (k === 'username') setUsernameTaken(false)
+  }
+
+  async function onUsernameBlur() {
+    const u = form.username.trim()
+    if (u.length < 3) return
+    setCheckingUsername(true)
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('username', u)
+      .maybeSingle()
+    setCheckingUsername(false)
+    if (data) {
+      setUsernameTaken(true)
+      setErrors(e => ({ ...e, username: 'username นี้ถูกใช้ไปแล้ว' }))
+    }
   }
 
   function handleAvatar(e: React.ChangeEvent<HTMLInputElement>) {
@@ -102,7 +121,8 @@ export default function RegisterPage() {
   function validate() {
     const e: Record<string, string> = {}
     if (!form.username.trim())                             e.username = 'กรุณากรอก username'
-    if (form.username.length < 3)                          e.username = 'username ต้องมีอย่างน้อย 3 ตัวอักษร'
+    else if (form.username.length < 3)                     e.username = 'username ต้องมีอย่างน้อย 3 ตัวอักษร'
+    else if (usernameTaken)                                e.username = 'username นี้ถูกใช้ไปแล้ว'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))  e.email    = 'รูปแบบ email ไม่ถูกต้อง'
     if (form.password.length < 8)                          e.password = 'password ต้องมีอย่างน้อย 8 ตัวอักษร'
     setErrors(e)
@@ -204,9 +224,12 @@ export default function RegisterPage() {
             <label style={label}>Username <span style={{ color:'#f87171' }}>*</span></label>
             <input style={{ ...inp, borderColor: errors.username ? '#f87171' : '#1e2130' }}
               placeholder="เช่น peonix_fh5" value={form.username}
-              onChange={e => setField('username', e.target.value)} />
+              onChange={e => setField('username', e.target.value)}
+              onBlur={onUsernameBlur} />
             {errors.username && <p style={err}>{errors.username}</p>}
-            <p style={{ color:'#475569', fontSize:'11px', margin:'4px 0 0' }}>ชื่อนี้จะแสดงในหน้า tune ของคุณ</p>
+            <p style={{ color:'#475569', fontSize:'11px', margin:'4px 0 0' }}>
+              {checkingUsername ? 'กำลังตรวจสอบ...' : 'ชื่อนี้จะแสดงในหน้า tune ของคุณ'}
+            </p>
           </div>
 
           {/* Email */}
@@ -259,10 +282,10 @@ export default function RegisterPage() {
           <div>
             <label style={label}>เพศ</label>
             <div style={{ display:'flex', gap:'8px' }}>
-              {([['male','ชาย','💙'],['female','หญิง','🩷'],['unspecified','ไม่ระบุ','🤍']] as const).map(([val, text, icon]) => (
+              {([['male','ชาย'],['female','หญิง'],['unspecified','ไม่ระบุ']] as const).map(([val, text]) => (
                 <button key={val} type="button" onClick={() => setField('gender', val)}
                   style={{ flex:1, padding:'9px 4px', borderRadius:'8px', border:`1px solid ${form.gender === val ? '#facc15' : '#1e2130'}`, background: form.gender === val ? 'rgba(250,204,21,0.08)' : '#0d1117', color: form.gender === val ? '#facc15' : '#64748b', fontSize:'13px', fontWeight:600, cursor:'pointer' }}>
-                  {icon} {text}
+                  {text}
                 </button>
               ))}
             </div>
