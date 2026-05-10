@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { AdUnit } from '@/components/ads/AdUnit'
+import { createClient } from '@/lib/supabase/client'
 
 // Types
 interface Comment {
@@ -163,6 +164,10 @@ function timeAgo(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+function wasEdited(created: string, updated: string) {
+  return new Date(updated).getTime() - new Date(created).getTime() > 60_000
+}
+
 export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: string }> }) {
   const { tuneId } = use(params)
 
@@ -177,8 +182,21 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
   const [submittingComment, setSubmittingComment] = useState(false)
   const [comments, setComments]       = useState<Comment[]>([])
   const [copied, setCopied]           = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isEditing, setIsEditing]     = useState(false)
+  const [editForm, setEditForm]       = useState<{
+    title: string; description: string; shareCode: string; gameVersion: string
+    parameters: Record<string, string>
+  }>({ title: '', description: '', shareCode: '', gameVersion: '', parameters: {} })
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError]     = useState('')
 
   useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUserId(data.user?.id ?? null)
+    })
+
     async function load() {
       setLoading(true)
       try {
@@ -255,6 +273,59 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
       })
+    }
+  }
+
+  function openEdit() {
+    if (!tune) return
+    const params: Record<string, string> = {}
+    for (const [k, v] of Object.entries(tune.parameters)) {
+      if (v !== null && v !== undefined && v !== '') params[k] = String(v)
+    }
+    setEditForm({
+      title:       tune.title,
+      description: tune.description ?? '',
+      shareCode:   tune.share_code  ?? '',
+      gameVersion: tune.game_version ?? '',
+      parameters:  params,
+    })
+    setEditError('')
+    setIsEditing(true)
+  }
+
+  async function handleEdit() {
+    if (!tune || editLoading) return
+    if (!editForm.title.trim()) { setEditError('Title is required'); return }
+    setEditLoading(true)
+    setEditError('')
+    try {
+      const params: Record<string, number | null> = {}
+      for (const [k, v] of Object.entries(editForm.parameters)) {
+        params[k] = v.trim() !== '' ? Number(v) : null
+      }
+      const res = await fetch(`/api/tunes/${tuneId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title:        editForm.title.trim(),
+          description:  editForm.description.trim() || null,
+          shareCode:    editForm.shareCode.trim()   || null,
+          gameVersion:  editForm.gameVersion.trim() || null,
+          parameters:   params,
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        setEditError(d.error ?? 'บันทึกไม่สำเร็จ')
+        return
+      }
+      const updated: TuneDetail = await res.json()
+      setTune(prev => prev ? { ...prev, ...updated } : prev)
+      setIsEditing(false)
+    } catch {
+      setEditError('เกิดข้อผิดพลาด')
+    } finally {
+      setEditLoading(false)
     }
   }
 
@@ -349,7 +420,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
               </p>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               {tune.user && <Avatar username={tune.user.username} size={28} />}
               <span style={{ fontSize: '13px', color: '#64748b' }}>
                 {'by '}
@@ -359,6 +430,14 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
               </span>
               <span style={{ color: '#1e293b' }}>{'·'}</span>
               <span style={{ fontSize: '13px', color: '#334155' }}>{timeAgo(tune.created_at)}</span>
+              {wasEdited(tune.created_at, tune.updated_at) && (
+                <>
+                  <span style={{ color: '#1e293b' }}>{'·'}</span>
+                  <span style={{ fontSize: '12px', color: '#60a5fa', background: 'rgba(96,165,250,0.1)', padding: '2px 8px', borderRadius: '5px', fontWeight: 600 }}>
+                    edited {timeAgo(tune.updated_at)}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -407,6 +486,19 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
               )}
 
               <div style={{ flex: 1 }} />
+
+              {currentUserId === tune.user?.id && (
+                <button onClick={isEditing ? () => setIsEditing(false) : openEdit} style={{
+                  padding: '10px 18px', borderRadius: '9px', cursor: 'pointer',
+                  background: isEditing ? 'rgba(248,113,113,0.08)' : 'rgba(250,204,21,0.08)',
+                  border: `1px solid ${isEditing ? 'rgba(248,113,113,0.3)' : 'rgba(250,204,21,0.25)'}`,
+                  color: isEditing ? '#f87171' : '#facc15',
+                  fontSize: '14px', fontWeight: 600, transition: 'all 0.15s',
+                }}>
+                  {isEditing ? 'Cancel' : 'Edit Tune'}
+                </button>
+              )}
+
               <div style={{ display: 'flex', alignItems: 'center', padding: '10px 0' }}>
                 <span style={{ fontSize: '13px', color: '#334155' }}>{tune.view_count} views</span>
               </div>
@@ -455,6 +547,67 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                     {tune.car.weight_kg} kg
                   </span>
                 )}
+              </div>
+            </div>
+          )}
+
+          {isEditing && tune && (
+            <div style={{ background: '#13151c', border: '1px solid rgba(250,204,21,0.25)', borderRadius: '14px', padding: '22px', marginBottom: '16px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#facc15', letterSpacing: '0.06em', marginBottom: '16px' }}>EDIT TUNE</div>
+
+              {editError && (
+                <div style={{ padding: '10px 14px', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '8px', color: '#f87171', fontSize: '13px', marginBottom: '14px' }}>
+                  {editError}
+                </div>
+              )}
+
+              {/* Basic fields */}
+              {[
+                { label: 'Title *', key: 'title' as const, placeholder: 'Tune title' },
+                { label: 'Description', key: 'description' as const, placeholder: 'Brief description' },
+                { label: 'Share Code', key: 'shareCode' as const, placeholder: '123 456 789' },
+                { label: 'Game Version', key: 'gameVersion' as const, placeholder: 'e.g. 1.0' },
+              ].map(f => (
+                <div key={f.key} style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#64748b', fontWeight: 600, marginBottom: '5px' }}>{f.label}</label>
+                  <input
+                    value={editForm[f.key]}
+                    onChange={e => setEditForm(p => ({ ...p, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    style={{ width: '100%', padding: '9px 12px', boxSizing: 'border-box', background: '#0f1117', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#f1f5f9', fontSize: '13px', outline: 'none' }}
+                  />
+                </div>
+              ))}
+
+              {/* Parameters */}
+              {PARAM_SECTIONS.map(section => (
+                <div key={section.title} style={{ marginBottom: '14px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: section.color, letterSpacing: '0.07em', marginBottom: '8px' }}>{section.title.toUpperCase()}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    {section.fields.map(f => (
+                      <div key={f.key}>
+                        <label style={{ display: 'block', fontSize: '11px', color: '#475569', marginBottom: '3px' }}>
+                          {f.label}{f.unit ? ` (${f.unit})` : ''}
+                        </label>
+                        <input
+                          type="number"
+                          value={editForm.parameters[f.key] ?? ''}
+                          onChange={e => setEditForm(p => ({ ...p, parameters: { ...p.parameters, [f.key]: e.target.value } }))}
+                          style={{ width: '100%', padding: '7px 10px', boxSizing: 'border-box', background: '#0f1117', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '7px', color: section.color, fontSize: '13px', fontFamily: 'monospace', outline: 'none' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                <button onClick={handleEdit} disabled={editLoading} style={{ flex: 1, padding: '10px', borderRadius: '9px', border: 'none', background: editLoading ? '#334155' : '#facc15', color: '#0d0f14', fontWeight: 700, fontSize: '14px', cursor: editLoading ? 'not-allowed' : 'pointer' }}>
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button onClick={() => setIsEditing(false)} style={{ padding: '10px 20px', borderRadius: '9px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#64748b', fontSize: '14px', cursor: 'pointer' }}>
+                  Cancel
+                </button>
               </div>
             </div>
           )}

@@ -14,6 +14,7 @@ interface TuneRow {
   view_count: number
   share_code?: string
   created_at: string
+  updated_at: string
   car: { id: string; make: string; model: string; pi_class: string; drivetrain: string } | null
   game: { id: string; name: string; slug: string } | null
   user: { id: string; username: string; avatar_url?: string; is_premium: boolean } | null
@@ -195,6 +196,11 @@ function TuneCardRow({ tune }: { tune: TuneRow }) {
           <div style={{ fontSize: '11px', color: '#334155', marginTop: '2px' }}>
             {tune.view_count} views
           </div>
+          {tune.updated_at && new Date(tune.updated_at).getTime() - new Date(tune.created_at).getTime() > 60_000 && (
+            <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '4px', fontWeight: 600 }}>
+              edited
+            </div>
+          )}
         </div>
       </div>
     </Link>

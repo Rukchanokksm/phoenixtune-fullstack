@@ -44,6 +44,7 @@ type Tune = {
   view_count: number
   share_code: string | null
   created_at: string
+  updated_at: string
   car: { id: string; make: string; model: string; year: number; pi_class: string; drivetrain: string } | null
   user: { username: string; avatar_url: string | null; is_premium: boolean } | null
 }
@@ -279,6 +280,9 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
                     </div>
                     <div>{new Date(tune.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}</div>
                     <div style={{ marginTop: '4px', color: '#475569' }}>{tune.view_count} views</div>
+                    {tune.updated_at && new Date(tune.updated_at).getTime() - new Date(tune.created_at).getTime() > 60_000 && (
+                      <div style={{ marginTop: '4px', fontSize: '10px', color: '#60a5fa', fontWeight: 600 }}>edited</div>
+                    )}
                   </div>
                 </div>
               </Link>

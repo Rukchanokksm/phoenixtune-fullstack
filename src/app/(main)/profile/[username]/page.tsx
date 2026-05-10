@@ -32,7 +32,7 @@ export default async function ProfilePage({ params }: Props) {
   const { data: tunes } = await supabase
     .from('tunes')
     .select(`
-      id, title, discipline, created_at, upvotes, view_count,
+      id, title, discipline, created_at, updated_at, upvotes, view_count,
       car:cars!tunes_car_id_fkey(make, model, pi_class),
       game:games!tunes_game_id_fkey(id, name, slug)
     `)
@@ -207,9 +207,15 @@ export default async function ProfilePage({ params }: Props) {
                       </div>
 
                       {/* Date */}
-                      <span style={{ color:'#374151', fontSize:'11px', flexShrink:0 }}>
-                        {new Date(tune.created_at).toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' })}
-                      </span>
+                      <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', flexShrink:0, gap:'2px' }}>
+                        <span style={{ color:'#374151', fontSize:'11px' }}>
+                          {new Date(tune.created_at).toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'2-digit' })}
+                        </span>
+                        {(tune as { updated_at?: string }).updated_at &&
+                          new Date((tune as { updated_at?: string }).updated_at!).getTime() - new Date(tune.created_at).getTime() > 60_000 && (
+                          <span style={{ fontSize:'10px', color:'#60a5fa', fontWeight:600 }}>edited</span>
+                        )}
+                      </div>
                     </div>
                   </Link>
                 )
