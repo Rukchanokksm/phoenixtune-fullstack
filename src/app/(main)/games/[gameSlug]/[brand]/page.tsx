@@ -34,7 +34,7 @@ export default async function BrandPage({
 
   const { data: cars } = await supabase
     .from('cars')
-    .select('id, make, model, year, drivetrain, pi_class')
+    .select('id, make, model, year')
     .eq('game_id', game.id)
     .eq('make', brandName)
     .order('year', { ascending: false })
