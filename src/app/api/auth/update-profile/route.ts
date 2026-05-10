@@ -7,9 +7,10 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { bio, gender, country, birthday, avatarUrl } = await req.json()
+  const { username, bio, gender, country, birthday, avatarUrl } = await req.json()
 
   const updates: Record<string, unknown> = {}
+  if (username  !== undefined) updates.username   = username.trim()
   if (bio       !== undefined) updates.bio        = bio || null
   if (gender    !== undefined) updates.gender     = gender
   if (country   !== undefined) updates.country    = country || null
