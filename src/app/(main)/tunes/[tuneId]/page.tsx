@@ -58,10 +58,10 @@ const GAME_ACCENT: Record<string, string> = {
   'nfs-unbound':        '#f87171',
 }
 
-const PARAM_SECTIONS: Array<{
-  title: string; emoji: string; color: string
-  fields: Array<{ key: string; label: string; unit?: string }>
-}> = [
+type ParamField = { key: string; label: string; unit?: string }
+type ParamSection = { title: string; emoji: string; color: string; fields: ParamField[] }
+
+const BASE_SECTIONS: ParamSection[] = [
   {
     title: 'Tires', emoji: 'O', color: '#60a5fa',
     fields: [
@@ -97,13 +97,6 @@ const PARAM_SECTIONS: Array<{
     ],
   },
   {
-    title: 'Differential', emoji: 'D', color: '#f472b6',
-    fields: [
-      { key: 'diffAccel',  label: 'Accel',  unit: '%' },
-      { key: 'diffDecel',  label: 'Decel',  unit: '%' },
-    ],
-  },
-  {
     title: 'Aero & Drive', emoji: 'V', color: '#a78bfa',
     fields: [
       { key: 'aeroF',      label: 'Downforce Front' },
@@ -112,6 +105,41 @@ const PARAM_SECTIONS: Array<{
     ],
   },
 ]
+
+function getDiffSection(drivetrain?: string | null, forEdit = false): ParamSection {
+  const awd: ParamField[] = [
+    { key: 'diffFAccel', label: 'Front Accel',    unit: '%' },
+    { key: 'diffFDecel', label: 'Front Decel',    unit: '%' },
+    { key: 'diffRAccel', label: 'Rear Accel',     unit: '%' },
+    { key: 'diffRDecel', label: 'Rear Decel',     unit: '%' },
+    { key: 'diffCenter', label: 'Center Balance', unit: '%' },
+  ]
+  const fwd: ParamField[] = [
+    { key: 'diffFAccel', label: 'Front Accel', unit: '%' },
+    { key: 'diffFDecel', label: 'Front Decel', unit: '%' },
+  ]
+  const rwd: ParamField[] = [
+    { key: 'diffRAccel', label: 'Rear Accel', unit: '%' },
+    { key: 'diffRDecel', label: 'Rear Decel', unit: '%' },
+  ]
+  // Legacy fields — included in display mode so old tunes still show values
+  const legacy: ParamField[] = forEdit ? [] : [
+    { key: 'diffAccel', label: 'Accel (legacy)', unit: '%' },
+    { key: 'diffDecel', label: 'Decel (legacy)', unit: '%' },
+  ]
+
+  let fields: ParamField[]
+  if (drivetrain === 'AWD') fields = [...awd, ...legacy]
+  else if (drivetrain === 'FWD') fields = [...fwd, ...legacy]
+  else fields = [...rwd, ...legacy]  // RWD or unknown
+
+  return { title: 'Differential', emoji: 'D', color: '#f472b6', fields }
+}
+
+function getParamSections(drivetrain?: string | null, forEdit = false): ParamSection[] {
+  const [tires, susp, align, arb, aero] = BASE_SECTIONS
+  return [tires, susp, align, arb, getDiffSection(drivetrain, forEdit), aero]
+}
 
 function StatBox({ label, value }: { label: string; value: string | number }) {
   return (
@@ -579,8 +607,18 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                 </div>
               ))}
 
+              {/* Car info — read-only */}
+              {tune.car && (
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', padding: '10px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '13px', color: '#64748b' }}>{tune.car.year ? `${tune.car.year} ` : ''}{tune.car.make} {tune.car.model}</span>
+                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '5px', background: 'rgba(255,255,255,0.06)', color: '#94a3b8', fontFamily: 'monospace' }}>{tune.car.pi_class}</span>
+                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '5px', background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>{tune.car.drivetrain}</span>
+                  <span style={{ fontSize: '11px', color: '#334155' }}>— ไม่สามารถแก้ไขได้</span>
+                </div>
+              )}
+
               {/* Parameters */}
-              {PARAM_SECTIONS.map(section => (
+              {getParamSections(tune.car?.drivetrain, true).map(section => (
                 <div key={section.title} style={{ marginBottom: '14px' }}>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: section.color, letterSpacing: '0.07em', marginBottom: '8px' }}>{section.title.toUpperCase()}</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -623,7 +661,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
             </div>
           ) : tune && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {PARAM_SECTIONS.map(section => {
+              {getParamSections(tune.car?.drivetrain).map(section => {
                 const filled = section.fields.filter(f => {
                   const v = tune.parameters[f.key]
                   return v !== null && v !== undefined && v !== ''
