@@ -73,7 +73,7 @@ export default function RegisterPage() {
 
   const [form, setForm] = useState({
     username: '', email: '', password: '',
-    gender: 'unspecified' as Gender, country: '',
+    gender: 'unspecified' as Gender, country: '', birthday: '',
   })
   const [avatarFile,    setAvatarFile]    = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -144,6 +144,7 @@ export default function RegisterPage() {
           username:  form.username,
           gender:    form.gender,
           country:   form.country || null,
+          birthday:  form.birthday || null,
           avatarUrl: avatarUrl ?? null,
         }),
       })
@@ -276,7 +277,18 @@ export default function RegisterPage() {
             </select>
           </div>
 
-
+          {/* Birthday */}
+          <div>
+            <label style={label}>วันเกิด</label>
+            <input
+              style={{ ...inp, colorScheme: 'dark' }}
+              type="date"
+              max={new Date().toISOString().split('T')[0]}
+              value={form.birthday}
+              onChange={e => setField('birthday', e.target.value)}
+            />
+            <p style={{ color:'#475569', fontSize:'11px', margin:'4px 0 0' }}>ไม่บังคับ — ใช้แสดงบนโปรไฟล์เท่านั้น</p>
+          </div>
 
           {/* Server error */}
           {serverError && (

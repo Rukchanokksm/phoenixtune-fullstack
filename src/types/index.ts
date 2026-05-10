@@ -60,7 +60,7 @@ export const TITLES: Record<TitleId, { label: string; desc: string; icon: string
 export interface UserProfile {
   id: string; email: string; username: string; avatarUrl?: string
   isPremium: boolean; premiumUntil?: string; bio?: string
-  role: UserRole; gender: Gender; country?: string
+  role: UserRole; gender: Gender; country?: string; birthday?: string
   activeTitle: TitleId; titlesEarned: TitleId[]
   tuneShareCount: number; totalUpvotesReceived: number
   tuneCount?: number; createdAt: string

@@ -54,7 +54,7 @@ export default async function RootLayout({
         const { data: dbProfile } = await supabase
             .from("user_profiles")
             .select(
-                "id, username, avatar_url, is_premium, premium_until, bio, role, gender, country, active_title, titles_earned, tune_share_count, total_upvotes_received, created_at",
+                "id, username, avatar_url, is_premium, premium_until, bio, role, gender, country, birthday, active_title, titles_earned, tune_share_count, total_upvotes_received, created_at",
             )
             .eq("id", authUser.id)
             .maybeSingle()
@@ -71,6 +71,7 @@ export default async function RootLayout({
                 role: (dbProfile.role as UserRole) ?? "user",
                 gender: (dbProfile.gender as Gender) ?? "unspecified",
                 country: dbProfile.country ?? undefined,
+                birthday: dbProfile.birthday ?? undefined,
                 activeTitle: (dbProfile.active_title as TitleId) ?? "newcomer",
                 titlesEarned: (dbProfile.titles_earned as TitleId[]) ?? [
                     "newcomer",

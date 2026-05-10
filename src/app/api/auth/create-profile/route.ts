@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
-  const { userId, username, gender, country, avatarUrl } = await req.json()
+  const { userId, username, gender, country, avatarUrl, birthday } = await req.json()
 
   if (!userId || !username)
     return NextResponse.json({ error: 'ข้อมูลไม่ครบ' }, { status: 400 })
@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     avatar_url:             avatarUrl  ?? null,
     gender:                 gender     ?? 'unspecified',
     country:                country    || null,
+    birthday:               birthday   || null,
     role:                   'user',
     active_title:           'newcomer',
     titles_earned:          ['newcomer'],

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { TITLES } from '@/types'
 import type { TitleId, Gender } from '@/types'
+import { EditProfileForm } from '@/components/profile/EditProfileForm'
 
 interface Props { params: Promise<{ username: string }> }
 
@@ -34,11 +35,15 @@ export default async function ProfilePage({ params }: Props) {
   const { username } = await params
   const supabase = await createClient()
 
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+
   const { data: profile } = await supabase
     .from('user_profiles')
-    .select('id, username, avatar_url, bio, gender, country, role, active_title, titles_earned, tune_share_count, total_upvotes_received, is_premium, created_at')
+    .select('id, username, avatar_url, bio, gender, country, birthday, role, active_title, titles_earned, tune_share_count, total_upvotes_received, is_premium, created_at')
     .eq('username', username)
     .single()
+
+  const isOwner = authUser?.id === profile?.id
 
   if (!profile) return (
     <div style={{ textAlign:'center', padding:'100px 24px', color:'#64748b' }}>
@@ -104,11 +109,31 @@ export default async function ProfilePage({ params }: Props) {
           {profile.bio && <p style={{ color:'#94a3b8', fontSize:'14px', margin:'0 0 12px', lineHeight:1.6 }}>{profile.bio}</p>}
           <div style={{ display:'flex', gap:'16px', flexWrap:'wrap' }}>
             {profile.country && <span style={{ color:'#475569', fontSize:'13px' }}>📍 {profile.country}</span>}
+            {profile.birthday && (
+              <span style={{ color:'#475569', fontSize:'13px' }}>
+                🎂 {new Date(profile.birthday).toLocaleDateString('th-TH', { day:'numeric', month:'long', year:'numeric' })}
+              </span>
+            )}
             <span style={{ color:'#475569', fontSize:'13px' }}>📅 เข้าร่วมปี {joinYear}</span>
             <span style={{ color:'#475569', fontSize:'13px', textTransform:'capitalize' }}>🎭 {profile.role}</span>
           </div>
         </div>
       </div>
+
+      {/* Edit form — เจ้าของโปรไฟล์เท่านั้น */}
+      {isOwner && (
+        <EditProfileForm
+          userId={profile.id}
+          username={profile.username}
+          initial={{
+            bio:      profile.bio      ?? '',
+            gender:   (profile.gender  as Gender) ?? 'unspecified',
+            country:  profile.country  ?? '',
+            birthday: profile.birthday ?? '',
+            avatarUrl: profile.avatar_url ?? '',
+          }}
+        />
+      )}
 
       {/* Stats */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:'12px', marginBottom:'24px' }}>
