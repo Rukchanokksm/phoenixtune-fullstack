@@ -425,6 +425,7 @@ export default async function GamePage({
                             </div>
                             <Link
                                 href="/calculator"
+                                className="btn-calculator"
                                 style={{
                                     padding: "13px 28px",
                                     borderRadius: "10px",
@@ -436,7 +437,7 @@ export default async function GamePage({
                                     whiteSpace: "nowrap",
                                 }}
                             >
-                                เปิด Calculator →
+                                Calculator →
                             </Link>
                         </div>
                         <div
@@ -478,6 +479,7 @@ export default async function GamePage({
                             </div>
                             <Link
                                 href="/tunes/new"
+                                className="btn-share-tune"
                                 style={{
                                     padding: "13px 28px",
                                     borderRadius: "10px",
@@ -537,6 +539,7 @@ export default async function GamePage({
                                 justifyContent: "space-between",
                                 flexWrap: "wrap",
                                 gap: "20px",
+                                transition: "border-color 0.2s",
                             }}
                         >
                             <div>

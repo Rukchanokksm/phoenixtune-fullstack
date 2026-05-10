@@ -24,3 +24,27 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.btn-calculator {
+  transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
+}
+.btn-calculator:hover {
+  background: #fde047 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(250, 204, 21, 0.35);
+}
+.btn-calculator:active {
+  transform: translateY(0);
+}
+
+.btn-share-tune {
+  transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
+}
+.btn-share-tune:hover {
+  background: #86efac !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(74, 222, 128, 0.35);
+}
+.btn-share-tune:active {
+  transform: translateY(0);
+}
