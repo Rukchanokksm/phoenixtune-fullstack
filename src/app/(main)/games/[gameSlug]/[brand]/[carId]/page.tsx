@@ -16,13 +16,22 @@ const PI_COLOR: Record<string, string> = {
 
 const DISCIPLINES = [
   { id: '',         label: 'ทั้งหมด' },
-  { id: 'road',     label: '🏁 Road' },
-  { id: 'dirt',     label: '🌲 Dirt' },
-  { id: 'cross',    label: '⛰️ Cross Country' },
-  { id: 'street',   label: '🌆 Street' },
-  { id: 'drag',     label: '⚡ Drag' },
-  { id: 'drift',    label: '💨 Drift' },
+  { id: 'street',   label: 'Street'   },
+  { id: 'track',    label: 'Track'    },
+  { id: 'rally',    label: 'Rally'    },
+  { id: 'offroad',  label: 'Offroad'  },
+  { id: 'drift',    label: 'Drift'    },
+  { id: 'drag',     label: 'Drag'     },
 ]
+
+const DISCIPLINE_COLOR: Record<string, string> = {
+  street:  '#4ade80',
+  track:   '#60a5fa',
+  rally:   '#fb923c',
+  offroad: '#fbbf24',
+  drift:   '#f472b6',
+  drag:    '#f87171',
+}
 
 const PI_CLASSES = ['', 'D', 'C', 'B', 'A', 'S1', 'X']
 
@@ -146,7 +155,7 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
                   cursor: 'pointer', border: 'none',
                   background: sortBy === s ? meta.accent : '#1a1d24',
                   color: sortBy === s ? '#0d0f14' : '#94a3b8' }}>
-                {s === 'newest' ? '🕐 ล่าสุด' : '🔥 ยอดนิยม'}
+                {s === 'newest' ? 'ล่าสุด' : 'ยอดนิยม'}
               </button>
             ))}
           </div>
@@ -173,16 +182,22 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
           {/* Discipline filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '12px', color: '#475569', fontWeight: 600 }}>Type:</span>
-            {DISCIPLINES.map(d => (
-              <button key={d.id} onClick={() => handleFilter(() => setFilterDiscipline(d.id))}
-                style={{ padding: '5px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
-                  cursor: 'pointer',
-                  background: filterDiscipline === d.id ? meta.accent + '22' : '#1a1d24',
-                  color: filterDiscipline === d.id ? meta.accent : '#64748b',
-                  border: `1px solid ${filterDiscipline === d.id ? meta.accent + '55' : '#2a2f3f'}` }}>
-                {d.label}
-              </button>
-            ))}
+            {DISCIPLINES.map(d => {
+              const col = DISCIPLINE_COLOR[d.id] ?? meta.accent
+              const active = filterDiscipline === d.id
+              return (
+                <button key={d.id} onClick={() => handleFilter(() => setFilterDiscipline(d.id))}
+                  style={{ padding: '5px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 700,
+                    cursor: 'pointer',
+                    background: active ? col + '28' : d.id ? col + '0f' : '#1a1d24',
+                    color: active ? col : d.id ? col + 'bb' : '#64748b',
+                    border: `1px solid ${active ? col + '77' : d.id ? col + '33' : '#2a2f3f'}`,
+                    opacity: active ? 1 : 0.85,
+                  }}>
+                  {d.label}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -240,12 +255,15 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                      {tune.discipline && (
-                        <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '5px',
-                          background: '#1e2330', color: '#94a3b8', border: '1px solid #2a2f3f' }}>
-                          {tune.discipline}
-                        </span>
-                      )}
+                      {tune.discipline && (() => {
+                        const dc = DISCIPLINE_COLOR[tune.discipline] ?? '#64748b'
+                        return (
+                          <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '5px', fontWeight: 700,
+                            background: dc + '1a', color: dc, border: `1px solid ${dc}44` }}>
+                            {tune.discipline}
+                          </span>
+                        )
+                      })()}
                       {tune.share_code && (
                         <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#475569' }}>
                           📋 {tune.share_code}
@@ -260,7 +278,7 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
                       <span style={{ color: '#64748b' }}>{tune.user?.username ?? 'Unknown'}</span>
                     </div>
                     <div>{new Date(tune.created_at).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })}</div>
-                    <div style={{ marginTop: '4px' }}>👁 {tune.view_count}</div>
+                    <div style={{ marginTop: '4px', color: '#475569' }}>{tune.view_count} views</div>
                   </div>
                 </div>
               </Link>
