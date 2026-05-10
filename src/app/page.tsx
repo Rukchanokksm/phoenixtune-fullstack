@@ -173,7 +173,7 @@ export default async function HomePage() {
                             color: "#f1f5f9",
                         }}
                     >
-                        แชร์ tune.{" "}
+                        มองหาค่า tune{" "}
                         <span
                             style={{
                                 background:
@@ -182,7 +182,7 @@ export default async function HomePage() {
                                 WebkitTextFillColor: "transparent",
                             }}
                         >
-                            ของคุณ ให้กับคนอื่นได้รู้
+                            อยู่หรือป่าว ?
                         </span>
                     </h1>
 
@@ -195,8 +195,10 @@ export default async function HomePage() {
                             margin: "0 auto 40px",
                         }}
                     >
-                        แหล่งรวม tune setting สำหรับ Forza Horizon, The Crew และ
-                        NFS ค้นหา แชร์ และ rate tune จากชุมชน tuner ทั่วโลก
+                        นี้คือ แหล่งรวม tune setting สำหรับคอเกม arcade racing
+                        เช่น Forza Horizon, The Crew motorfest และ Need for
+                        Speed ค้นหา และแบ่งปัน ข้อมูลการจูนรถของคุณได้ง่ายๆ
+                        ในที่เดียว
                     </p>
 
                     <div
