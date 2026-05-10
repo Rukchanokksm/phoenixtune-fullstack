@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
 type View = "login" | "forgot" | "change"
@@ -46,6 +46,8 @@ function StrengthBar({ password }: { password: string }) {
 
 export default function LoginPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const nextPath = searchParams.get('next') ?? '/'
     const supabase = createClient()
 
     const [view, setView] = useState<View>("login")
@@ -100,7 +102,7 @@ export default function LoginPage() {
                 return setErr("ลองเข้าสู่ระบบบ่อยเกินไป รอสักครู่แล้วลองใหม่")
             return setErr(msg)
         }
-        router.push("/")
+        router.push(nextPath)
         router.refresh()
     }
 
