@@ -29,15 +29,17 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protected routes — redirect to login if not authenticated
+  const { pathname } = request.nextUrl
   const protectedPaths = ['/tunes/new', '/profile']
-  const isProtected = protectedPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  )
+  const isTuneDetail = /^\/tunes\/[^/]+$/.test(pathname)
+  const isProtected =
+    isTuneDetail ||
+    protectedPaths.some((path) => pathname.startsWith(path))
 
   if (isProtected && !user) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
-    loginUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
+    loginUrl.searchParams.set('next', pathname)
     return NextResponse.redirect(loginUrl)
   }
 
