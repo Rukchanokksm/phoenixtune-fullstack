@@ -25,7 +25,7 @@ const DISCIPLINES = [
 ]
 
 const DISCIPLINE_COLOR: Record<string, string> = {
-  street:  '#4ade80',
+  street:  '#c084fc',
   track:   '#60a5fa',
   rally:   '#fb923c',
   offroad: '#fbbf24',

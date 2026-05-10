@@ -6,7 +6,7 @@ type Period = 'week' | 'month' | 'all'
 const DC: Record<string, { bg: string; color: string }> = {
   drift:   { bg: '#2a0f1a', color: '#f472b6' },
   track:   { bg: '#0f1a2a', color: '#60a5fa' },
-  street:  { bg: '#0f2a1a', color: '#4ade80' },
+  street:  { bg: '#1a0f2a', color: '#c084fc' },
   rally:   { bg: '#2a1f0f', color: '#facc15' },
   offroad: { bg: '#2a2010', color: '#fbbf24' },
   drag:    { bg: '#2a1010', color: '#f87171' },

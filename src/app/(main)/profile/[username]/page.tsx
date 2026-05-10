@@ -162,7 +162,7 @@ export default async function ProfilePage({ params }: Props) {
                 }
                 const piColor = piColors[car?.pi_class ?? ''] ?? '#64748b'
                 const disciplineColor: Record<string, string> = {
-                  street:'#4ade80', track:'#60a5fa', drift:'#f472b6',
+                  street:'#c084fc', track:'#60a5fa', drift:'#f472b6',
                   rally:'#fb923c', offroad:'#fbbf24', drag:'#f87171',
                 }
                 return (
