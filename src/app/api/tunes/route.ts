@@ -32,8 +32,20 @@ export async function GET(req: NextRequest) {
     if (gameId)     query = query.eq('game_id', gameId)
     if (carId)      query = query.eq('car_id', carId)
     if (discipline) query = query.eq('discipline', discipline)
-    if (piClass)    query = query.eq('cars.pi_class', piClass)
-    if (drivetrain) query = query.eq('cars.drivetrain', drivetrain)
+
+    // piClass / drivetrain filter ต้อง resolve ผ่าน cars table ก่อน
+    // เพราะ Supabase ไม่รองรับ .eq('cars.column', value) บน joined relation
+    if (piClass || drivetrain) {
+      let carsQuery = supabase.from('cars').select('id')
+      if (piClass)    carsQuery = carsQuery.eq('pi_class',   piClass)
+      if (drivetrain) carsQuery = carsQuery.eq('drivetrain', drivetrain)
+      const { data: matchedCars } = await carsQuery
+      const matchedIds = matchedCars?.map((c) => c.id) ?? []
+      if (matchedIds.length === 0) {
+        return NextResponse.json({ data: [], total: 0, page, perPage })
+      }
+      query = query.in('car_id', matchedIds)
+    }
 
     if (search) {
       query = query.textSearch('title', search, { type: 'websearch', config: 'english' })
