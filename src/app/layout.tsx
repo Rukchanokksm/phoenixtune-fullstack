@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Geist } from "next/font/google"
+import { Geist, Kanit, Michroma, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { Navbar } from "@/components/layout/Navbar"
 import { Footer } from "@/components/layout/Footer"
@@ -8,6 +8,24 @@ import { createClient } from "@/lib/supabase/server"
 import type { UserProfile, UserRole, Gender, TitleId } from "@/types"
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" })
+
+const kanit = Kanit({
+    subsets: ["latin", "thai"],
+    weight: ["300", "400", "500", "600", "700"],
+    variable: "--font-kanit",
+})
+
+const michroma = Michroma({
+    subsets: ["latin"],
+    weight: "400",
+    variable: "--font-michroma",
+})
+
+const jetbrainsMono = JetBrains_Mono({
+    subsets: ["latin"],
+    weight: ["400", "500"],
+    variable: "--font-mono",
+})
 
 export const metadata: Metadata = {
     title: {
@@ -77,7 +95,10 @@ export default async function RootLayout({
     const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT
 
     return (
-        <html lang="th" className={geist.variable}>
+        <html
+            lang="th"
+            className={`${geist.variable} ${kanit.variable} ${michroma.variable} ${jetbrainsMono.variable}`}
+        >
             <head>
                 {adsenseClient && (
                     <script
@@ -92,7 +113,7 @@ export default async function RootLayout({
                     margin: 0,
                     background: "#0d0f14",
                     color: "#e2e8f0",
-                    fontFamily: "var(--font-geist), sans-serif",
+                    fontFamily: "var(--font-kanit), var(--font-geist), sans-serif",
                 }}
             >
                 <UserInitializer
