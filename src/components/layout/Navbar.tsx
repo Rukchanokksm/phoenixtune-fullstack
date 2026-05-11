@@ -487,7 +487,7 @@ export function Navbar() {
                                         },
                                         {
                                             label: "Saved Tunes",
-                                            href: `/profile/${user.username}?tab=saved`,
+                                            href: `/saved`,
                                         },
                                         {
                                             label: "Settings",

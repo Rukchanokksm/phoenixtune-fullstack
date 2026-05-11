@@ -30,7 +30,7 @@ export async function proxy(request: NextRequest) {
 
   // Protected routes — redirect to login if not authenticated
   const { pathname } = request.nextUrl
-  const protectedPaths = ['/tunes/new', '/profile']
+  const protectedPaths = ['/tunes/new', '/profile', '/saved']
   const isTuneDetail = /^\/tunes\/[^/]+$/.test(pathname)
   const isProtected =
     isTuneDetail ||
