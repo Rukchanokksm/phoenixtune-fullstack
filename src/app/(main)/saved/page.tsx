@@ -5,21 +5,25 @@ import Link from 'next/link'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+interface TuneData {
+  id: string
+  title: string
+  discipline: string
+  upvotes: number
+  view_count: number
+  created_at: string
+  updated_at?: string
+  car:  { make: string; model: string; pi_class: string | null } | null
+  game: { name: string; slug: string } | null
+  user: { username: string; avatar_url?: string } | null
+}
+
 interface SavedTune {
   id: string
   folder_name: string
   created_at: string
-  tune: {
-    id: string
-    title: string
-    discipline: string
-    upvotes: number
-    view_count: number
-    created_at: string
-    car:  { make: string; model: string; pi_class: string } | null
-    game: { name: string; slug: string } | null
-    user: { username: string; avatar_url?: string } | null
-  } | null
+  // Supabase may return single object or array depending on PostgREST version
+  tune: TuneData | TuneData[] | null
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -46,6 +50,12 @@ const GAME_ACCENT: Record<string, string> = {
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
+
+// Normalize tune — Supabase may return single object or array
+function normalizeTune(raw: TuneData | TuneData[] | null): TuneData | null {
+  if (!raw) return null
+  return Array.isArray(raw) ? (raw[0] ?? null) : raw
+}
 
 function DisciplineBadge({ d }: { d: string }) {
   const s = DISCIPLINE_STYLE[d] ?? { bg: '#1e293b', color: '#94a3b8' }
@@ -102,7 +112,7 @@ function SavedTuneCard({
   unsaving: boolean
 }) {
   const [hovered, setHovered] = useState(false)
-  const tune   = item.tune
+  const tune = normalizeTune(item.tune)
   if (!tune) return null
 
   const accent = tune.game ? GAME_ACCENT[tune.game.slug] ?? '#facc15' : '#facc15'
@@ -122,7 +132,7 @@ function SavedTuneCard({
       {/* Discipline + PI */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <DisciplineBadge d={tune.discipline} />
-        {tune.car && <PIBadge pi={tune.car.pi_class} />}
+        {tune.car?.pi_class && <PIBadge pi={tune.car.pi_class} />}
       </div>
 
       {/* Title + car info */}
@@ -176,6 +186,11 @@ function SavedTuneCard({
         <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>
           saved {timeAgo(item.created_at)}
         </div>
+        {tune.updated_at && new Date(tune.updated_at).getTime() - new Date(tune.created_at).getTime() > 60_000 && (
+          <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '2px', fontWeight: 600 }}>
+            edited
+          </div>
+        )}
       </div>
 
       {/* Unsave button */}

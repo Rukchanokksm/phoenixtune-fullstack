@@ -21,11 +21,11 @@ export async function GET(req: NextRequest) {
       .from('saves')
       .select(`
         id, folder_name, created_at,
-        tune:tunes(
-          id, title, discipline, upvotes, view_count, created_at,
+        tune:tunes!saves_tune_id_fkey(
+          id, title, discipline, upvotes, view_count, created_at, updated_at,
           car:cars(make, model, pi_class),
           game:games(name, slug),
-          user:user_profiles(username, avatar_url)
+          user:user_profiles!tunes_user_id_fkey(username, avatar_url)
         )
       `, { count: 'exact' })
       .eq('user_id', user.id)
