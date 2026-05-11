@@ -478,7 +478,7 @@ export default async function GamePage({
                                 </p>
                             </div>
                             <Link
-                                href="/tunes/new"
+                                href={`/tunes/new?game=${gameSlug}`}
                                 className="btn-share-tune"
                                 style={{
                                     padding: "13px 28px",
@@ -525,7 +525,7 @@ export default async function GamePage({
                         dot={meta.accent}
                     />
                     <Link
-                        href={`/tunes?gameSlug=${gameSlug}`}
+                        href={`/tunes?game=${gameSlug}`}
                         style={{ textDecoration: "none", display: "block" }}
                     >
                         <div
