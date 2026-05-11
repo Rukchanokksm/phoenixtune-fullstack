@@ -30,6 +30,13 @@ export async function GET(req: NextRequest) {
       `, { count: 'exact' })
 
     if (gameId)     query = query.eq('game_id', gameId)
+
+    // gameSlug filter — resolve slug → id first
+    const gameSlug = searchParams.get('gameSlug')
+    if (gameSlug) {
+      const { data: gameRow } = await supabase.from('games').select('id').eq('slug', gameSlug).maybeSingle()
+      if (gameRow) query = query.eq('game_id', gameRow.id)
+    }
     if (carId)      query = query.eq('car_id', carId)
     if (discipline) query = query.eq('discipline', discipline)
 

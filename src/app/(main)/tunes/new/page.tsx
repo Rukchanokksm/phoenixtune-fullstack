@@ -1,8 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { AdUnit } from '@/components/ads/AdUnit'
+
+// ─── Game config ─────────────────────────────────────────────────────────────
+
+const GAME_OPTS = [
+  { slug: 'forza-horizon-5',    name: 'Forza Horizon 5',    short: 'FH5', accent: '#60a5fa', active: true,  note: null },
+  { slug: 'forza-horizon-6',    name: 'Forza Horizon 6',    short: 'FH6', accent: '#c084fc', active: true,  note: 'Same parameters as FH5' },
+  { slug: 'nfs-unbound',        name: 'NFS Unbound',        short: 'NFS', accent: '#f87171', active: true,  note: null },
+  { slug: 'the-crew-motorfest', name: 'The Crew Motorfest', short: 'TCM', accent: '#fb923c', active: true,  note: null },
+]
+
+// For car lookup: FH6 shares FH5 car pool
+function carLookupSlug(gameSlug: string) {
+  return gameSlug === 'forza-horizon-6' ? 'forza-horizon-5' : gameSlug
+}
 
 type CarBrand = { id: string; name: string }
 type CarModel = { id: string; year: number; model: string; label: string; drivetrain: string }
@@ -117,17 +131,76 @@ function Chip({ label, active, onClick, color }: {
   )
 }
 
-/* ─── Main Page ──────────────────────────────────────────────── */
-export default function ShareTunePage() {
-  const router = useRouter()
+/* ─── Game Picker (Step 0) ───────────────────────────────────── */
+function GamePickerStep({ onSelect }: { onSelect: (slug: string) => void }) {
+  return (
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 24px' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 900, color: '#f1f5f9' }}>
+          เลือกเกมที่ต้องการสร้าง tune
+        </h2>
+        <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>
+          แต่ละเกมมีระบบ tune และรายการรถที่แตกต่างกัน
+        </p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: '12px' }}>
+        {GAME_OPTS.map(game => (
+          <button
+            key={game.slug}
+            onClick={() => onSelect(game.slug)}
+            style={{
+              background: '#131620', border: `1px solid ${game.accent}44`,
+              borderRadius: '12px', padding: '20px 16px', cursor: 'pointer',
+              textAlign: 'left', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = game.accent + 'aa' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = game.accent + '44' }}
+          >
+            <div style={{
+              display: 'inline-block', fontSize: '10px', fontWeight: 800,
+              letterSpacing: '0.1em', padding: '2px 8px', borderRadius: '5px',
+              background: game.accent + '22', color: game.accent,
+              border: `1px solid ${game.accent}44`, marginBottom: '10px',
+            }}>{game.short}</div>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: '#f1f5f9', lineHeight: 1.3, marginBottom: '4px' }}>
+              {game.name}
+            </div>
+            {game.note && (
+              <div style={{ fontSize: '11px', color: '#475569' }}>{game.note}</div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ─── Inner Page (needs useSearchParams) ────────────────────── */
+function ShareTunePageInner() {
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const gameParam    = searchParams.get('game') ?? ''
+
+  const [selectedGame, setSelectedGame] = useState(gameParam)
+  const gameOpt = GAME_OPTS.find(g => g.slug === selectedGame)
+
+  function handleSelectGame(slug: string) {
+    setSelectedGame(slug)
+    // Update URL so back/refresh preserves selection
+    router.replace(`/tunes/new?game=${slug}`, { scroll: false })
+  }
 
   // Car data from API
   const [brands, setBrands]           = useState<CarBrand[]>([])
   const [modelsByBrand, setModelsByBrand] = useState<Record<string, CarModel[]>>({})
-  const [carsLoading, setCarsLoading] = useState(true)
+  const [carsLoading, setCarsLoading] = useState(false)
 
   useEffect(() => {
-    fetch('/api/cars?game=forza-horizon-5')
+    if (!selectedGame) return
+    setCarsLoading(true)
+    setBrands([])
+    setModelsByBrand({})
+    fetch(`/api/cars?game=${carLookupSlug(selectedGame)}`)
       .then(r => r.json())
       .then(data => {
         setBrands(data.brands ?? [])
@@ -135,7 +208,7 @@ export default function ShareTunePage() {
       })
       .catch(console.error)
       .finally(() => setCarsLoading(false))
-  }, [])
+  }, [selectedGame])
 
   const [brand, setBrand]       = useState('')
   const [modelId, setModelId]   = useState('')
@@ -273,7 +346,7 @@ export default function ShareTunePage() {
           description: tuneDesc.trim() || undefined,
           shareCode:  shareCode.trim() || undefined,
           parameters,
-          gameSlug:   'forza-horizon-5',
+          gameSlug:   selectedGame,
           carMake:    selectedBrand?.name ?? brand,
           carModel:   selectedModel?.model ?? modelId,
           carYear:    selectedModel?.year,
@@ -308,18 +381,46 @@ export default function ShareTunePage() {
     <div style={{ background: '#0d0f14', minHeight: '100vh', color: '#e2e8f0' }}>
       <div style={{ borderBottom: '1px solid #1e2330', background: '#0f1117' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px 24px',
-          display: 'flex', alignItems: 'center', gap: '16px' }}>
+          display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <button onClick={() => router.back()}
             style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '13px', cursor: 'pointer', padding: 0 }}>
             ← กลับ
           </button>
           <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: '#f1f5f9' }}>Share Your Tune</h1>
-          <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#475569' }}>
-            แบ่งปัน tune setup ของคุณให้กับชุมชน
-          </span>
+          {gameOpt && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em',
+              padding: '3px 10px', borderRadius: '6px',
+              background: gameOpt.accent + '22', color: gameOpt.accent,
+              border: `1px solid ${gameOpt.accent}44`,
+            }}>
+              {gameOpt.short} · {gameOpt.name}
+            </span>
+          )}
+          {selectedGame && (
+            <button
+              onClick={() => { setSelectedGame(''); router.replace('/tunes/new', { scroll: false }) }}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none',
+                color: '#475569', fontSize: '12px', cursor: 'pointer', padding: 0 }}
+            >
+              เปลี่ยนเกม
+            </button>
+          )}
+          {!selectedGame && (
+            <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#475569' }}>
+              แบ่งปัน tune setup ของคุณให้กับชุมชน
+            </span>
+          )}
         </div>
       </div>
 
+      {/* Step 0 — Game selection */}
+      {!selectedGame && (
+        <GamePickerStep onSelect={handleSelectGame} />
+      )}
+
+      {selectedGame && (
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '32px 24px',
         display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
@@ -816,6 +917,21 @@ export default function ShareTunePage() {
           </>
         )}
       </div>
+      )}
     </div>
+  )
+}
+
+// ─── Page export (Suspense required for useSearchParams) ─────────────────────
+
+export default function ShareTunePage() {
+  return (
+    <Suspense fallback={
+      <div style={{ background: '#0d0f14', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#475569', fontSize: '14px' }}>Loading...</div>
+      </div>
+    }>
+      <ShareTunePageInner />
+    </Suspense>
   )
 }

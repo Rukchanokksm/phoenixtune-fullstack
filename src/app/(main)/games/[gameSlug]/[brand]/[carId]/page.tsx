@@ -222,7 +222,7 @@ export default function CarTunesPage({ params }: { params: Promise<{ gameSlug: s
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔧</div>
             <p style={{ fontSize: '16px', margin: '0 0 8px', color: '#64748b' }}>ยังไม่มี tune สำหรับรถคันนี้</p>
             <p style={{ fontSize: '13px', margin: '0 0 24px' }}>เป็นคนแรกที่แชร์ tune!</p>
-            <Link href="/tunes/new" style={{ padding: '11px 24px', borderRadius: '10px', background: '#6366f1', color: '#fff', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
+            <Link href={`/tunes/new?game=${gameSlug}`} style={{ padding: '11px 24px', borderRadius: '10px', background: '#6366f1', color: '#fff', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
               + แชร์ Tune แรก
             </Link>
           </div>

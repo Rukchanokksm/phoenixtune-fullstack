@@ -1,10 +1,21 @@
 'use client'
 
-import { useState, useEffect, useCallback, Fragment } from 'react'
+import { useState, useEffect, useCallback, Fragment, Suspense } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { AdUnit } from '@/components/ads/AdUnit'
 
-// Types
+// ─── Game config ────────────────────────────────────────────────────────────
+
+const GAME_OPTS = [
+  { slug: 'forza-horizon-5',    name: 'Forza Horizon 5',    short: 'FH5', accent: '#60a5fa', active: true,  note: null },
+  { slug: 'forza-horizon-6',    name: 'Forza Horizon 6',    short: 'FH6', accent: '#c084fc', active: false, note: 'Same parameters as FH5' },
+  { slug: 'nfs-unbound',        name: 'NFS Unbound',        short: 'NFS', accent: '#f87171', active: true,  note: null },
+  { slug: 'the-crew-motorfest', name: 'The Crew Motorfest', short: 'TCM', accent: '#fb923c', active: true,  note: null },
+]
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
 interface TuneRow {
   id: string
   discipline: string
@@ -19,6 +30,8 @@ interface TuneRow {
   game: { id: string; name: string; slug: string } | null
   user: { id: string; username: string; avatar_url?: string; is_premium: boolean } | null
 }
+
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const DISCIPLINES = [
   { id: '',        label: 'All'     },
@@ -75,6 +88,8 @@ const GAME_ACCENT: Record<string, string> = {
   'nfs-unbound':        '#f87171',
 }
 
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
 function DisciplineBadge({ d }: { d: string }) {
   const s = DISCIPLINE_STYLE[d] ?? { bg: '#1e293b', color: '#94a3b8' }
   return (
@@ -82,9 +97,7 @@ function DisciplineBadge({ d }: { d: string }) {
       display: 'inline-block', padding: '2px 9px', borderRadius: '5px',
       fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em',
       textTransform: 'uppercase', background: s.bg, color: s.color,
-    }}>
-      {d}
-    </span>
+    }}>{d}</span>
   )
 }
 
@@ -94,9 +107,7 @@ function PIBadge({ pi }: { pi: string }) {
       display: 'inline-block', padding: '1px 7px', borderRadius: '4px',
       fontSize: '11px', fontWeight: 800, fontFamily: 'monospace',
       background: 'rgba(255,255,255,0.06)', color: PI_COLORS[pi] ?? '#94a3b8',
-    }}>
-      {pi}
-    </span>
+    }}>{pi}</span>
   )
 }
 
@@ -109,9 +120,7 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
       border: active ? '1px solid #facc15' : '1px solid rgba(255,255,255,0.08)',
       fontSize: '13px', fontWeight: active ? 700 : 500,
       transition: 'all 0.15s', whiteSpace: 'nowrap',
-    }}>
-      {label}
-    </button>
+    }}>{label}</button>
   )
 }
 
@@ -156,19 +165,14 @@ function TuneCardRow({ tune }: { tune: TuneRow }) {
               <span style={{
                 fontSize: '11px', padding: '1px 7px', borderRadius: '4px',
                 background: accent + '18', color: accent, fontWeight: 600,
-              }}>
-                {shortGameName(tune.game.name)}
-              </span>
+              }}>{shortGameName(tune.game.name)}</span>
             )}
           </div>
           {tune.description && (
             <div style={{
               marginTop: '6px', fontSize: '12px', color: '#475569',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              maxWidth: '500px',
-            }}>
-              {tune.description}
-            </div>
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '500px',
+            }}>{tune.description}</div>
           )}
         </div>
 
@@ -181,25 +185,18 @@ function TuneCardRow({ tune }: { tune: TuneRow }) {
           }}>
             {tune.user?.username?.[0]?.toUpperCase() ?? '?'}
           </div>
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', lineHeight: 1.2 }}>
-              {tune.user?.username ?? 'Unknown'}
-            </div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', lineHeight: 1.2 }}>
+            {tune.user?.username ?? 'Unknown'}
           </div>
         </div>
 
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '17px', fontWeight: 800, color: '#f1f5f9' }}>
-            <span style={{ color: '#facc15', marginRight: '3px' }}>^</span>
-            {tune.upvotes}
+            <span style={{ color: '#facc15', marginRight: '3px' }}>^</span>{tune.upvotes}
           </div>
-          <div style={{ fontSize: '11px', color: '#334155', marginTop: '2px' }}>
-            {tune.view_count} views
-          </div>
+          <div style={{ fontSize: '11px', color: '#334155', marginTop: '2px' }}>{tune.view_count} views</div>
           {tune.updated_at && new Date(tune.updated_at).getTime() - new Date(tune.created_at).getTime() > 60_000 && (
-            <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '4px', fontWeight: 600 }}>
-              edited
-            </div>
+            <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '4px', fontWeight: 600 }}>edited</div>
           )}
         </div>
       </div>
@@ -207,7 +204,84 @@ function TuneCardRow({ tune }: { tune: TuneRow }) {
   )
 }
 
-export default function TunesPage() {
+// ─── Game Picker ─────────────────────────────────────────────────────────────
+
+function GamePicker({ onSelect }: { onSelect: (slug: string) => void }) {
+  return (
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '48px 24px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <h2 style={{ margin: '0 0 10px', fontSize: '28px', fontWeight: 900, color: '#f1f5f9' }}>
+          เลือกเกมที่ต้องการค้นหา tune
+        </h2>
+        <p style={{ margin: 0, color: '#475569', fontSize: '15px' }}>
+          แต่ละเกมมีระบบ tune และรถที่แตกต่างกัน
+        </p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: '16px' }}>
+        {GAME_OPTS.map(game => (
+          <button
+            key={game.slug}
+            onClick={() => game.active && onSelect(game.slug)}
+            style={{
+              background: '#13151c',
+              border: `1px solid ${game.active ? game.accent + '44' : 'rgba(255,255,255,0.06)'}`,
+              borderRadius: '14px', padding: '28px 20px',
+              cursor: game.active ? 'pointer' : 'default',
+              textAlign: 'left', transition: 'all 0.15s',
+              opacity: game.active ? 1 : 0.5,
+            }}
+            onMouseEnter={e => {
+              if (game.active) (e.currentTarget as HTMLElement).style.borderColor = game.accent + '99'
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLElement).style.borderColor = game.active ? game.accent + '44' : 'rgba(255,255,255,0.06)'
+            }}
+          >
+            <div style={{
+              display: 'inline-block', fontSize: '11px', fontWeight: 800,
+              letterSpacing: '0.1em', padding: '3px 10px', borderRadius: '6px',
+              background: game.accent + '22', color: game.accent,
+              border: `1px solid ${game.accent}44`, marginBottom: '14px',
+            }}>{game.short}</div>
+
+            <div style={{ fontSize: '16px', fontWeight: 800, color: '#f1f5f9', marginBottom: '6px', lineHeight: 1.3 }}>
+              {game.name}
+            </div>
+
+            {game.note && (
+              <div style={{ fontSize: '11px', color: '#475569', marginBottom: '8px' }}>
+                {game.note}
+              </div>
+            )}
+
+            {!game.active && (
+              <div style={{
+                display: 'inline-block', fontSize: '10px', fontWeight: 700,
+                padding: '2px 8px', borderRadius: '4px',
+                background: 'rgba(250,204,21,0.1)', color: '#facc15',
+                border: '1px solid rgba(250,204,21,0.2)',
+              }}>COMING SOON</div>
+            )}
+            {game.active && (
+              <div style={{ fontSize: '12px', color: game.accent, fontWeight: 600 }}>
+                Browse tunes →
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Main inner component (needs useSearchParams) ────────────────────────────
+
+function TunesPageInner() {
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const gameSlug     = searchParams.get('game') ?? ''
+
   const [tunes, setTunes]             = useState<TuneRow[]>([])
   const [total, setTotal]             = useState(0)
   const [loading, setLoading]         = useState(true)
@@ -220,10 +294,19 @@ export default function TunesPage() {
   const [sortBy, setSortBy]           = useState('newest')
 
   const perPage = 20
+  const gameOpt = GAME_OPTS.find(g => g.slug === gameSlug)
+
+  // When game changes, reset filters and page
+  useEffect(() => {
+    setPage(1); setSearch(''); setSearchInput('')
+    setDiscipline(''); setPiClass(''); setDrivetrain('')
+  }, [gameSlug])
 
   const fetchTunes = useCallback(async () => {
+    if (!gameSlug) return
     setLoading(true)
     const params = new URLSearchParams({ page: String(page), perPage: String(perPage), sortBy })
+    params.set('gameSlug', gameSlug)
     if (search)     params.set('search', search)
     if (discipline) params.set('discipline', discipline)
     if (piClass)    params.set('piClass', piClass)
@@ -238,7 +321,7 @@ export default function TunesPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, discipline, piClass, drivetrain, sortBy])
+  }, [gameSlug, page, search, discipline, piClass, drivetrain, sortBy])
 
   useEffect(() => { fetchTunes() }, [fetchTunes])
   useEffect(() => { setPage(1) }, [search, discipline, piClass, drivetrain, sortBy])
@@ -250,27 +333,67 @@ export default function TunesPage() {
     setDiscipline(''); setPiClass(''); setDrivetrain('')
   }
 
+  function handleSelectGame(slug: string) {
+    router.push(`/tunes?game=${slug}`)
+  }
+
+  // ── No game selected → show picker ─────────────────────────────────────────
+  if (!gameSlug) {
+    return (
+      <div style={{ background: '#0d0f14', minHeight: '100vh', color: '#e2e8f0' }}>
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '32px 24px 28px' }}>
+          <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <h1 style={{ margin: '0 0 6px', fontSize: '26px', fontWeight: 900, color: '#f1f5f9' }}>Browse Tunes</h1>
+            <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>เลือกเกมเพื่อดู tune ของเกมนั้น</p>
+          </div>
+        </div>
+        <GamePicker onSelect={handleSelectGame} />
+      </div>
+    )
+  }
+
+  // ── Game selected → show tunes ──────────────────────────────────────────────
   return (
     <div style={{ background: '#0d0f14', minHeight: '100vh', color: '#e2e8f0' }}>
-      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '32px 24px 28px' }}>
+      {/* Header */}
+      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '28px 24px 24px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '6px' }}>
-            <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 900, color: '#f1f5f9' }}>Browse Tunes</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => router.push('/tunes')}
+              style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer',
+                fontSize: '13px', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              ← เกม
+            </button>
+            <span style={{ color: '#1e293b' }}>|</span>
+            {/* Game badge */}
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              fontSize: '12px', fontWeight: 800, letterSpacing: '0.06em',
+              padding: '4px 12px', borderRadius: '8px',
+              background: (gameOpt?.accent ?? '#64748b') + '22',
+              color: gameOpt?.accent ?? '#64748b',
+              border: `1px solid ${(gameOpt?.accent ?? '#64748b')}44`,
+            }}>
+              {gameOpt?.short ?? gameSlug.toUpperCase()}
+            </span>
+            <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: '#f1f5f9' }}>
+              {gameOpt?.name ?? gameSlug}
+            </h1>
             {!loading && total > 0 && (
-              <span style={{ fontSize: '14px', color: '#334155', fontWeight: 500 }}>
+              <span style={{ fontSize: '13px', color: '#334155', fontWeight: 500 }}>
                 {total.toLocaleString()} tunes
               </span>
             )}
           </div>
-          <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>
-            {'Search tunes from the community'}
-          </p>
         </div>
       </div>
 
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '28px 24px' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 24px' }}>
+        {/* Search + sort */}
         <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1', minWidth: '240px', position: 'relative' }}>
+          <div style={{ flex: '1', minWidth: '240px' }}>
             <input
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
@@ -292,10 +415,11 @@ export default function TunesPage() {
           </div>
         </div>
 
+        {/* Filters */}
         <div style={{
           background: '#13151c', border: '1px solid rgba(255,255,255,0.06)',
           borderRadius: '12px', padding: '16px 18px',
-          display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px',
+          display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px',
         }}>
           {[
             { label: 'STYLE',    opts: DISCIPLINES, val: discipline, set: setDiscipline },
@@ -304,9 +428,7 @@ export default function TunesPage() {
           ].map(row => (
             <div key={row.label} style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
               <span style={{ fontSize: '10px', color: '#334155', fontWeight: 700,
-                letterSpacing: '0.08em', width: '64px', flexShrink: 0 }}>
-                {row.label}
-              </span>
+                letterSpacing: '0.08em', width: '64px', flexShrink: 0 }}>{row.label}</span>
               {row.opts.map(o => (
                 <FilterChip key={o.id} label={o.label} active={row.val === o.id}
                   onClick={() => row.set(o.id)} />
@@ -315,18 +437,19 @@ export default function TunesPage() {
           ))}
         </div>
 
+        {/* Share CTA */}
         <div style={{
           background: 'linear-gradient(135deg,#0f2a1a,#0d0f14)',
           border: '1px solid rgba(74,222,128,0.15)', borderRadius: '12px',
           padding: '14px 20px', display: 'flex',
           alignItems: 'center', justifyContent: 'space-between',
-          gap: '16px', flexWrap: 'wrap', marginBottom: '24px',
+          gap: '16px', flexWrap: 'wrap', marginBottom: '20px',
         }}>
           <span style={{ fontSize: '13px', color: '#64748b' }}>
-            <span style={{ fontWeight: 700, color: '#f1f5f9' }}>Have a great tune? </span>
-            Share it with the community
+            <span style={{ fontWeight: 700, color: '#f1f5f9' }}>มี tune ดีๆ อยู่? </span>
+            แชร์ให้ชุมชนด้วย
           </span>
-          <Link href="/tunes/new" style={{
+          <Link href={`/tunes/new?game=${gameSlug}`} style={{
             padding: '8px 18px', borderRadius: '8px', background: '#4ade80',
             color: '#0d0f14', fontWeight: 700, fontSize: '13px', textDecoration: 'none',
           }}>
@@ -334,6 +457,7 @@ export default function TunesPage() {
           </Link>
         </div>
 
+        {/* Tune list */}
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {Array.from({ length: 8 }).map((_, i) => (
@@ -349,18 +473,16 @@ export default function TunesPage() {
             background: '#13151c', borderRadius: '16px',
             border: '1px solid rgba(255,255,255,0.06)',
           }}>
-            <div style={{ fontSize: '44px', marginBottom: '14px' }}>{'🏎️'}</div>
+            <div style={{ fontSize: '44px', marginBottom: '14px' }}>🏎️</div>
             <h3 style={{ color: '#f1f5f9', margin: '0 0 8px', fontWeight: 700 }}>No tunes found</h3>
             <p style={{ color: '#475569', margin: '0 0 20px', fontSize: '14px' }}>
               Try changing filters or{' '}
               <button onClick={resetFilters} style={{
                 background: 'none', border: 'none', color: '#facc15',
                 cursor: 'pointer', fontSize: '14px', textDecoration: 'underline', padding: 0,
-              }}>
-                reset all
-              </button>
+              }}>reset all</button>
             </p>
-            <Link href="/tunes/new" style={{
+            <Link href={`/tunes/new?game=${gameSlug}`} style={{
               padding: '10px 24px', borderRadius: '9px', background: '#4ade80',
               color: '#0d0f14', fontWeight: 700, fontSize: '14px', textDecoration: 'none',
             }}>
@@ -380,20 +502,15 @@ export default function TunesPage() {
           </div>
         )}
 
+        {/* Pagination */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '32px', alignItems: 'center' }}>
-            <button
-              disabled={page <= 1}
-              onClick={() => setPage(p => p - 1)}
-              style={{
-                padding: '8px 16px', borderRadius: '8px',
-                cursor: page > 1 ? 'pointer' : 'not-allowed',
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                color: page > 1 ? '#94a3b8' : '#334155', fontSize: '13px',
-              }}
-            >
-              {'<- Prev'}
-            </button>
+            <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} style={{
+              padding: '8px 16px', borderRadius: '8px',
+              cursor: page > 1 ? 'pointer' : 'not-allowed',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+              color: page > 1 ? '#94a3b8' : '#334155', fontSize: '13px',
+            }}>{'<- Prev'}</button>
             {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
               const p = totalPages <= 7 ? i + 1
                 : page <= 4        ? i + 1
@@ -406,26 +523,32 @@ export default function TunesPage() {
                   border: `1px solid ${page === p ? '#facc15' : 'rgba(255,255,255,0.08)'}`,
                   color: page === p ? '#0d0f14' : '#94a3b8',
                   fontSize: '13px', fontWeight: page === p ? 700 : 400,
-                }}>
-                  {p}
-                </button>
+                }}>{p}</button>
               )
             })}
-            <button
-              disabled={page >= totalPages}
-              onClick={() => setPage(p => p + 1)}
-              style={{
-                padding: '8px 16px', borderRadius: '8px',
-                cursor: page < totalPages ? 'pointer' : 'not-allowed',
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                color: page < totalPages ? '#94a3b8' : '#334155', fontSize: '13px',
-              }}
-            >
-              {'Next ->'}
-            </button>
+            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} style={{
+              padding: '8px 16px', borderRadius: '8px',
+              cursor: page < totalPages ? 'pointer' : 'not-allowed',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+              color: page < totalPages ? '#94a3b8' : '#334155', fontSize: '13px',
+            }}>{'Next ->'}</button>
           </div>
         )}
       </div>
     </div>
+  )
+}
+
+// ─── Page export (Suspense required for useSearchParams) ─────────────────────
+
+export default function TunesPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ background: '#0d0f14', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#475569', fontSize: '14px' }}>Loading...</div>
+      </div>
+    }>
+      <TunesPageInner />
+    </Suspense>
   )
 }
