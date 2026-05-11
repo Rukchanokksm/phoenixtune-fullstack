@@ -317,7 +317,7 @@ export default function RegisterPage() {
                         }}
                     >
                         สมัคร{" "}
-                        <span style={{ color: "#facc15" }}>PeonixTune</span>
+                        <span style={{ color: "#facc15" }}>Tunix</span>
                     </h1>
                     <p
                         style={{

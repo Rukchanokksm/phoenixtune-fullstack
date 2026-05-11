@@ -228,9 +228,9 @@ export default function LoginPage() {
                         }}
                     >
                         <span style={{ color: "#facc15", fontWeight: 700 }}>
-                            Peonix
+                            Tu
                         </span>
-                        Tune
+                        nix
                     </p>
                 </div>
 

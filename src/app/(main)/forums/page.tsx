@@ -117,7 +117,7 @@ export default async function ForumsPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
         <div>
           <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: 800 }}>Forums</h1>
-          <p style={{ margin: 0, color: '#475569', fontSize: '13px' }}>พื้นที่พูดคุยสำหรับชุมชน PeonixTune</p>
+          <p style={{ margin: 0, color: '#475569', fontSize: '13px' }}>พื้นที่พูดคุยสำหรับชุมชน Tunix</p>
         </div>
         {user && (
           <Link href="/forums/new" style={{

@@ -29,8 +29,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
     title: {
-        template: "%s | PeonixTune",
-        default: "PeonixTune — Community Tuning Platform",
+        template: "%s | Tunix",
+        default: "Tunix — Community Tuning Platform",
     },
     description:
         "Free tune settings สำหรับ Forza Horizon, The Crew และ NFS — ตั้งค่าง่าย แชร์ฟรี",

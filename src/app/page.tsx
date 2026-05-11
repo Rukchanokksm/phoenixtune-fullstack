@@ -173,7 +173,7 @@ export default async function HomePage() {
                             color: "#f1f5f9",
                         }}
                     >
-                        มองหาค่า tune{" "}
+                        ค่า tune ดีๆ{" "}
                         <span
                             style={{
                                 background:
@@ -182,7 +182,7 @@ export default async function HomePage() {
                                 WebkitTextFillColor: "transparent",
                             }}
                         >
-                            อยู่หรือป่าว ?
+                            อยู่ที่ Tunix
                         </span>
                     </h1>
 
@@ -195,10 +195,9 @@ export default async function HomePage() {
                             margin: "0 auto 40px",
                         }}
                     >
-                        นี้คือ แหล่งรวม tune setting สำหรับคอเกม arcade racing
-                        เช่น Forza Horizon, The Crew motorfest และ Need for
-                        Speed ค้นหา และแบ่งปัน ข้อมูลการจูนรถของคุณได้ง่ายๆ
-                        ในที่เดียว
+                        Tunix คือแหล่งรวม tune setting สำหรับคอเกม racing
+                        ไม่ว่าจะเป็น Forza Horizon, The Crew Motorfest หรือ NFS
+                        — ค้นหา แชร์ และจูนรถในที่เดียว ฟรี
                     </p>
 
                     <div

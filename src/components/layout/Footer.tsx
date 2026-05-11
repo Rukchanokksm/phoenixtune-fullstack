@@ -120,7 +120,7 @@ export function Footer() {
                                 letterSpacing: "-0.3px",
                             }}
                         >
-                            PeonixTune
+                            Tunix
                         </span>
                     </Link>
                     <p
@@ -406,7 +406,7 @@ export function Footer() {
                 }}
             >
                 <span style={{ fontSize: "12px", color: "#475569" }}>
-                    © {year} PeonixTune — Built with ❤️ for the racing
+                    © {year} Tunix — Built with ❤️ for the racing
                     community
                 </span>
                 <div style={{ display: "flex", gap: "20px" }}>

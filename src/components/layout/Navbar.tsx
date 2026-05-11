@@ -205,8 +205,8 @@ export function Navbar() {
                                 whiteSpace: "nowrap",
                             }}
                         >
-                            <span style={{ color: "#facc15" }}>Peonix</span>
-                            <span style={{ color: "#e2e8f0" }}>Tune</span>
+                            <span style={{ color: "#facc15" }}>Tu</span>
+                            <span style={{ color: "#e2e8f0" }}>nix</span>
                         </span>
                     </Link>
 
