@@ -2,8 +2,12 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { useLanguage } from "@/lib/i18n/LanguageProvider"
+import { LanguageSwitcher } from "./LanguageSwitcher"
+import tunixLogo from "@/app/tunix_wall.png"
 import type { UserProfile } from "@/types"
 
 // ─── Games list ─────────────────────────────────────────────────────────────
@@ -75,6 +79,7 @@ function UserCircleIcon() {
 export function Navbar() {
     const router = useRouter()
     const supabase = createClient()
+    const { t } = useLanguage()
 
     const [user, setUser] = useState<UserProfile | null>(null)
     const [loading, setLoading] = useState(true)
@@ -194,20 +199,15 @@ export function Navbar() {
                             textDecoration: "none",
                             display: "flex",
                             alignItems: "center",
-                            gap: "8px",
                         }}
                     >
-                        <span
-                            style={{
-                                fontWeight: 800,
-                                fontSize: "17px",
-                                letterSpacing: "-0.3px",
-                                whiteSpace: "nowrap",
-                            }}
-                        >
-                            <span style={{ color: "#facc15" }}>Tu</span>
-                            <span style={{ color: "#e2e8f0" }}>nix</span>
-                        </span>
+                        <Image
+                            src={tunixLogo}
+                            alt="Tunix"
+                            height={36}
+                            style={{ width: "auto", display: "block" }}
+                            priority
+                        />
                     </Link>
 
                     {/* Nav links */}
@@ -219,7 +219,7 @@ export function Navbar() {
                         }}
                     >
                         <Link href="/" style={navLinkStyle}>
-                            Home
+                            {t.nav.home}
                         </Link>
 
                         {/* Games dropdown */}
@@ -236,7 +236,7 @@ export function Navbar() {
                                     cursor: "pointer",
                                 }}
                             >
-                                Games <ChevronIcon open={gamesOpen} />
+                                {t.nav.games} <ChevronIcon open={gamesOpen} />
                             </button>
 
                             {gamesOpen && (
@@ -306,7 +306,7 @@ export function Navbar() {
                                                         letterSpacing: "0.3px",
                                                     }}
                                                 >
-                                                    SOON
+                                                    {t.nav.soon}
                                                 </span>
                                             )}
                                         </Link>
@@ -316,7 +316,7 @@ export function Navbar() {
                         </div>
 
                         <Link href="/forums" style={navLinkStyle}>
-                            Forums
+                            {t.nav.forums}
                         </Link>
                     </div>
                 </div>
@@ -329,7 +329,7 @@ export function Navbar() {
                     <input
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="ค้นหา tune, รถ, หรือ tuner..."
+                        placeholder={t.nav.search}
                         style={{
                             width: "100%",
                             background: "rgba(255,255,255,0.06)",
@@ -371,7 +371,7 @@ export function Navbar() {
                     </button>
                 </form>
 
-                {/* ── RIGHT: Auth ── */}
+                {/* ── RIGHT: Lang switcher + Auth ── */}
                 <div
                     style={{
                         display: "flex",
@@ -380,6 +380,7 @@ export function Navbar() {
                         gap: "8px",
                     }}
                 >
+                    <LanguageSwitcher />
                     {loading ? (
                         <div
                             style={{
@@ -478,19 +479,19 @@ export function Navbar() {
                                 >
                                     {[
                                         {
-                                            label: "Profile",
+                                            label: t.nav.profile,
                                             href: `/profile/${user.username}`,
                                         },
                                         {
-                                            label: "My Tunes",
+                                            label: t.nav.myTunes,
                                             href: `/profile/${user.username}?tab=tunes`,
                                         },
                                         {
-                                            label: "Saved Tunes",
+                                            label: t.nav.savedTunes,
                                             href: `/saved`,
                                         },
                                         {
-                                            label: "Settings",
+                                            label: t.nav.settings,
                                             href: "/settings",
                                         },
                                     ].map((item) => (
@@ -548,7 +549,7 @@ export function Navbar() {
                                             ).style.background = "transparent"
                                         }}
                                     >
-                                        Sign out
+                                        {t.nav.signOut}
                                     </button>
                                 </div>
                             )}
@@ -582,7 +583,7 @@ export function Navbar() {
                                     el.style.color = "#cbd5e1"
                                 }}
                             >
-                                Sign in
+                                {t.nav.signIn}
                             </Link>
                             <Link
                                 href="/register"
@@ -607,7 +608,7 @@ export function Navbar() {
                                     ).style.background = "#facc15"
                                 }}
                             >
-                                Register
+                                {t.nav.register}
                             </Link>
                         </>
                     )}

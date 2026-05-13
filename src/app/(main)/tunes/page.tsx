@@ -281,13 +281,14 @@ function TunesPageInner() {
   const router       = useRouter()
   const searchParams = useSearchParams()
   const gameSlug     = searchParams.get('game') ?? ''
+  const urlSearch    = searchParams.get('search') ?? ''
 
   const [tunes, setTunes]             = useState<TuneRow[]>([])
   const [total, setTotal]             = useState(0)
   const [loading, setLoading]         = useState(true)
   const [page, setPage]               = useState(1)
-  const [searchInput, setSearchInput] = useState('')
-  const [search, setSearch]           = useState('')
+  const [searchInput, setSearchInput] = useState(urlSearch)
+  const [search, setSearch]           = useState(urlSearch)
   const [discipline, setDiscipline]   = useState('')
   const [piClass, setPiClass]         = useState('')
   const [drivetrain, setDrivetrain]   = useState('')
@@ -296,17 +297,24 @@ function TunesPageInner() {
   const perPage = 20
   const gameOpt = GAME_OPTS.find(g => g.slug === gameSlug)
 
-  // When game changes, reset filters and page
+  // Sync search input with URL ?search= changes (e.g., from navbar)
   useEffect(() => {
-    setPage(1); setSearch(''); setSearchInput('')
+    setSearchInput(urlSearch)
+    setSearch(urlSearch)
+  }, [urlSearch])
+
+  // When game changes, reset filters and page (but keep URL-provided search)
+  useEffect(() => {
+    setPage(1)
     setDiscipline(''); setPiClass(''); setDrivetrain('')
   }, [gameSlug])
 
   const fetchTunes = useCallback(async () => {
-    if (!gameSlug) return
+    // Allow listing when EITHER a game is selected OR a search query is present
+    if (!gameSlug && !search) return
     setLoading(true)
     const params = new URLSearchParams({ page: String(page), perPage: String(perPage), sortBy })
-    params.set('gameSlug', gameSlug)
+    if (gameSlug)   params.set('gameSlug', gameSlug)
     if (search)     params.set('search', search)
     if (discipline) params.set('discipline', discipline)
     if (piClass)    params.set('piClass', piClass)
@@ -337,17 +345,114 @@ function TunesPageInner() {
     router.push(`/tunes?game=${slug}`)
   }
 
-  // ── No game selected → show picker ─────────────────────────────────────────
-  if (!gameSlug) {
+  // ── No game and no search → show game picker ─────────────────────────────
+  if (!gameSlug && !search) {
     return (
       <div style={{ background: '#0d0f14', minHeight: '100vh', color: '#e2e8f0' }}>
         <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '32px 24px 28px' }}>
           <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
             <h1 style={{ margin: '0 0 6px', fontSize: '26px', fontWeight: 900, color: '#f1f5f9' }}>Browse Tunes</h1>
-            <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>เลือกเกมเพื่อดู tune ของเกมนั้น</p>
+            <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>Pick a game to browse its tunes</p>
           </div>
         </div>
         <GamePicker onSelect={handleSelectGame} />
+      </div>
+    )
+  }
+
+  // ── Cross-game search results (no game selected, but has search) ──────────
+  if (!gameSlug && search) {
+    return (
+      <div style={{ background: '#0d0f14', minHeight: '100vh', color: '#e2e8f0' }}>
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '28px 24px 24px' }}>
+          <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => router.push('/tunes')}
+                style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer',
+                  fontSize: '13px', padding: 0 }}
+              >
+                ← All games
+              </button>
+              <span style={{ color: '#1e293b' }}>|</span>
+              <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: '#f1f5f9' }}>
+                Search: <span style={{ color: '#facc15' }}>{search}</span>
+              </h1>
+              {!loading && (
+                <span style={{ fontSize: '13px', color: '#334155', fontWeight: 500 }}>
+                  {total.toLocaleString()} results
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px' }}>
+          <div style={{ marginBottom: '16px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <input
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  setSearch(searchInput)
+                  router.push(`/tunes?search=${encodeURIComponent(searchInput)}`)
+                }
+              }}
+              placeholder="Search across all games..."
+              style={{
+                flex: 1, minWidth: '240px', padding: '10px 14px',
+                background: '#13151c', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '10px', color: '#f1f5f9', fontSize: '14px',
+                outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} style={{
+                  background: '#13151c', borderRadius: '12px', height: '78px',
+                  opacity: 1 - i * 0.12, border: '1px solid rgba(255,255,255,0.04)',
+                }} />
+              ))}
+            </div>
+          ) : tunes.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '72px 24px',
+              background: '#13151c', borderRadius: '16px',
+              border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ fontSize: '44px', marginBottom: '14px' }}>🔍</div>
+              <h3 style={{ color: '#f1f5f9', margin: '0 0 8px', fontWeight: 700 }}>No tunes found</h3>
+              <p style={{ color: '#475569', margin: 0, fontSize: '14px' }}>
+                Try a different search term or browse by game
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {tunes.map(tune => <TuneCardRow key={tune.id} tune={tune} />)}
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '32px' }}>
+              <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} style={{
+                padding: '8px 16px', borderRadius: '8px',
+                cursor: page > 1 ? 'pointer' : 'not-allowed',
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                color: page > 1 ? '#94a3b8' : '#334155', fontSize: '13px',
+              }}>{'<- Prev'}</button>
+              <span style={{ padding: '8px 14px', color: '#94a3b8', fontSize: '13px' }}>
+                {page} / {totalPages}
+              </span>
+              <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} style={{
+                padding: '8px 16px', borderRadius: '8px',
+                cursor: page < totalPages ? 'pointer' : 'not-allowed',
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                color: page < totalPages ? '#94a3b8' : '#334155', fontSize: '13px',
+              }}>{'Next ->'}</button>
+            </div>
+          )}
+        </div>
       </div>
     )
   }

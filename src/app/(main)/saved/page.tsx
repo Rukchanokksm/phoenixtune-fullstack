@@ -252,7 +252,7 @@ export default function SavedPage() {
     try {
       const res = await fetch(`/api/saves?tuneId=${tuneId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to unsave')
-      setItems(prev => prev.filter(item => item.tune?.id !== tuneId))
+      setItems(prev => prev.filter(item => normalizeTune(item.tune)?.id !== tuneId))
       setTotal(prev => prev - 1)
     } catch {
       // silently fail — keep item in list
@@ -338,7 +338,7 @@ export default function SavedPage() {
                 key={item.id}
                 item={item}
                 onUnsave={handleUnsave}
-                unsaving={unsaving === item.tune?.id}
+                unsaving={unsaving === normalizeTune(item.tune)?.id}
               />
             ))}
           </div>

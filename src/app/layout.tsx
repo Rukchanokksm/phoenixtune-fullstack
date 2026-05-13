@@ -4,6 +4,7 @@ import "./globals.css"
 import { Navbar } from "@/components/layout/Navbar"
 import { Footer } from "@/components/layout/Footer"
 import { UserInitializer } from "@/components/providers/UserInitializer"
+import { LanguageProvider } from "@/lib/i18n/LanguageProvider"
 import { createClient } from "@/lib/supabase/server"
 import type { UserProfile, UserRole, Gender, TitleId } from "@/types"
 
@@ -97,8 +98,9 @@ export default async function RootLayout({
 
     return (
         <html
-            lang="th"
+            lang="en"
             className={`${geist.variable} ${kanit.variable} ${michroma.variable} ${jetbrainsMono.variable}`}
+            suppressHydrationWarning
         >
             <head>
                 {adsenseClient && (
@@ -117,21 +119,23 @@ export default async function RootLayout({
                     fontFamily: "var(--font-kanit), var(--font-geist), sans-serif",
                 }}
             >
-                <UserInitializer
-                    initialUser={profile}
-                    initialSavedIds={savedIds}
-                />
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        minHeight: "100vh",
-                    }}
-                >
-                    <Navbar />
-                    <main style={{ flex: 1 }}>{children}</main>
-                    <Footer />
-                </div>
+                <LanguageProvider>
+                    <UserInitializer
+                        initialUser={profile}
+                        initialSavedIds={savedIds}
+                    />
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            minHeight: "100vh",
+                        }}
+                    >
+                        <Navbar />
+                        <main style={{ flex: 1 }}>{children}</main>
+                        <Footer />
+                    </div>
+                </LanguageProvider>
             </body>
         </html>
     )

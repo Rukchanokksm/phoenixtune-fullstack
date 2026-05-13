@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useLanguage } from "@/lib/i18n/LanguageProvider"
 
 // ─── Social Icons ────────────────────────────────────────────────────────────
 function DiscordIcon() {
@@ -68,14 +69,7 @@ function MailIcon() {
     )
 }
 
-// ─── Data ────────────────────────────────────────────────────────────────────
-const PLATFORM_LINKS = [
-    { label: "Browse Tunes", href: "/tunes" },
-    { label: "Tune Calculator", href: "/calculator" },
-    { label: "Forums", href: "/forums" },
-    { label: "Upload Tune", href: "/tunes/new" },
-]
-
+// ─── Game data (labels don't translate — game names are proper nouns) ────────
 const GAME_LINKS = [
     { label: "Forza Horizon 5", href: "/games/forza-horizon-5" },
     { label: "Forza Horizon 6", href: "/games/forza-horizon-6", soon: true },
@@ -85,7 +79,15 @@ const GAME_LINKS = [
 
 // ─── Component ───────────────────────────────────────────────────────────────
 export function Footer() {
+    const { t } = useLanguage()
     const year = new Date().getFullYear()
+
+    const PLATFORM_LINKS = [
+        { label: t.footer.browseTunes,    href: "/tunes" },
+        { label: t.footer.tuneCalculator, href: "/calculator" },
+        { label: t.footer.forums,         href: "/forums" },
+        { label: t.footer.uploadTune,     href: "/tunes/new" },
+    ]
 
     return (
         <footer
@@ -132,8 +134,7 @@ export function Footer() {
                             maxWidth: "220px",
                         }}
                     >
-                        Community platform สำหรับแชร์และค้นหา tune setting
-                        ของเกมแต่งรถ
+                        {t.footer.tagline}
                     </p>
                     {/* Social icons */}
                     <div
@@ -205,7 +206,7 @@ export function Footer() {
 
                 {/* Col 2 — Platform */}
                 <div>
-                    <h4 style={colHeadingStyle}>Platform</h4>
+                    <h4 style={colHeadingStyle}>{t.footer.platformTitle}</h4>
                     <ul style={ulStyle}>
                         {PLATFORM_LINKS.map((l) => (
                             <li key={l.href}>
@@ -232,7 +233,7 @@ export function Footer() {
 
                 {/* Col 3 — Games */}
                 <div>
-                    <h4 style={colHeadingStyle}>Games</h4>
+                    <h4 style={colHeadingStyle}>{t.footer.gamesTitle}</h4>
                     <ul style={ulStyle}>
                         {GAME_LINKS.map((l) => (
                             <li
@@ -276,7 +277,7 @@ export function Footer() {
                                             color: "#facc15",
                                         }}
                                     >
-                                        SOON
+                                        {t.nav.soon}
                                     </span>
                                 )}
                             </li>
@@ -286,7 +287,7 @@ export function Footer() {
 
                 {/* Col 4 — Contact */}
                 <div>
-                    <h4 style={colHeadingStyle}>Contact</h4>
+                    <h4 style={colHeadingStyle}>{t.footer.contactTitle}</h4>
                     <ul style={ulStyle}>
                         <li>
                             <a
@@ -333,7 +334,7 @@ export function Footer() {
                                     ).style.color = "#64748b"
                                 }}
                             >
-                                <DiscordIcon /> Discord Community
+                                <DiscordIcon /> {t.footer.discord}
                             </a>
                         </li>
                         <li>
@@ -358,7 +359,7 @@ export function Footer() {
                                     ).style.color = "#64748b"
                                 }}
                             >
-                                <FacebookIcon /> Facebook Page
+                                <FacebookIcon /> {t.footer.facebook}
                             </a>
                         </li>
                         <li>
@@ -384,7 +385,7 @@ export function Footer() {
                                     ).style.color = "#f87171"
                                 }}
                             >
-                                <BugIcon /> Report a Bug
+                                <BugIcon /> {t.footer.reportBug}
                             </a>
                         </li>
                     </ul>
@@ -406,13 +407,12 @@ export function Footer() {
                 }}
             >
                 <span style={{ fontSize: "12px", color: "#475569" }}>
-                    © {year} Tunix — Built with ❤️ for the racing
-                    community
+                    © {year} Tunix — {t.footer.copyright}
                 </span>
                 <div style={{ display: "flex", gap: "20px" }}>
                     {[
-                        { label: "Privacy Policy", href: "/privacy" },
-                        { label: "Terms of Service", href: "/terms" },
+                        { label: t.footer.privacy, href: "/privacy" },
+                        { label: t.footer.terms, href: "/terms" },
                     ].map((l) => (
                         <Link
                             key={l.href}

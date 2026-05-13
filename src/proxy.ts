@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
+// Next.js 16 renamed "middleware" to "proxy" — this is the new convention.
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -25,16 +26,13 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // Refresh session — keeps auth token alive
+  // Refresh session — keeps auth token alive on every request
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protected routes — redirect to login if not authenticated
   const { pathname } = request.nextUrl
-  const protectedPaths = ['/tunes/new', '/profile', '/saved']
-  const isTuneDetail = /^\/tunes\/[^/]+$/.test(pathname)
-  const isProtected =
-    isTuneDetail ||
-    protectedPaths.some((path) => pathname.startsWith(path))
+  const protectedPaths = ['/tunes/new', '/profile', '/saved', '/settings']
+  const isProtected = protectedPaths.some((path) => pathname.startsWith(path))
 
   if (isProtected && !user) {
     const loginUrl = request.nextUrl.clone()

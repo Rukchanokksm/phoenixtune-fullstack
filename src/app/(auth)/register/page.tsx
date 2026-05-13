@@ -3,6 +3,8 @@ import { useState, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { useLanguage } from "@/lib/i18n/LanguageProvider"
+import type { Messages } from "@/lib/i18n/messages"
 import type { Gender } from "@/types"
 
 // ── Country list ──────────────────────────────────────────────────────────────
@@ -41,7 +43,7 @@ const COUNTRIES = [
 ]
 
 // ── Password strength ─────────────────────────────────────────────────────────
-function calcStrength(pw: string): {
+function calcStrength(pw: string, t: Messages["auth"]): {
     level: 0 | 1 | 2
     label: string
     color: string
@@ -64,10 +66,10 @@ function calcStrength(pw: string): {
     score = Math.max(0, score)
     // ── แปลงเป็น level ────────────────────────────────────────────────────
     if (score <= 2)
-        return { level: 0, label: "คาดเดาง่าย", color: "#f87171", score }
+        return { level: 0, label: t.strengthEasy, color: "#f87171", score }
     if (score <= 4)
-        return { level: 1, label: "ปานกลาง", color: "#facc15", score }
-    return { level: 2, label: "คาดเดายาก", color: "#4ade80", score }
+        return { level: 1, label: t.strengthMedium, color: "#facc15", score }
+    return { level: 2, label: t.strengthStrong, color: "#4ade80", score }
 }
 
 // ── Default SVG Avatars ───────────────────────────────────────────────────────
@@ -134,6 +136,7 @@ function AvatarPreview({
 export default function RegisterPage() {
     const router = useRouter()
     const supabase = createClient()
+    const { t } = useLanguage()
     const fileRef = useRef<HTMLInputElement>(null)
 
     const [form, setForm] = useState({
@@ -153,7 +156,7 @@ export default function RegisterPage() {
     const [usernameTaken, setUsernameTaken] = useState(false)
     const [checkingUsername, setCheckingUsername] = useState(false)
 
-    const strength = calcStrength(form.password)
+    const strength = calcStrength(form.password, t.auth)
 
     function setField<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
         setForm((f) => ({ ...f, [k]: v }))
@@ -177,7 +180,7 @@ export default function RegisterPage() {
         setCheckingUsername(false)
         if (data) {
             setUsernameTaken(true)
-            setErrors((e) => ({ ...e, username: "username นี้ถูกใช้ไปแล้ว" }))
+            setErrors((e) => ({ ...e, username: t.auth.errUsernameTaken }))
         }
     }
 
@@ -185,7 +188,7 @@ export default function RegisterPage() {
         const file = e.target.files?.[0]
         if (!file) return
         if (file.size > 2 * 1024 * 1024) {
-            setErrors((e) => ({ ...e, avatar: "ขนาดไฟล์ต้องไม่เกิน 2MB" }))
+            setErrors((e) => ({ ...e, avatar: t.auth.errAvatarSize }))
             return
         }
         setAvatarFile(file)
@@ -196,14 +199,12 @@ export default function RegisterPage() {
 
     function validate() {
         const e: Record<string, string> = {}
-        if (!form.username.trim()) e.username = "กรุณากรอก username"
-        else if (form.username.length < 3)
-            e.username = "username ต้องมีอย่างน้อย 3 ตัวอักษร"
-        else if (usernameTaken) e.username = "username นี้ถูกใช้ไปแล้ว"
+        if (!form.username.trim()) e.username = t.auth.errFillUsername
+        else if (form.username.length < 3) e.username = t.auth.errUsernameMin3
+        else if (usernameTaken) e.username = t.auth.errUsernameTaken
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-            e.email = "รูปแบบ email ไม่ถูกต้อง"
-        if (form.password.length < 8)
-            e.password = "password ต้องมีอย่างน้อย 8 ตัวอักษร"
+            e.email = t.auth.errInvalidEmail
+        if (form.password.length < 8) e.password = t.auth.errPwMin8
         setErrors(e)
         return Object.keys(e).length === 0
     }
@@ -222,7 +223,7 @@ export default function RegisterPage() {
             })
             if (error) throw error
             const userId = data.user?.id
-            if (!userId) throw new Error("ไม่ได้รับ user id")
+            if (!userId) throw new Error("No user id returned")
 
             // 2. Upload avatar (optional)
             let avatarUrl: string | undefined
@@ -255,13 +256,13 @@ export default function RegisterPage() {
             })
             if (!profileRes.ok) {
                 const d = await profileRes.json()
-                throw new Error(d.error ?? "บันทึกข้อมูลไม่สำเร็จ")
+                throw new Error(d.error ?? t.auth.errGeneric)
             }
 
             router.push("/?registered=1")
         } catch (err: unknown) {
             setServerError(
-                err instanceof Error ? err.message : "เกิดข้อผิดพลาด",
+                err instanceof Error ? err.message : t.auth.errGeneric,
             )
         } finally {
             setLoading(false)
@@ -316,7 +317,7 @@ export default function RegisterPage() {
                             margin: "0 0 6px",
                         }}
                     >
-                        สมัคร{" "}
+                        {t.auth.registerTitle}{" "}
                         <span style={{ color: "#facc15" }}>Tunix</span>
                     </h1>
                     <p
@@ -326,7 +327,7 @@ export default function RegisterPage() {
                             margin: 0,
                         }}
                     >
-                        เข้าร่วมชุมชน tuner และแชร์ setup ของคุณ
+                        {t.auth.registerSubtitle}
                     </p>
                 </div>
 
@@ -377,7 +378,7 @@ export default function RegisterPage() {
                                 cursor: "pointer",
                             }}
                         >
-                            อัปโหลดรูปโปรไฟล์
+                            {t.auth.uploadAvatar}
                         </button>
                         {errors.avatar && (
                             <span style={err}>{errors.avatar}</span>
@@ -394,7 +395,7 @@ export default function RegisterPage() {
                     {/* Username */}
                     <div>
                         <label style={label}>
-                            Username <span style={{ color: "#f87171" }}>*</span>
+                            {t.auth.username} <span style={{ color: "#f87171" }}>*</span>
                         </label>
                         <input
                             style={{
@@ -403,7 +404,7 @@ export default function RegisterPage() {
                                     ? "#f87171"
                                     : "#1e2130",
                             }}
-                            placeholder="เช่น yourname"
+                            placeholder={t.auth.usernamePlaceholder}
                             value={form.username}
                             onChange={(e) =>
                                 setField("username", e.target.value)
@@ -420,16 +421,14 @@ export default function RegisterPage() {
                                 margin: "4px 0 0",
                             }}
                         >
-                            {checkingUsername
-                                ? "กำลังตรวจสอบ..."
-                                : "ชื่อนี้จะแสดงในหน้า tune ของคุณ"}
+                            {checkingUsername ? t.auth.usernameChecking : t.auth.usernameHint}
                         </p>
                     </div>
 
                     {/* Email */}
                     <div>
                         <label style={label}>
-                            Email <span style={{ color: "#f87171" }}>*</span>
+                            {t.auth.email} <span style={{ color: "#f87171" }}>*</span>
                         </label>
                         <input
                             style={{
@@ -449,7 +448,7 @@ export default function RegisterPage() {
                     {/* Password + strength bar */}
                     <div>
                         <label style={label}>
-                            Password <span style={{ color: "#f87171" }}>*</span>
+                            {t.auth.password} <span style={{ color: "#f87171" }}>*</span>
                         </label>
                         <div style={{ position: "relative" }}>
                             <input
@@ -461,7 +460,7 @@ export default function RegisterPage() {
                                     paddingRight: "42px",
                                 }}
                                 type={showPassword ? "text" : "password"}
-                                placeholder="อย่างน้อย 8 ตัวอักษร"
+                                placeholder="•••••••• (min 8)"
                                 value={form.password}
                                 onChange={(e) =>
                                     setField("password", e.target.value)
@@ -537,12 +536,9 @@ export default function RegisterPage() {
                                             color: "#334155",
                                         }}
                                     >
-                                        {strength.level === 0 &&
-                                            "เพิ่มตัวเลข/สัญลักษณ์และความยาว"}
-                                        {strength.level === 1 &&
-                                            "เพิ่มสัญลักษณ์พิเศษ หรือความยาว 12+"}
-                                        {strength.level === 2 &&
-                                            "✓ รหัสผ่านแข็งแกร่ง"}
+                                        {strength.level === 0 && "+ digits/symbols & length"}
+                                        {strength.level === 1 && "+ symbols or 12+ length"}
+                                        {strength.level === 2 && "✓ Strong"}
                                     </span>
                                 </div>
                             </div>
@@ -551,13 +547,13 @@ export default function RegisterPage() {
 
                     {/* Gender */}
                     <div>
-                        <label style={label}>เพศ</label>
+                        <label style={label}>{t.auth.gender}</label>
                         <div style={{ display: "flex", gap: "8px" }}>
                             {(
                                 [
-                                    ["male", "ชาย"],
-                                    ["female", "หญิง"],
-                                    ["unspecified", "ไม่ระบุ"],
+                                    ["male", t.auth.male],
+                                    ["female", t.auth.female],
+                                    ["unspecified", t.auth.unspecified],
                                 ] as const
                             ).map(([val, text]) => (
                                 <button
@@ -590,7 +586,7 @@ export default function RegisterPage() {
 
                     {/* Country */}
                     <div>
-                        <label style={label}>ประเทศ</label>
+                        <label style={label}>{t.auth.country}</label>
                         <select
                             style={{ ...inp, cursor: "pointer" }}
                             value={form.country}
@@ -598,7 +594,7 @@ export default function RegisterPage() {
                                 setField("country", e.target.value)
                             }
                         >
-                            <option value="">— ไม่ระบุ —</option>
+                            <option value="">{t.auth.countryNone}</option>
                             {COUNTRIES.map((c) => (
                                 <option key={c} value={c}>
                                     {c}
@@ -609,7 +605,7 @@ export default function RegisterPage() {
 
                     {/* Birthday */}
                     <div>
-                        <label style={label}>วันเกิด</label>
+                        <label style={label}>{t.auth.birthday}</label>
                         <input
                             style={{ ...inp, colorScheme: "dark" }}
                             type="date"
@@ -626,7 +622,7 @@ export default function RegisterPage() {
                                 margin: "4px 0 0",
                             }}
                         >
-                            ไม่บังคับ — ใช้แสดงบนโปรไฟล์เท่านั้น
+                            {t.auth.birthdayHint}
                         </p>
                     </div>
 
@@ -662,7 +658,7 @@ export default function RegisterPage() {
                             transition: "background 0.2s",
                         }}
                     >
-                        {loading ? "กำลังสมัคร..." : "สมัครสมาชิก →"}
+                        {loading ? t.auth.registering : t.auth.registerButton}
                     </button>
 
                     <p
@@ -673,7 +669,7 @@ export default function RegisterPage() {
                             margin: 0,
                         }}
                     >
-                        มีบัญชีแล้ว?{" "}
+                        {t.auth.hasAccount}{" "}
                         <Link
                             href="/login"
                             style={{
@@ -682,7 +678,7 @@ export default function RegisterPage() {
                                 fontWeight: 600,
                             }}
                         >
-                            เข้าสู่ระบบ
+                            {t.auth.loginTitle}
                         </Link>
                     </p>
                 </form>

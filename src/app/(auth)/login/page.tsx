@@ -3,23 +3,26 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { useLanguage } from "@/lib/i18n/LanguageProvider"
+import type { Messages } from "@/lib/i18n/messages"
 
 type View = "login" | "forgot" | "change"
 
-function calcStrength(pw: string): {
+function calcStrength(pw: string, t: Messages["auth"]): {
     level: 0 | 1 | 2
     label: string
     color: string
 } {
     if (!pw) return { level: 0, label: "", color: "" }
     const u = new Set(pw).size
-    if (u <= 1) return { level: 0, label: "คาดเดาง่าย", color: "#f87171" }
-    if (u <= 5) return { level: 1, label: "ปานกลาง", color: "#facc15" }
-    return { level: 2, label: "คาดเดายาก", color: "#4ade80" }
+    if (u <= 1) return { level: 0, label: t.strengthEasy, color: "#f87171" }
+    if (u <= 5) return { level: 1, label: t.strengthMedium, color: "#facc15" }
+    return { level: 2, label: t.strengthStrong, color: "#4ade80" }
 }
 
 function StrengthBar({ password }: { password: string }) {
-    const s = calcStrength(password)
+    const { t } = useLanguage()
+    const s = calcStrength(password, t.auth)
     if (!password) return null
     return (
         <div style={{ marginTop: "8px" }}>
@@ -49,6 +52,7 @@ export default function LoginPage() {
     const searchParams = useSearchParams()
     const nextPath = searchParams.get('next') ?? '/'
     const supabase = createClient()
+    const { t } = useLanguage()
 
     const [view, setView] = useState<View>("login")
     const [loading, setLoading] = useState(false)
@@ -82,8 +86,7 @@ export default function LoginPage() {
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault()
         reset()
-        if (!loginEmail || !loginPw)
-            return setErr("กรุณากรอก email และ password")
+        if (!loginEmail || !loginPw) return setErr(t.auth.errFillEmailPw)
         setLoading(true)
         const { error } = await supabase.auth.signInWithPassword({
             email: loginEmail,
@@ -93,13 +96,11 @@ export default function LoginPage() {
         if (error) {
             const msg = error.message
             if (msg.includes("Invalid login credentials"))
-                return setErr("email หรือ password ไม่ถูกต้อง")
+                return setErr(t.auth.errInvalidCred)
             if (msg.includes("Email not confirmed"))
-                return setErr(
-                    "กรุณายืนยัน email ก่อน — หรือปิด Email Confirmation ใน Supabase Dashboard",
-                )
+                return setErr(t.auth.errEmailNotConfirmed)
             if (msg.includes("Too many requests"))
-                return setErr("ลองเข้าสู่ระบบบ่อยเกินไป รอสักครู่แล้วลองใหม่")
+                return setErr(t.auth.errTooManyReq)
             return setErr(msg)
         }
         router.push(nextPath)
@@ -110,10 +111,9 @@ export default function LoginPage() {
     async function handleForgot(e: React.FormEvent) {
         e.preventDefault()
         reset()
-        if (!fEmail) return setErr("กรุณากรอก email")
-        if (fNewPw.length < 8)
-            return setErr("password ต้องมีอย่างน้อย 8 ตัวอักษร")
-        if (fNewPw !== fConfirm) return setErr("password ทั้งสองช่องไม่ตรงกัน")
+        if (!fEmail) return setErr(t.auth.errFillEmail)
+        if (fNewPw.length < 8) return setErr(t.auth.errPwMin8)
+        if (fNewPw !== fConfirm) return setErr(t.auth.errPwMismatch)
         setLoading(true)
         const res = await fetch("/api/auth/reset-password", {
             method: "POST",
@@ -122,8 +122,8 @@ export default function LoginPage() {
         })
         const data = await res.json()
         setLoading(false)
-        if (!res.ok) return setErr(data.error ?? "เกิดข้อผิดพลาด")
-        setDone("เปลี่ยนรหัสผ่านสำเร็จแล้ว — กลับไปเข้าสู่ระบบได้เลย")
+        if (!res.ok) return setErr(data.error ?? t.auth.errGeneric)
+        setDone(t.auth.okResetDone)
         setFEmail("")
         setFNewPw("")
         setFConfirm("")
@@ -133,13 +133,10 @@ export default function LoginPage() {
     async function handleChange(e: React.FormEvent) {
         e.preventDefault()
         reset()
-        if (!cOld || !cNew || !cConfirm) return setErr("กรุณากรอกข้อมูลให้ครบ")
-        if (cNew === cOld)
-            return setErr("รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านเดิม")
-        if (cNew.length < 8)
-            return setErr("password ใหม่ต้องมีอย่างน้อย 8 ตัวอักษร")
-        if (cNew !== cConfirm)
-            return setErr("password ใหม่ทั้งสองช่องไม่ตรงกัน")
+        if (!cOld || !cNew || !cConfirm) return setErr(t.auth.errFillAll)
+        if (cNew === cOld) return setErr(t.auth.errPwSame)
+        if (cNew.length < 8) return setErr(t.auth.errPwMin8)
+        if (cNew !== cConfirm) return setErr(t.auth.errPwMismatch)
         setLoading(true)
         const res = await fetch("/api/auth/change-password", {
             method: "POST",
@@ -148,8 +145,8 @@ export default function LoginPage() {
         })
         const data = await res.json()
         setLoading(false)
-        if (!res.ok) return setErr(data.error ?? "เกิดข้อผิดพลาด")
-        setDone("เปลี่ยนรหัสผ่านสำเร็จแล้ว!")
+        if (!res.ok) return setErr(data.error ?? t.auth.errGeneric)
+        setDone(t.auth.okChangeDone)
         setCOld("")
         setCNew("")
         setCConfirm("")
@@ -188,11 +185,16 @@ export default function LoginPage() {
     }
 
     const TITLE = {
-        login: "เข้าสู่ระบบ",
-        forgot: "รีเซ็ตรหัสผ่าน",
-        change: "เปลี่ยนรหัสผ่าน",
+        login: t.auth.loginTitle,
+        forgot: t.auth.forgotTitle,
+        change: t.auth.changeTitle,
     }
     const ICON = { login: "🔑", forgot: "🔓", change: "🔒" }
+    const TAB_LABEL: Record<View, string> = {
+        login:  t.auth.tabLogin,
+        forgot: t.auth.tabForgot,
+        change: t.auth.tabChange,
+    }
 
     return (
         <div
@@ -264,11 +266,7 @@ export default function LoginPage() {
                                 color: view === v ? "#0d0f14" : "#475569",
                             }}
                         >
-                            {v === "login"
-                                ? "เข้าสู่ระบบ"
-                                : v === "forgot"
-                                  ? "ลืมรหัสผ่าน"
-                                  : "เปลี่ยน"}
+                            {TAB_LABEL[v]}
                         </button>
                     ))}
                 </div>
@@ -316,7 +314,7 @@ export default function LoginPage() {
                         }}
                     >
                         <div>
-                            <label style={lbl}>Email</label>
+                            <label style={lbl}>{t.auth.email}</label>
                             <input
                                 style={inp}
                                 type="email"
@@ -326,7 +324,7 @@ export default function LoginPage() {
                             />
                         </div>
                         <div>
-                            <label style={lbl}>Password</label>
+                            <label style={lbl}>{t.auth.password}</label>
                             <input
                                 style={inp}
                                 type="password"
@@ -336,7 +334,7 @@ export default function LoginPage() {
                             />
                         </div>
                         <button type="submit" disabled={loading} style={btn}>
-                            {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ →"}
+                            {loading ? t.auth.signingIn : t.auth.signInButton}
                         </button>
                         <p
                             style={{
@@ -346,7 +344,7 @@ export default function LoginPage() {
                                 margin: 0,
                             }}
                         >
-                            ยังไม่มีบัญชี?{" "}
+                            {t.auth.noAccount}{" "}
                             <Link
                                 href="/register"
                                 style={{
@@ -355,7 +353,7 @@ export default function LoginPage() {
                                     fontWeight: 600,
                                 }}
                             >
-                                สมัครสมาชิก
+                                {t.auth.signUp}
                             </Link>
                         </p>
                     </form>
@@ -382,11 +380,10 @@ export default function LoginPage() {
                                 lineHeight: 1.6,
                             }}
                         >
-                            💡 กรอก email ที่ใช้สมัคร และ password
-                            ใหม่ที่ต้องการตั้ง
+                            💡 {t.auth.forgotHint}
                         </div>
                         <div>
-                            <label style={lbl}>Email ที่ใช้สมัคร</label>
+                            <label style={lbl}>{t.auth.email}</label>
                             <input
                                 style={inp}
                                 type="email"
@@ -396,18 +393,18 @@ export default function LoginPage() {
                             />
                         </div>
                         <div>
-                            <label style={lbl}>รหัสผ่านใหม่</label>
+                            <label style={lbl}>{t.auth.newPassword}</label>
                             <input
                                 style={inp}
                                 type="password"
-                                placeholder="อย่างน้อย 8 ตัวอักษร"
+                                placeholder="•••••••• (min 8)"
                                 value={fNewPw}
                                 onChange={(e) => setFNewPw(e.target.value)}
                             />
                             <StrengthBar password={fNewPw} />
                         </div>
                         <div>
-                            <label style={lbl}>ยืนยันรหัสผ่านใหม่</label>
+                            <label style={lbl}>{t.auth.confirmPassword}</label>
                             <input
                                 style={{
                                     ...inp,
@@ -422,30 +419,18 @@ export default function LoginPage() {
                                 onChange={(e) => setFConfirm(e.target.value)}
                             />
                             {fConfirm && fConfirm !== fNewPw && (
-                                <p
-                                    style={{
-                                        color: "#f87171",
-                                        fontSize: "12px",
-                                        margin: "4px 0 0",
-                                    }}
-                                >
-                                    password ไม่ตรงกัน
+                                <p style={{ color: "#f87171", fontSize: "12px", margin: "4px 0 0" }}>
+                                    {t.auth.pwNoMatch}
                                 </p>
                             )}
                             {fConfirm && fConfirm === fNewPw && fNewPw && (
-                                <p
-                                    style={{
-                                        color: "#4ade80",
-                                        fontSize: "12px",
-                                        margin: "4px 0 0",
-                                    }}
-                                >
-                                    ✓ password ตรงกัน
+                                <p style={{ color: "#4ade80", fontSize: "12px", margin: "4px 0 0" }}>
+                                    ✓ {t.auth.pwMatch}
                                 </p>
                             )}
                         </div>
                         <button type="submit" disabled={loading} style={btn}>
-                            {loading ? "กำลังรีเซ็ต..." : "รีเซ็ตรหัสผ่าน →"}
+                            {loading ? t.auth.resetting : t.auth.resetButton}
                         </button>
                     </form>
                 )}
@@ -471,10 +456,10 @@ export default function LoginPage() {
                                 lineHeight: 1.6,
                             }}
                         >
-                            🔒 ต้องเข้าสู่ระบบก่อนถึงจะเปลี่ยนรหัสผ่านได้
+                            🔒 {t.auth.changeHint}
                         </div>
                         <div>
-                            <label style={lbl}>รหัสผ่านเดิม</label>
+                            <label style={lbl}>{t.auth.oldPassword}</label>
                             <input
                                 style={inp}
                                 type="password"
@@ -484,7 +469,7 @@ export default function LoginPage() {
                             />
                         </div>
                         <div>
-                            <label style={lbl}>รหัสผ่านใหม่</label>
+                            <label style={lbl}>{t.auth.newPassword}</label>
                             <input
                                 style={{
                                     ...inp,
@@ -494,25 +479,19 @@ export default function LoginPage() {
                                             : "#1e2130",
                                 }}
                                 type="password"
-                                placeholder="ต้องไม่ซ้ำกับอันเดิม"
+                                placeholder="••••••••"
                                 value={cNew}
                                 onChange={(e) => setCNew(e.target.value)}
                             />
                             {cNew && cNew === cOld && (
-                                <p
-                                    style={{
-                                        color: "#f87171",
-                                        fontSize: "12px",
-                                        margin: "4px 0 0",
-                                    }}
-                                >
-                                    รหัสผ่านใหม่ซ้ำกับอันเดิม
+                                <p style={{ color: "#f87171", fontSize: "12px", margin: "4px 0 0" }}>
+                                    {t.auth.errPwSame}
                                 </p>
                             )}
                             <StrengthBar password={cNew} />
                         </div>
                         <div>
-                            <label style={lbl}>ยืนยันรหัสผ่านใหม่</label>
+                            <label style={lbl}>{t.auth.confirmPassword}</label>
                             <input
                                 style={{
                                     ...inp,
@@ -527,33 +506,18 @@ export default function LoginPage() {
                                 onChange={(e) => setCConfirm(e.target.value)}
                             />
                             {cConfirm && cConfirm !== cNew && (
-                                <p
-                                    style={{
-                                        color: "#f87171",
-                                        fontSize: "12px",
-                                        margin: "4px 0 0",
-                                    }}
-                                >
-                                    password ไม่ตรงกัน
+                                <p style={{ color: "#f87171", fontSize: "12px", margin: "4px 0 0" }}>
+                                    {t.auth.pwNoMatch}
                                 </p>
                             )}
-                            {cConfirm &&
-                                cConfirm === cNew &&
-                                cNew &&
-                                cNew !== cOld && (
-                                    <p
-                                        style={{
-                                            color: "#4ade80",
-                                            fontSize: "12px",
-                                            margin: "4px 0 0",
-                                        }}
-                                    >
-                                        ✓ password ตรงกัน
-                                    </p>
-                                )}
+                            {cConfirm && cConfirm === cNew && cNew && cNew !== cOld && (
+                                <p style={{ color: "#4ade80", fontSize: "12px", margin: "4px 0 0" }}>
+                                    ✓ {t.auth.pwMatch}
+                                </p>
+                            )}
                         </div>
                         <button type="submit" disabled={loading} style={btn}>
-                            {loading ? "กำลังเปลี่ยน..." : "เปลี่ยนรหัสผ่าน →"}
+                            {loading ? t.auth.changing : t.auth.changeButton}
                         </button>
                     </form>
                 )}
