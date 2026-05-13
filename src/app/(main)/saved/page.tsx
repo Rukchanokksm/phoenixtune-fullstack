@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { PREMIUM_ENABLED } from '@/lib/premium'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -215,7 +216,36 @@ function SavedTuneCard({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+function ComingSoonPlaceholder() {
+  return (
+    <div style={{ background: '#0d0f14', minHeight: '100vh', color: '#e2e8f0',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
+      <div style={{ maxWidth: '480px', textAlign: 'center' }}>
+        <div style={{ fontSize: '54px', marginBottom: '18px' }}>🔖</div>
+        <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 10px', color: '#f1f5f9' }}>
+          Saved Tunes — Coming Soon
+        </h1>
+        <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.6, margin: '0 0 24px' }}>
+          We're polishing this feature before rolling it out.
+          For now, you can browse and upvote tunes — bookmarking will be available soon.
+        </p>
+        <Link href="/tunes" style={{
+          display: 'inline-block', padding: '10px 22px', borderRadius: '9px',
+          background: '#facc15', color: '#0d0f14', fontWeight: 700, fontSize: '14px',
+          textDecoration: 'none',
+        }}>
+          Browse Tunes →
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 export default function SavedPage() {
+  // ── Premium hold: render placeholder while the feature is gated off ──────
+  // PREMIUM_ENABLED is a build-time constant, so React Hooks rules aren't violated.
+  if (!PREMIUM_ENABLED) return <ComingSoonPlaceholder />
+
   const [items, setItems]       = useState<SavedTune[]>([])
   const [total, setTotal]       = useState(0)
   const [loading, setLoading]   = useState(true)

@@ -6,6 +6,7 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { useLanguage } from "@/lib/i18n/LanguageProvider"
+import { PREMIUM_ENABLED } from "@/lib/premium"
 import { LanguageSwitcher } from "./LanguageSwitcher"
 import tunixLogo from "@/app/tunix_wall.png"
 import type { UserProfile } from "@/types"
@@ -444,7 +445,7 @@ export function Navbar() {
                                 >
                                     {user.username}
                                 </span>
-                                {user.isPremium && (
+                                {PREMIUM_ENABLED && user.isPremium && (
                                     <span
                                         style={{
                                             fontSize: "10px",
@@ -486,10 +487,10 @@ export function Navbar() {
                                             label: t.nav.myTunes,
                                             href: `/profile/${user.username}?tab=tunes`,
                                         },
-                                        {
-                                            label: t.nav.savedTunes,
-                                            href: `/saved`,
-                                        },
+                                        // Saved Tunes is a premium-gated feature — hide while premium is held
+                                        ...(PREMIUM_ENABLED
+                                            ? [{ label: t.nav.savedTunes, href: `/saved` }]
+                                            : []),
                                         {
                                             label: t.nav.settings,
                                             href: "/settings",

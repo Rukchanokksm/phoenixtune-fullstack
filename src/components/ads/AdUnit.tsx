@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useUserStore } from '@/stores/userStore'
+import { resolveSlotId } from '@/lib/adsense'
 
 type AdFormat = 'horizontal' | 'rectangle' | 'infeed'
 
@@ -29,6 +30,12 @@ export function AdUnit({ slot, format = 'horizontal', style }: Props) {
 
   const isAdmin = user?.role === 'admin'
 
+  // Resolve the human-readable slot key to a real AdSense numeric slot ID.
+  // If the map entry is empty, we treat the slot as not-yet-configured and
+  // render the dev placeholder instead of an empty real ad.
+  const slotId = resolveSlotId(slot)
+  const isConfigured = Boolean(CLIENT && slotId)
+
   // Check localStorage on mount to restore dismissal state
   useEffect(() => {
     const ts = localStorage.getItem(STORE_KEY(slot))
@@ -37,16 +44,16 @@ export function AdUnit({ slot, format = 'horizontal', style }: Props) {
     }
   }, [slot])
 
-  // Push AdSense only when visible
+  // Push AdSense only when visible AND properly configured
   useEffect(() => {
-    if (isAdmin || dismissed || !CLIENT || pushed.current) return
+    if (isAdmin || dismissed || !isConfigured || pushed.current) return
     try {
       pushed.current = true
       ;(window as unknown as { adsbygoogle: unknown[] }).adsbygoogle =
         (window as unknown as { adsbygoogle: unknown[] }).adsbygoogle ?? []
       ;(window as unknown as { adsbygoogle: unknown[] }).adsbygoogle.push({})
     } catch { /* ignore */ }
-  }, [isAdmin, dismissed])
+  }, [isAdmin, dismissed, isConfigured])
 
   function dismiss() {
     localStorage.setItem(STORE_KEY(slot), String(Date.now()))
@@ -82,7 +89,7 @@ export function AdUnit({ slot, format = 'horizontal', style }: Props) {
     flexShrink: 0,
   }
 
-  if (!CLIENT) {
+  if (!isConfigured) {
     return (
       <div style={{
         ...wrapStyle,
@@ -98,7 +105,7 @@ export function AdUnit({ slot, format = 'horizontal', style }: Props) {
         userSelect: 'none',
       }}>
         AD · {format}
-        <button onClick={dismiss} style={closeBtn} title="ปิดโฆษณา">✕</button>
+        <button onClick={dismiss} style={closeBtn} title="Close ad">✕</button>
       </div>
     )
   }
@@ -110,11 +117,11 @@ export function AdUnit({ slot, format = 'horizontal', style }: Props) {
         className="adsbygoogle"
         style={{ display: 'block', width: '100%', height: '100%' }}
         data-ad-client={CLIENT}
-        data-ad-slot={slot}
+        data-ad-slot={slotId}
         data-ad-format="auto"
         data-full-width-responsive="true"
       />
-      <button onClick={dismiss} style={closeBtn} title="ปิดโฆษณา">✕</button>
+      <button onClick={dismiss} style={closeBtn} title="Close ad">✕</button>
     </div>
   )
 }

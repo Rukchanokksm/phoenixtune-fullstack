@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import { PREMIUM_ENABLED } from '@/lib/premium'
 import type { UserProfile } from '@/types'
 
 // ─── Store interface ──────────────────────────────────────────────────────────
@@ -38,6 +39,9 @@ export const useUserStore = create<UserStore>()(
 
       // ── Computed: isPremium ──────────────────────────────────────────────
       isPremium: () => {
+        // Master kill-switch — premium features are held until enabled site-wide
+        if (!PREMIUM_ENABLED) return false
+
         const { user } = get()
         if (!user?.isPremium) return false
         // Also check premiumUntil expiry if present
