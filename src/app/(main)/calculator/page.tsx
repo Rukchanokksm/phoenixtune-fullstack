@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/userStore'
 import { calculateFH5Tune } from '@/lib/calculator'
 import type { CalcInput, TuneResult, Drivetrain, Discipline } from '@/lib/calculator'
 import { AdUnit } from '@/components/ads/AdUnit'
+import { useLanguage } from '@/lib/i18n/LanguageProvider'
 
 const clamp = (v: number, mn: number, mx: number) => Math.max(mn, Math.min(mx, v))
 
@@ -56,8 +57,10 @@ function BarRow({ label, value, min, max, unit, color = '#facc15', midMark = fal
 }
 
 function RideHeightBar({ pct }: { pct: number }) {
+  const { t } = useLanguage()
+  const C = t.calc
   const labels: Record<number, string> = {
-    0: 'ต่ำสุด (Track/Drift)', 20: 'ต่ำ (Street)', 60: 'กลาง (Rally)', 100: 'สูงสุด (Offroad)',
+    0: C.rideHeightLowest, 20: C.rideHeightLow, 60: C.rideHeightMid, 100: C.rideHeightHigh,
   }
   return (
     <div style={{ padding:'7px 0', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
@@ -109,6 +112,8 @@ const labelSt: React.CSSProperties = {
 
 export default function CalculatorPage() {
   const router = useRouter()
+  const { t } = useLanguage()
+  const C = t.calc
   const user      = useUserStore((s) => s.user)
   const isLoading = useUserStore((s) => s.isLoading)
   const isLoggedIn = !isLoading && !!user
@@ -147,13 +152,13 @@ export default function CalculatorPage() {
         {/* Header */}
         <div style={{ marginBottom:'32px' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'12px', marginBottom:'6px' }}>
-            <h1 style={{ fontSize:'26px', fontWeight:800, margin:0, color:'#f1f5f9' }}>Auto Calculator</h1>
+            <h1 style={{ fontSize:'26px', fontWeight:800, margin:0, color:'#f1f5f9' }}>{C.title}</h1>
             <span style={{ fontSize:'10px', fontWeight:700, letterSpacing:'0.1em', padding:'3px 8px',
               borderRadius:'5px', background:'rgba(250,204,21,0.1)',
               border:'1px solid rgba(250,204,21,0.25)', color:'#facc15' }}>FH5 · v1.0</span>
           </div>
           <p style={{ margin:0, fontSize:'14px', color:'#64748b' }}>
-            กรอกข้อมูลรถ → กด คำนวณ → รับค่า tune setting ที่แนะนำ (read-only)
+            {C.subtitle}
           </p>
         </div>
 
@@ -166,7 +171,7 @@ export default function CalculatorPage() {
             {/* Balance Front */}
             <div>
               <label style={labelSt}>
-                Balance Front
+                {C.balanceFront}
                 <span style={{ float:'right', color:'#facc15', fontWeight:800 }}>{form.balanceFront}%</span>
               </label>
               <input type="range" min={30} max={70} step={1} value={form.balanceFront}
@@ -174,20 +179,20 @@ export default function CalculatorPage() {
                 style={{ width:'100%', accentColor:'#facc15', cursor:'pointer' }} />
               <div style={{ display:'flex', justifyContent:'space-between',
                 fontSize:'10px', color:'#475569', marginTop:'3px' }}>
-                <span>Rear-heavy 30%</span><span>Neutral 50%</span><span>Front-heavy 70%</span>
+                <span>{C.rearHeavy}</span><span>{C.neutral}</span><span>{C.frontHeavy}</span>
               </div>
             </div>
 
             {/* Drivetrain */}
             <div>
-              <label style={labelSt}>Drivetrain</label>
+              <label style={labelSt}>{C.drivetrain}</label>
               <ChipSelect options={DRIVETRAIN} value={form.drivetrain}
                 onChange={v => set('drivetrain', v)} accent='#60a5fa' />
             </div>
 
             {/* Discipline */}
             <div>
-              <label style={labelSt}>ประเภทการใช้งาน</label>
+              <label style={labelSt}>{C.discipline}</label>
               <ChipSelect options={DISCIPLINE} value={form.discipline}
                 onChange={v => set('discipline', v)} accent='#facc15' />
             </div>
@@ -195,7 +200,7 @@ export default function CalculatorPage() {
             {/* Weight + Torque */}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
               <div>
-                <label style={labelSt}>Weight</label>
+                <label style={labelSt}>{C.weight}</label>
                 <div style={{ position:'relative' }}>
                   <input type="number" min={600} max={3000} step={10} value={form.weightKg}
                     onChange={e => set('weightKg', Number(e.target.value))} style={numInput} />
@@ -204,7 +209,7 @@ export default function CalculatorPage() {
                 </div>
               </div>
               <div>
-                <label style={labelSt}>Torque</label>
+                <label style={labelSt}>{C.torque}</label>
                 <div style={{ position:'relative' }}>
                   <input type="number" min={50} max={2000} step={10} value={form.torqueNm}
                     onChange={e => set('torqueNm', Number(e.target.value))} style={numInput} />
@@ -229,20 +234,20 @@ export default function CalculatorPage() {
                 background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.25)',
                 textAlign:'center' }}>
                 <p style={{ margin:'0 0 10px', fontSize:'13px', color:'#f87171', fontWeight:600 }}>
-                  🔒 ต้องเข้าสู่ระบบก่อนใช้งาน
+                  {C.loginPromptTitle}
                 </p>
                 <div style={{ display:'flex', gap:'8px', justifyContent:'center' }}>
                   <button onClick={() => router.push('/login')}
                     style={{ padding:'7px 18px', borderRadius:'7px', border:'none',
                       background:'#facc15', color:'#0d0f14',
                       fontWeight:700, fontSize:'13px', cursor:'pointer' }}>
-                    เข้าสู่ระบบ
+                    {C.signIn}
                   </button>
                   <button onClick={() => router.push('/register')}
                     style={{ padding:'7px 18px', borderRadius:'7px',
                       border:'1px solid rgba(255,255,255,0.1)', background:'transparent',
                       color:'#94a3b8', fontWeight:600, fontSize:'13px', cursor:'pointer' }}>
-                    สมัครสมาชิก
+                    {C.register}
                   </button>
                 </div>
               </div>
@@ -258,7 +263,7 @@ export default function CalculatorPage() {
             }}
               onMouseEnter={e => { if (isLoggedIn) e.currentTarget.style.opacity = '0.85' }}
               onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
-              {isLoading ? 'กำลังโหลด...' : isLoggedIn ? '🧮 คำนวณ Tune' : '🔒 เข้าสู่ระบบเพื่อใช้งาน'}
+              {isLoading ? C.loadingBtn : isLoggedIn ? C.calculate : C.loginBtn}
             </button>
             <AdUnit slot="calculator-form-bottom" format="rectangle" style={{ alignSelf: 'center' }} />
           </div>
@@ -268,9 +273,9 @@ export default function CalculatorPage() {
             <div style={{ background:'#13151c', border:'1px solid rgba(255,255,255,0.07)',
               borderRadius:'14px', padding:'60px 24px', textAlign:'center', color:'#475569' }}>
               <div style={{ fontSize:'48px', marginBottom:'14px' }}>🏎</div>
-              <p style={{ margin:0, fontSize:'14px' }}>กรอกข้อมูลแล้วกด "คำนวณ Tune"</p>
+              <p style={{ margin:0, fontSize:'14px' }}>{C.noResultHint}</p>
               <p style={{ margin:'6px 0 0', fontSize:'12px', color:'#334155' }}>
-                ผลลัพธ์จะแสดงที่นี่ · ค่าทั้งหมดเป็น read-only
+                {C.noResultSub}
               </p>
             </div>
           ) : (
@@ -305,10 +310,9 @@ export default function CalculatorPage() {
                   <div style={{ padding:'12px', background:'rgba(255,255,255,0.03)',
                     borderRadius:'8px', textAlign:'center' }}>
                     <div style={{ fontSize:'24px', marginBottom:'6px' }}>🔒</div>
-                    <p style={{ margin:0, fontSize:'13px', color:'#94a3b8', fontWeight:600 }}>ใช้ค่า Default</p>
+                    <p style={{ margin:0, fontSize:'13px', color:'#94a3b8', fontWeight:600 }}>{C.gearDefault}</p>
                     <p style={{ margin:'6px 0 0', fontSize:'12px', color:'#475569', lineHeight:1.5 }}>
-                      ค่า Gear Ratio ขึ้นอยู่กับของแต่งเฉพาะรถแต่ละคัน
-                      แนะนำให้ใช้ค่า Default แล้วปรับ Final Drive ตามสนาม
+                      {C.gearNote}
                     </p>
                   </div>
                 </div>
@@ -331,9 +335,9 @@ export default function CalculatorPage() {
                   <BarRow label="Front ARB" value={result.arb.front} min={1} max={65} unit="" color='#c084fc' />
                   <BarRow label="Rear ARB"  value={result.arb.rear}  min={1} max={65} unit="" color='#c084fc' />
                   <p style={{ margin:'10px 0 0', fontSize:'11px', color:'#475569', lineHeight:1.5 }}>
-                    {form.drivetrain === 'AWD' && 'AWD: Rear สูงกว่า Front เล็กน้อย → เข้าโค้งง่าย'}
-                    {form.drivetrain === 'RWD' && 'RWD: Front สูง / Rear ต่ำ → ป้องกัน Oversteer'}
-                    {form.drivetrain === 'FWD' && 'FWD: Rear สูงกว่า Front → ดึงท้ายออก ลด Understeer'}
+                    {form.drivetrain === 'AWD' && C.arbNoteAWD}
+                    {form.drivetrain === 'RWD' && C.arbNoteRWD}
+                    {form.drivetrain === 'FWD' && C.arbNoteFWD}
                   </p>
                 </div>
 
@@ -364,7 +368,7 @@ export default function CalculatorPage() {
                   <BarRow label="Rear Downforce"  value={result.aero.pct} min={0} max={100} unit="%" color='#f472b6' />
                   {result.aero.pct === 0 && (
                     <p style={{ margin:'8px 0 0', fontSize:'11px', color:'#475569' }}>
-                      Drift: Downforce ต่ำสุด → ท้ายเบา เลื่อนได้ง่าย
+                      {C.driftNote}
                     </p>
                   )}
                 </div>
@@ -416,8 +420,7 @@ export default function CalculatorPage() {
                 padding:'12px 16px', background:'rgba(255,255,255,0.02)',
                 border:'1px solid rgba(255,255,255,0.05)', borderRadius:'8px' }}>
                 <p style={{ margin:0, fontSize:'11px', color:'#334155', lineHeight:1.5 }}>
-                  ⚠️ ค่าเหล่านี้เป็น <strong style={{ color:'#475569' }}>จุดเริ่มต้น</strong> เท่านั้น
-                  ควรปรับตาม feedback จากการขับจริงในเกม
+                  {C.warningNote}
                 </p>
                 <span style={{ fontSize:'11px', fontFamily:'monospace', color:'#334155',
                   background:'rgba(255,255,255,0.04)', padding:'3px 8px', borderRadius:'4px', whiteSpace:'nowrap' }}>

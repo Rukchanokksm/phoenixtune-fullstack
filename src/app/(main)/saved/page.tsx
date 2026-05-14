@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { PREMIUM_ENABLED } from '@/lib/premium'
+import { useLanguage } from '@/lib/i18n/LanguageProvider'
+import { timeAgo as timeAgoLocale } from '@/lib/i18n/timeAgo'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -83,17 +85,6 @@ function PIBadge({ pi }: { pi: string }) {
   )
 }
 
-function timeAgo(date: string) {
-  const diff = Date.now() - new Date(date).getTime()
-  const mins  = Math.floor(diff / 60_000)
-  const hours = Math.floor(diff / 3_600_000)
-  const days  = Math.floor(diff / 86_400_000)
-  if (mins < 60)   return `${mins}m ago`
-  if (hours < 24)  return `${hours}h ago`
-  if (days < 30)   return `${days}d ago`
-  return new Date(date).toLocaleDateString()
-}
-
 function shortGameName(name: string) {
   return name
     .replace('Forza Horizon', 'FH')
@@ -113,6 +104,8 @@ function SavedTuneCard({
   unsaving: boolean
 }) {
   const [hovered, setHovered] = useState(false)
+  const { t, locale } = useLanguage()
+  const S = t.saved
   const tune = normalizeTune(item.tune)
   if (!tune) return null
 
@@ -171,7 +164,7 @@ function SavedTuneCard({
           {tune.user?.username?.[0]?.toUpperCase() ?? '?'}
         </div>
         <div style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', lineHeight: 1.2 }}>
-          {tune.user?.username ?? 'Unknown'}
+          {tune.user?.username ?? t.tunes.unknown}
         </div>
       </div>
 
@@ -182,14 +175,14 @@ function SavedTuneCard({
           {tune.upvotes}
         </div>
         <div style={{ fontSize: '11px', color: '#334155', marginTop: '2px' }}>
-          {tune.view_count} views
+          {tune.view_count} {S.views}
         </div>
         <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>
-          saved {timeAgo(item.created_at)}
+          {S.savedLabel} {timeAgoLocale(item.created_at, locale)}
         </div>
         {tune.updated_at && new Date(tune.updated_at).getTime() - new Date(tune.created_at).getTime() > 60_000 && (
           <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '2px', fontWeight: 600 }}>
-            edited
+            {S.edited}
           </div>
         )}
       </div>
@@ -207,7 +200,7 @@ function SavedTuneCard({
             transition: 'all 0.15s', whiteSpace: 'nowrap',
           }}
         >
-          {unsaving ? '...' : 'Unsave'}
+          {unsaving ? '...' : S.unsave}
         </button>
       </div>
     </div>
@@ -217,24 +210,25 @@ function SavedTuneCard({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 function ComingSoonPlaceholder() {
+  const { t } = useLanguage()
+  const S = t.saved
   return (
     <div style={{ background: '#0d0f14', minHeight: '100vh', color: '#e2e8f0',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
       <div style={{ maxWidth: '480px', textAlign: 'center' }}>
         <div style={{ fontSize: '54px', marginBottom: '18px' }}>🔖</div>
         <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 10px', color: '#f1f5f9' }}>
-          Saved Tunes — Coming Soon
+          {S.comingSoon}
         </h1>
         <p style={{ color: '#64748b', fontSize: '14px', lineHeight: 1.6, margin: '0 0 24px' }}>
-          We're polishing this feature before rolling it out.
-          For now, you can browse and upvote tunes — bookmarking will be available soon.
+          {S.comingDesc}
         </p>
         <Link href="/tunes" style={{
           display: 'inline-block', padding: '10px 22px', borderRadius: '9px',
           background: '#facc15', color: '#0d0f14', fontWeight: 700, fontSize: '14px',
           textDecoration: 'none',
         }}>
-          Browse Tunes →
+          {S.browseTunesCta}
         </Link>
       </div>
     </div>
@@ -242,9 +236,8 @@ function ComingSoonPlaceholder() {
 }
 
 export default function SavedPage() {
-  // ── Premium hold: render placeholder while the feature is gated off ──────
-  // PREMIUM_ENABLED is a build-time constant, so React Hooks rules aren't violated.
-  if (!PREMIUM_ENABLED) return <ComingSoonPlaceholder />
+  const { t } = useLanguage()
+  const S = t.saved
 
   const [items, setItems]       = useState<SavedTune[]>([])
   const [total, setTotal]       = useState(0)
@@ -252,6 +245,9 @@ export default function SavedPage() {
   const [page, setPage]         = useState(1)
   const [unsaving, setUnsaving] = useState<string | null>(null)
   const [error, setError]       = useState('')
+
+  // ── Premium hold: render placeholder while the feature is gated off ──────
+  if (!PREMIUM_ENABLED) return <ComingSoonPlaceholder />
 
   const perPage = 20
 
@@ -262,14 +258,14 @@ export default function SavedPage() {
       const params = new URLSearchParams({ page: String(page), perPage: String(perPage) })
       const res  = await fetch(`/api/saves?${params}`)
       if (res.status === 401) {
-        setError('Please log in to view your saved tunes.')
+        setError(S.loginError)
         return
       }
       const json = await res.json()
       setItems(json.data ?? [])
       setTotal(json.total ?? 0)
     } catch {
-      setError('Failed to load saved tunes.')
+      setError(S.loadError)
     } finally {
       setLoading(false)
     }
@@ -300,16 +296,16 @@ export default function SavedPage() {
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '6px' }}>
             <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 900, color: '#f1f5f9' }}>
-              Saved Tunes
+              {S.title}
             </h1>
             {!loading && total > 0 && (
               <span style={{ fontSize: '14px', color: '#334155', fontWeight: 500 }}>
-                {total.toLocaleString()} saved
+                {total.toLocaleString()} {S.savedCount}
               </span>
             )}
           </div>
           <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>
-            Tunes you've bookmarked for later
+            {S.subtitle}
           </p>
         </div>
       </div>
@@ -347,15 +343,15 @@ export default function SavedPage() {
             border: '1px solid rgba(255,255,255,0.06)',
           }}>
             <div style={{ fontSize: '44px', marginBottom: '14px' }}>🔖</div>
-            <h3 style={{ color: '#f1f5f9', margin: '0 0 8px', fontWeight: 700 }}>No saved tunes yet</h3>
+            <h3 style={{ color: '#f1f5f9', margin: '0 0 8px', fontWeight: 700 }}>{S.empty}</h3>
             <p style={{ color: '#475569', margin: '0 0 24px', fontSize: '14px' }}>
-              Hit the save button on any tune to bookmark it here
+              {S.emptyDesc}
             </p>
             <Link href="/tunes" style={{
               padding: '10px 24px', borderRadius: '9px', background: '#facc15',
               color: '#0d0f14', fontWeight: 700, fontSize: '14px', textDecoration: 'none',
             }}>
-              Browse Tunes
+              {S.browseTunes}
             </Link>
           </div>
         )}
@@ -387,7 +383,7 @@ export default function SavedPage() {
                 color: page > 1 ? '#94a3b8' : '#334155', fontSize: '13px',
               }}
             >
-              {'<- Prev'}
+              {S.prevPage}
             </button>
             {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
               const p = totalPages <= 7 ? i + 1
@@ -416,7 +412,7 @@ export default function SavedPage() {
                 color: page < totalPages ? '#94a3b8' : '#334155', fontSize: '13px',
               }}
             >
-              {'Next ->'}
+              {S.nextPage}
             </button>
           </div>
         )}

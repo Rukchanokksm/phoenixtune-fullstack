@@ -1,80 +1,35 @@
 # new-component
 
-Create a new React component for this project following the established patterns.
+Create a new React component following project patterns.
 
 ## Arguments
+`$ARGUMENTS` — e.g. "TuneFilterBar — filter bar for the tunes list page, goes in src/components/tune/"
 
-`$ARGUMENTS` — describe what the component does and where it lives, e.g. "TuneFilterBar — filter bar for the tunes list page, goes in src/components/tune/"
+## Server vs Client
 
-## Decision: Server vs Client Component
+**Server (no directive):** fetches from Supabase server client, no interactivity, no hooks, no state.  
+**Client (`"use client"`):** uses Zustand stores, DOM event handlers, `useState`/`useEffect`, browser Supabase client.
 
-**Use a Server Component (default, no directive)** when:
-- Fetching data directly from Supabase server client
-- No interactivity, event handlers, or browser APIs
-- No React state or effects
+## File Locations
 
-**Add `"use client"` at the top** when:
-- Component reads from Zustand stores (`useTuneStore`, `useUserStore`)
-- Has `onClick`, `onChange`, `onSubmit` or any DOM event handler
-- Uses `useState`, `useEffect`, `useRef`, or other React hooks
-- Uses the browser Supabase client (`@/lib/supabase/client.ts`)
-
-## Component Structure
-
-```tsx
-// Server component — no directive needed
-import type { Tune } from "@/types"
-import { cn } from "@/lib/utils"
-
-interface Props {
-  // define props here
-}
-
-export function ComponentName({ }: Props) {
-  return (
-    <div className={cn("...")}>
-      {/* content */}
-    </div>
-  )
-}
-```
-
-```tsx
-"use client"
-// Client component
-import { useTuneStore, selectFilters } from "@/stores/tuneStore"
-import { useUserStore, selectUser } from "@/stores/userStore"
-
-export function ComponentName() {
-  const filters = useTuneStore(selectFilters)
-  const user = useUserStore(selectUser)
-  // ...
-}
-```
+| Folder | Purpose |
+|---|---|
+| `src/components/tune/` | tune-related |
+| `src/components/game/` | game/car browsing |
+| `src/components/layout/` | Navbar, Footer |
+| `src/components/profile/` | user profile |
+| `src/components/providers/` | context/initializer wrappers |
+| `src/components/ads/` | ad slots |
 
 ## Key Conventions
 
-- **Named exports only** — no default exports for components.
-- **Path alias** — use `@/` for all imports from `src/` (e.g. `@/types`, `@/lib/utils`, `@/stores/tuneStore`).
-- **Class merging** — always use `cn()` from `@/lib/utils` when combining conditional classes.
-- **Supabase in client components** — use `createClient()` from `@/lib/supabase/client.ts` (browser-safe). Never import the server client in a `"use client"` file.
-- **File location**:
-  - `src/components/tune/` — tune-related components
-  - `src/components/game/` — game/car browsing components
-  - `src/components/layout/` — Navbar, Footer, wrappers
-  - `src/components/profile/` — user profile components
-  - `src/components/providers/` — context/initializer wrappers
-  - `src/components/ads/` — ad slots
-- **Domain types** live in `src/types/index.ts`. Import from there; do not redeclare.
-
-## Premium Gate Pattern
-
-When a feature requires premium:
-```tsx
-const isPremium = useUserStore((s) => s.isPremium())
-if (!isPremium) return <PremiumUpsell />
-```
+- **Named exports only** — no default exports.
+- **Class merging** — always `cn()` from `@/lib/utils`.
+- **i18n** — use `const { t } = useLanguage()` for all user-visible text. Add keys to both `en` and `th` in `src/lib/i18n/messages.ts` and update the `Schema` type.
+- **Types** — import from `src/types/index.ts`; do not redeclare.
+- **Premium gate** — `const isPremium = useUserStore(s => s.isPremium())`. Flag-only: `import { PREMIUM_ENABLED } from "@/lib/premium"`.
+- Nav entries gated by flag: `...(PREMIUM_ENABLED ? [{ label, href }] : [])`.
 
 ## After Writing
 
-Run `npm run build` to verify the component has no TypeScript errors before reporting done.
+`npm run build` — verify no TypeScript errors.

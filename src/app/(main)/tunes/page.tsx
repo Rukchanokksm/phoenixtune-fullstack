@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Fragment, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AdUnit } from '@/components/ads/AdUnit'
+import { useLanguage } from '@/lib/i18n/LanguageProvider'
 
 // ─── Game config ────────────────────────────────────────────────────────────
 
@@ -126,6 +127,8 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
 
 function TuneCardRow({ tune }: { tune: TuneRow }) {
   const [hovered, setHovered] = useState(false)
+  const { t } = useLanguage()
+  const T = t.tunes
   const accent = tune.game ? GAME_ACCENT[tune.game.slug] ?? '#facc15' : '#facc15'
   const shortGameName = (name: string) =>
     name.replace('Forza Horizon', 'FH').replace('Need for Speed', 'NFS').replace('The Crew Motorfest', 'TCM')
@@ -186,7 +189,7 @@ function TuneCardRow({ tune }: { tune: TuneRow }) {
             {tune.user?.username?.[0]?.toUpperCase() ?? '?'}
           </div>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', lineHeight: 1.2 }}>
-            {tune.user?.username ?? 'Unknown'}
+            {tune.user?.username ?? T.unknown}
           </div>
         </div>
 
@@ -194,9 +197,9 @@ function TuneCardRow({ tune }: { tune: TuneRow }) {
           <div style={{ fontSize: '17px', fontWeight: 800, color: '#f1f5f9' }}>
             <span style={{ color: '#facc15', marginRight: '3px' }}>^</span>{tune.upvotes}
           </div>
-          <div style={{ fontSize: '11px', color: '#334155', marginTop: '2px' }}>{tune.view_count} views</div>
+          <div style={{ fontSize: '11px', color: '#334155', marginTop: '2px' }}>{tune.view_count} {T.views}</div>
           {tune.updated_at && new Date(tune.updated_at).getTime() - new Date(tune.created_at).getTime() > 60_000 && (
-            <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '4px', fontWeight: 600 }}>edited</div>
+            <div style={{ fontSize: '10px', color: '#60a5fa', marginTop: '4px', fontWeight: 600 }}>{T.edited}</div>
           )}
         </div>
       </div>
@@ -207,14 +210,16 @@ function TuneCardRow({ tune }: { tune: TuneRow }) {
 // ─── Game Picker ─────────────────────────────────────────────────────────────
 
 function GamePicker({ onSelect }: { onSelect: (slug: string) => void }) {
+  const { t } = useLanguage()
+  const T = t.tunes
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '48px 24px' }}>
       <div style={{ textAlign: 'center', marginBottom: '40px' }}>
         <h2 style={{ margin: '0 0 10px', fontSize: '28px', fontWeight: 900, color: '#f1f5f9' }}>
-          เลือกเกมที่ต้องการค้นหา tune
+          {T.pickTitle}
         </h2>
         <p style={{ margin: 0, color: '#475569', fontSize: '15px' }}>
-          แต่ละเกมมีระบบ tune และรถที่แตกต่างกัน
+          {T.pickGameSub}
         </p>
       </div>
 
@@ -261,11 +266,11 @@ function GamePicker({ onSelect }: { onSelect: (slug: string) => void }) {
                 padding: '2px 8px', borderRadius: '4px',
                 background: 'rgba(250,204,21,0.1)', color: '#facc15',
                 border: '1px solid rgba(250,204,21,0.2)',
-              }}>COMING SOON</div>
+              }}>{T.comingSoon}</div>
             )}
             {game.active && (
               <div style={{ fontSize: '12px', color: game.accent, fontWeight: 600 }}>
-                Browse tunes →
+                {T.browseCta}
               </div>
             )}
           </button>
@@ -280,6 +285,8 @@ function GamePicker({ onSelect }: { onSelect: (slug: string) => void }) {
 function TunesPageInner() {
   const router       = useRouter()
   const searchParams = useSearchParams()
+  const { t } = useLanguage()
+  const T = t.tunes
   const gameSlug     = searchParams.get('game') ?? ''
   const urlSearch    = searchParams.get('search') ?? ''
 
@@ -351,8 +358,8 @@ function TunesPageInner() {
       <div style={{ background: '#0d0f14', minHeight: '100vh', color: '#e2e8f0' }}>
         <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '32px 24px 28px' }}>
           <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-            <h1 style={{ margin: '0 0 6px', fontSize: '26px', fontWeight: 900, color: '#f1f5f9' }}>Browse Tunes</h1>
-            <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>Pick a game to browse its tunes</p>
+            <h1 style={{ margin: '0 0 6px', fontSize: '26px', fontWeight: 900, color: '#f1f5f9' }}>{T.title}</h1>
+            <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>{T.pickSub}</p>
           </div>
         </div>
         <GamePicker onSelect={handleSelectGame} />
@@ -372,7 +379,7 @@ function TunesPageInner() {
                 style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer',
                   fontSize: '13px', padding: 0 }}
               >
-                ← All games
+                {T.backGames}
               </button>
               <span style={{ color: '#1e293b' }}>|</span>
               <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: '#f1f5f9' }}>
@@ -380,7 +387,7 @@ function TunesPageInner() {
               </h1>
               {!loading && (
                 <span style={{ fontSize: '13px', color: '#334155', fontWeight: 500 }}>
-                  {total.toLocaleString()} results
+                  {total.toLocaleString()} {T.results}
                 </span>
               )}
             </div>
@@ -398,7 +405,7 @@ function TunesPageInner() {
                   router.push(`/tunes?search=${encodeURIComponent(searchInput)}`)
                 }
               }}
-              placeholder="Search across all games..."
+              placeholder={T.searchAll}
               style={{
                 flex: 1, minWidth: '240px', padding: '10px 14px',
                 background: '#13151c', border: '1px solid rgba(255,255,255,0.08)',
@@ -422,9 +429,9 @@ function TunesPageInner() {
               background: '#13151c', borderRadius: '16px',
               border: '1px solid rgba(255,255,255,0.06)' }}>
               <div style={{ fontSize: '44px', marginBottom: '14px' }}>🔍</div>
-              <h3 style={{ color: '#f1f5f9', margin: '0 0 8px', fontWeight: 700 }}>No tunes found</h3>
+              <h3 style={{ color: '#f1f5f9', margin: '0 0 8px', fontWeight: 700 }}>{T.noFound}</h3>
               <p style={{ color: '#475569', margin: 0, fontSize: '14px' }}>
-                Try a different search term or browse by game
+                {T.noFoundTip}
               </p>
             </div>
           ) : (
@@ -440,7 +447,7 @@ function TunesPageInner() {
                 cursor: page > 1 ? 'pointer' : 'not-allowed',
                 background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
                 color: page > 1 ? '#94a3b8' : '#334155', fontSize: '13px',
-              }}>{'<- Prev'}</button>
+              }}>{T.prevPage}</button>
               <span style={{ padding: '8px 14px', color: '#94a3b8', fontSize: '13px' }}>
                 {page} / {totalPages}
               </span>
@@ -449,7 +456,7 @@ function TunesPageInner() {
                 cursor: page < totalPages ? 'pointer' : 'not-allowed',
                 background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
                 color: page < totalPages ? '#94a3b8' : '#334155', fontSize: '13px',
-              }}>{'Next ->'}</button>
+              }}>{T.nextPage}</button>
             </div>
           )}
         </div>
@@ -469,7 +476,7 @@ function TunesPageInner() {
               style={{ background: 'none', border: 'none', color: '#475569', cursor: 'pointer',
                 fontSize: '13px', padding: 0, display: 'flex', alignItems: 'center', gap: '4px' }}
             >
-              ← เกม
+              {T.backGames}
             </button>
             <span style={{ color: '#1e293b' }}>|</span>
             {/* Game badge */}
@@ -504,7 +511,7 @@ function TunesPageInner() {
               onChange={e => setSearchInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && setSearch(searchInput)}
               onBlur={() => setSearch(searchInput)}
-              placeholder="Search tunes..."
+              placeholder={T.searchTunes}
               style={{
                 width: '100%', padding: '10px 14px',
                 background: '#13151c', border: '1px solid rgba(255,255,255,0.08)',
@@ -551,14 +558,14 @@ function TunesPageInner() {
           gap: '16px', flexWrap: 'wrap', marginBottom: '20px',
         }}>
           <span style={{ fontSize: '13px', color: '#64748b' }}>
-            <span style={{ fontWeight: 700, color: '#f1f5f9' }}>มี tune ดีๆ อยู่? </span>
-            แชร์ให้ชุมชนด้วย
+            <span style={{ fontWeight: 700, color: '#f1f5f9' }}>{T.shareCtaHighlight} </span>
+            {T.shareCtaBody}
           </span>
           <Link href={`/tunes/new?game=${gameSlug}`} style={{
             padding: '8px 18px', borderRadius: '8px', background: '#4ade80',
             color: '#0d0f14', fontWeight: 700, fontSize: '13px', textDecoration: 'none',
           }}>
-            + Share Tune
+            {T.shareTune}
           </Link>
         </div>
 
@@ -579,19 +586,19 @@ function TunesPageInner() {
             border: '1px solid rgba(255,255,255,0.06)',
           }}>
             <div style={{ fontSize: '44px', marginBottom: '14px' }}>🏎️</div>
-            <h3 style={{ color: '#f1f5f9', margin: '0 0 8px', fontWeight: 700 }}>No tunes found</h3>
+            <h3 style={{ color: '#f1f5f9', margin: '0 0 8px', fontWeight: 700 }}>{T.noFound}</h3>
             <p style={{ color: '#475569', margin: '0 0 20px', fontSize: '14px' }}>
-              Try changing filters or{' '}
+              {T.tryFilters}{' '}
               <button onClick={resetFilters} style={{
                 background: 'none', border: 'none', color: '#facc15',
                 cursor: 'pointer', fontSize: '14px', textDecoration: 'underline', padding: 0,
-              }}>reset all</button>
+              }}>{T.resetAll}</button>
             </p>
             <Link href={`/tunes/new?game=${gameSlug}`} style={{
               padding: '10px 24px', borderRadius: '9px', background: '#4ade80',
               color: '#0d0f14', fontWeight: 700, fontSize: '14px', textDecoration: 'none',
             }}>
-              + Be the first to share a tune
+              {T.beFirst}
             </Link>
           </div>
         ) : (
@@ -615,7 +622,7 @@ function TunesPageInner() {
               cursor: page > 1 ? 'pointer' : 'not-allowed',
               background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
               color: page > 1 ? '#94a3b8' : '#334155', fontSize: '13px',
-            }}>{'<- Prev'}</button>
+            }}>{T.prevPage}</button>
             {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
               const p = totalPages <= 7 ? i + 1
                 : page <= 4        ? i + 1
@@ -636,7 +643,7 @@ function TunesPageInner() {
               cursor: page < totalPages ? 'pointer' : 'not-allowed',
               background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
               color: page < totalPages ? '#94a3b8' : '#334155', fontSize: '13px',
-            }}>{'Next ->'}</button>
+            }}>{T.nextPage}</button>
           </div>
         )}
       </div>

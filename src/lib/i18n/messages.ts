@@ -4,7 +4,6 @@ export type Locale = "en" | "th"
 export const DEFAULT_LOCALE: Locale = "en"
 export const LOCALES: Locale[] = ["en", "th"]
 
-// Use a shared schema so the type widens across locales (no literal narrowing).
 type Schema = {
   nav: Record<
     | "home" | "games" | "forums" | "tunes" | "calculator" | "search"
@@ -37,6 +36,83 @@ type Schema = {
     | "errUsernameMin3" | "errUsernameTaken" | "errFillUsername"
     | "errAvatarSize" | "errGeneric"
     | "okResetDone" | "okChangeDone" | "pwMatch" | "pwNoMatch",
+    string
+  >
+  home: Record<
+    | "badge" | "heroTitle" | "heroTitleAt" | "heroDesc"
+    | "browseTunes" | "uploadTune"
+    | "statTunes" | "statTuners" | "statGames"
+    | "gamesTitle" | "noTunes"
+    | "recentTitle" | "viewAll" | "noPosts" | "beFirstPost"
+    | "catAnnouncement" | "catGeneral" | "catReport"
+    | "statusLive" | "statusSoon" | "statusComing",
+    string
+  >
+  tunes: Record<
+    | "title" | "pickSub" | "pickTitle" | "pickGameSub"
+    | "comingSoon" | "browseCta" | "backGames"
+    | "searchAll" | "searchTunes"
+    | "results" | "noFound" | "noFoundTip"
+    | "shareCtaHighlight" | "shareCtaBody" | "shareTune"
+    | "tryFilters" | "resetAll" | "beFirst"
+    | "prevPage" | "nextPage"
+    | "views" | "edited" | "unknown",
+    string
+  >
+  tuneDetail: Record<
+    | "home" | "breadTunes" | "featured" | "by"
+    | "save" | "saved" | "copied" | "copyCode"
+    | "editTune" | "cancel"
+    | "car" | "carReadOnly"
+    | "editTitle" | "titleField" | "descField" | "shareCodeField" | "gameVersionField"
+    | "titlePlaceholder" | "descPlaceholder" | "shareCodePlaceholder" | "versionPlaceholder"
+    | "saving" | "saveChanges"
+    | "stats" | "upvotes" | "views" | "comments" | "version"
+    | "shareCode" | "links" | "browseTunes" | "shareTune" | "tuneCalc"
+    | "commentTitle" | "commentPlaceholder" | "posting" | "postComment" | "noComments"
+    | "notFoundTitle" | "notFoundDesc" | "backTunes"
+    | "loading" | "titleRequired" | "errGeneric",
+    string
+  >
+  forums: Record<
+    | "title" | "subtitle" | "newPost" | "viewAll" | "addAnnouncement"
+    | "catAnnouncement" | "catAnnouncementSub"
+    | "catGeneral" | "catGeneralSub"
+    | "catReports" | "catReportsSub"
+    | "emptyAnnouncements" | "emptyGeneral" | "emptyReports"
+    | "comments",
+    string
+  >
+  calc: Record<
+    | "title" | "subtitle"
+    | "balanceFront" | "rearHeavy" | "neutral" | "frontHeavy"
+    | "drivetrain" | "discipline" | "weight" | "torque"
+    | "calculate" | "loadingBtn" | "loginBtn"
+    | "loginPromptTitle" | "signIn" | "register"
+    | "noResultHint" | "noResultSub"
+    | "gearDefault" | "gearNote"
+    | "warningNote"
+    | "rideHeightLowest" | "rideHeightLow" | "rideHeightMid" | "rideHeightHigh"
+    | "arbNoteAWD" | "arbNoteRWD" | "arbNoteFWD"
+    | "aeroNote" | "driftNote",
+    string
+  >
+  settings: Record<
+    | "title"
+    | "langTitle" | "langDesc" | "langUpdated"
+    | "notLoggedIn" | "logIn"
+    | "profileTitle" | "profileDesc" | "profileLink"
+    | "passwordTitle" | "passwordDesc" | "passwordLink"
+    | "signOutTitle" | "signOutDesc" | "signOut" | "signingOut",
+    string
+  >
+  saved: Record<
+    | "title" | "subtitle" | "savedCount"
+    | "empty" | "emptyDesc" | "browseTunes"
+    | "loginError" | "loadError"
+    | "unsave" | "views" | "savedLabel" | "edited"
+    | "comingSoon" | "comingDesc" | "browseTunesCta"
+    | "prevPage" | "nextPage",
     string
   >
 }
@@ -79,7 +155,6 @@ export const MESSAGES: Record<Locale, Schema> = {
     },
     // ─── Auth pages ───────────────────────────────────────────────────────
     auth: {
-      // Login
       loginTitle:      "Sign in",
       forgotTitle:     "Reset password",
       changeTitle:     "Change password",
@@ -105,7 +180,6 @@ export const MESSAGES: Record<Locale, Schema> = {
       strengthEasy:    "Easy to guess",
       strengthMedium:  "Medium",
       strengthStrong:  "Strong",
-      // Register
       registerTitle:   "Sign up",
       registerSubtitle:"Join the tuner community and share your setup",
       username:        "Username",
@@ -123,9 +197,7 @@ export const MESSAGES: Record<Locale, Schema> = {
       uploadAvatar:    "Upload avatar",
       registerButton:  "Sign up →",
       registering:     "Signing up...",
-      // Common
       required:        "Required",
-      // Errors
       errInvalidCred:  "Invalid email or password",
       errEmailNotConfirmed: "Please confirm your email first",
       errTooManyReq:   "Too many attempts — please wait a moment",
@@ -141,13 +213,201 @@ export const MESSAGES: Record<Locale, Schema> = {
       errFillUsername: "Please enter a username",
       errAvatarSize:   "File size must not exceed 2MB",
       errGeneric:      "An error occurred",
-      // Success
       okResetDone:     "Password reset successful — back to sign in",
       okChangeDone:    "Password changed successfully!",
       pwMatch:         "Passwords match",
       pwNoMatch:       "Passwords do not match",
     },
+    // ─── Home page ────────────────────────────────────────────────────────
+    home: {
+      badge:           "Community Tuning Platform",
+      heroTitle:       "Share your tunes",
+      heroTitleAt:     "at Tunix",
+      heroDesc:        "Tunix is your hub for racing game tune settings — whether it's Forza Horizon, The Crew Motorfest, or Need for Speed. Find, share, and perfect your setup.",
+      browseTunes:     "Browse Tunes →",
+      uploadTune:      "Upload Your Tune",
+      statTunes:       "Tunes",
+      statTuners:      "Tuners",
+      statGames:       "Games",
+      gamesTitle:      "Games",
+      noTunes:         "No tunes yet",
+      recentTitle:     "Recent Posts",
+      viewAll:         "View all →",
+      noPosts:         "No posts yet — ",
+      beFirstPost:     "be the first to post",
+      catAnnouncement: "Announcement",
+      catGeneral:      "General",
+      catReport:       "Report",
+      statusLive:      "LIVE",
+      statusSoon:      "SOON",
+      statusComing:    "COMING",
+    },
+    // ─── Tunes list page ─────────────────────────────────────────────────
+    tunes: {
+      title:           "Browse Tunes",
+      pickSub:         "Pick a game to browse its tunes",
+      pickTitle:       "Select a game",
+      pickGameSub:     "Each game has different tune systems and cars",
+      comingSoon:      "COMING SOON",
+      browseCta:       "Browse tunes →",
+      backGames:       "← All games",
+      searchAll:       "Search across all games...",
+      searchTunes:     "Search tunes...",
+      results:         "results",
+      noFound:         "No tunes found",
+      noFoundTip:      "Try a different search term or browse by game",
+      shareCtaHighlight: "Have a good tune?",
+      shareCtaBody:    "Share it with the community",
+      shareTune:       "+ Share Tune",
+      tryFilters:      "Try changing filters or",
+      resetAll:        "reset all",
+      beFirst:         "+ Be the first to share a tune",
+      prevPage:        "← Prev",
+      nextPage:        "Next →",
+      views:           "views",
+      edited:          "edited",
+      unknown:         "Unknown",
+    },
+    // ─── Tune detail page ─────────────────────────────────────────────────
+    tuneDetail: {
+      home:            "Home",
+      breadTunes:      "Tunes",
+      featured:        "FEATURED",
+      by:              "by",
+      save:            "Save",
+      saved:           "Saved",
+      copied:          "Copied!",
+      copyCode:        "Copy Code",
+      editTune:        "Edit Tune",
+      cancel:          "Cancel",
+      car:             "CAR",
+      carReadOnly:     "— cannot be changed",
+      editTitle:       "EDIT TUNE",
+      titleField:      "Title *",
+      descField:       "Description",
+      shareCodeField:  "Share Code",
+      gameVersionField:"Game Version",
+      titlePlaceholder:"Tune title",
+      descPlaceholder: "Brief description",
+      shareCodePlaceholder: "123 456 789",
+      versionPlaceholder:   "e.g. 1.0",
+      saving:          "Saving...",
+      saveChanges:     "Save Changes",
+      stats:           "STATS",
+      upvotes:         "Upvotes",
+      views:           "Views",
+      comments:        "Comments",
+      version:         "Version",
+      shareCode:       "SHARE CODE",
+      links:           "LINKS",
+      browseTunes:     "Browse Tunes",
+      shareTune:       "+ Share Your Tune",
+      tuneCalc:        "Tune Calculator",
+      commentTitle:    "Comments",
+      commentPlaceholder: "Leave a comment or feedback...",
+      posting:         "Posting...",
+      postComment:     "Post Comment",
+      noComments:      "No comments yet",
+      notFoundTitle:   "Tune not found",
+      notFoundDesc:    "It may have been deleted or the URL is invalid.",
+      backTunes:       "← Browse Tunes",
+      loading:         "Loading...",
+      titleRequired:   "Title is required",
+      errGeneric:      "An error occurred",
+    },
+    // ─── Forums page ──────────────────────────────────────────────────────
+    forums: {
+      title:              "Forums",
+      subtitle:           "Community space for Tunix",
+      newPost:            "Create Post",
+      viewAll:            "View all",
+      addAnnouncement:    "+ Add Announcement",
+      catAnnouncement:    "Announcements",
+      catAnnouncementSub: "Important updates from the team",
+      catGeneral:         "General Discussion",
+      catGeneralSub:      "5 latest posts",
+      catReports:         "Problems & Reports",
+      catReportsSub:      "bugs, usage issues, content reports",
+      emptyAnnouncements: "No announcements yet",
+      emptyGeneral:       "No posts yet — be the first to start a discussion",
+      emptyReports:       "No pending reports",
+      comments:           "comments",
+    },
+    // ─── Calculator page ──────────────────────────────────────────────────
+    calc: {
+      title:          "Auto Calculator",
+      subtitle:       "Enter car specs → press Calculate → get recommended tune settings (read-only)",
+      balanceFront:   "Balance Front",
+      rearHeavy:      "Rear-heavy 30%",
+      neutral:        "Neutral 50%",
+      frontHeavy:     "Front-heavy 70%",
+      drivetrain:     "Drivetrain",
+      discipline:     "Discipline",
+      weight:         "Weight",
+      torque:         "Torque",
+      calculate:      "🧮 Calculate Tune",
+      loadingBtn:     "Loading...",
+      loginBtn:       "🔒 Sign in to use",
+      loginPromptTitle: "🔒 Sign in required",
+      signIn:         "Sign in",
+      register:       "Register",
+      noResultHint:   "Enter car specs then press \"Calculate Tune\"",
+      noResultSub:    "Results will appear here · all values are read-only",
+      gearDefault:    "Use Default",
+      gearNote:       "Gear ratios depend on individual car mods. Use the default then adjust Final Drive per track.",
+      warningNote:    "⚠️ These values are a starting point only. Adjust based on real in-game feedback.",
+      rideHeightLowest: "Lowest (Track/Drift)",
+      rideHeightLow:    "Low (Street)",
+      rideHeightMid:    "Mid (Rally)",
+      rideHeightHigh:   "Highest (Offroad)",
+      arbNoteAWD:     "AWD: Rear slightly higher than Front → easier cornering",
+      arbNoteRWD:     "RWD: Front high / Rear low → prevents oversteer",
+      arbNoteFWD:     "FWD: Rear higher than Front → pulls tail out, reduces understeer",
+      aeroNote:       "Drift: Minimum downforce → light tail, easy to slide",
+      driftNote:      "Drift: Minimum downforce → light tail, easy to slide",
+    },
+    // ─── Settings page ────────────────────────────────────────────────────
+    settings: {
+      title:        "Settings",
+      langTitle:    "Language",
+      langDesc:     "Choose your preferred display language.",
+      langUpdated:  "Language updated",
+      notLoggedIn:  "Please",
+      logIn:        "log in",
+      profileTitle: "Profile",
+      profileDesc:  "Update your username, bio, and avatar.",
+      profileLink:  "Edit profile →",
+      passwordTitle:"Password",
+      passwordDesc: "Change your account password.",
+      passwordLink: "Change password →",
+      signOutTitle: "Sign out",
+      signOutDesc:  "End your current session.",
+      signOut:      "Sign out",
+      signingOut:   "Signing out...",
+    },
+    // ─── Saved tunes page ─────────────────────────────────────────────────
+    saved: {
+      title:        "Saved Tunes",
+      subtitle:     "Tunes you've bookmarked for later",
+      savedCount:   "saved",
+      empty:        "No saved tunes yet",
+      emptyDesc:    "Hit the save button on any tune to bookmark it here",
+      browseTunes:  "Browse Tunes",
+      loginError:   "Please log in to view your saved tunes.",
+      loadError:    "Failed to load saved tunes.",
+      unsave:       "Unsave",
+      views:        "views",
+      savedLabel:   "saved",
+      edited:       "edited",
+      comingSoon:   "Saved Tunes — Coming Soon",
+      comingDesc:   "We're polishing this feature before rolling it out. For now, you can browse and upvote tunes — bookmarking will be available soon.",
+      browseTunesCta: "Browse Tunes →",
+      prevPage:     "← Prev",
+      nextPage:     "Next →",
+    },
   },
+
+  // ─── Thai ─────────────────────────────────────────────────────────────────
   th: {
     nav: {
       home:        "หน้าแรก",
@@ -244,6 +504,186 @@ export const MESSAGES: Record<Locale, Schema> = {
       okChangeDone:    "เปลี่ยนรหัสผ่านสำเร็จแล้ว!",
       pwMatch:         "password ตรงกัน",
       pwNoMatch:       "password ไม่ตรงกัน",
+    },
+    home: {
+      badge:           "แพลตฟอร์มแชร์ Tune",
+      heroTitle:       "แบ่งปัน tune ของคุณ",
+      heroTitleAt:     "ได้ที่ Tunix",
+      heroDesc:        "Tunix คือแหล่งรวม tune setting สำหรับคอเกม arcade racing ไม่ว่าจะเป็น Forza Horizon, The Crew Motorfest หรือ Need for Speed — ค้นหา หรือ แชร์ tune ของคุณให้คนอื่นได้ลองกัน!",
+      browseTunes:     "ดู Tune ทั้งหมด →",
+      uploadTune:      "อัปโหลด Tune ของคุณ",
+      statTunes:       "Tune",
+      statTuners:      "ผู้ใช้",
+      statGames:       "เกม",
+      gamesTitle:      "เกม",
+      noTunes:         "ยังไม่มี tune",
+      recentTitle:     "กระทู้ล่าสุด",
+      viewAll:         "ดูทั้งหมด →",
+      noPosts:         "ยังไม่มีกระทู้ — ",
+      beFirstPost:     "เป็นคนแรกที่โพสต์",
+      catAnnouncement: "ประกาศ",
+      catGeneral:      "ทั่วไป",
+      catReport:       "รายงาน",
+      statusLive:      "LIVE",
+      statusSoon:      "SOON",
+      statusComing:    "COMING",
+    },
+    tunes: {
+      title:           "ค้นหา Tune",
+      pickSub:         "เลือกเกมเพื่อดู tune",
+      pickTitle:       "เลือกเกมที่ต้องการค้นหา tune",
+      pickGameSub:     "แต่ละเกมมีระบบ tune และรถที่แตกต่างกัน",
+      comingSoon:      "เร็วๆ นี้",
+      browseCta:       "ดู tune →",
+      backGames:       "← เกมทั้งหมด",
+      searchAll:       "ค้นหาในทุกเกม...",
+      searchTunes:     "ค้นหา tune...",
+      results:         "ผลลัพธ์",
+      noFound:         "ไม่พบ tune",
+      noFoundTip:      "ลองคำค้นหาอื่น หรือเลือกดูตามเกม",
+      shareCtaHighlight: "มี tune ดีๆ อยู่?",
+      shareCtaBody:    "แชร์ให้ชุมชนด้วย",
+      shareTune:       "+ แชร์ Tune",
+      tryFilters:      "ลองเปลี่ยนตัวกรอง หรือ",
+      resetAll:        "รีเซ็ตทั้งหมด",
+      beFirst:         "+ เป็นคนแรกที่แชร์ tune",
+      prevPage:        "← ก่อนหน้า",
+      nextPage:        "ถัดไป →",
+      views:           "วิว",
+      edited:          "แก้ไข",
+      unknown:         "ไม่ทราบ",
+    },
+    tuneDetail: {
+      home:            "หน้าแรก",
+      breadTunes:      "Tune",
+      featured:        "FEATURED",
+      by:              "โดย",
+      save:            "บันทึก",
+      saved:           "บันทึกแล้ว",
+      copied:          "คัดลอกแล้ว!",
+      copyCode:        "คัดลอกโค้ด",
+      editTune:        "แก้ไข Tune",
+      cancel:          "ยกเลิก",
+      car:             "รถ",
+      carReadOnly:     "— ไม่สามารถแก้ไขได้",
+      editTitle:       "แก้ไข TUNE",
+      titleField:      "ชื่อ *",
+      descField:       "คำอธิบาย",
+      shareCodeField:  "Share Code",
+      gameVersionField:"เวอร์ชันเกม",
+      titlePlaceholder:"ชื่อ tune",
+      descPlaceholder: "คำอธิบายสั้นๆ",
+      shareCodePlaceholder: "123 456 789",
+      versionPlaceholder:   "เช่น 1.0",
+      saving:          "กำลังบันทึก...",
+      saveChanges:     "บันทึกการเปลี่ยนแปลง",
+      stats:           "สถิติ",
+      upvotes:         "โหวต",
+      views:           "วิว",
+      comments:        "ความคิดเห็น",
+      version:         "เวอร์ชัน",
+      shareCode:       "Share Code",
+      links:           "ลิงก์",
+      browseTunes:     "ดู Tune ทั้งหมด",
+      shareTune:       "+ แชร์ Tune ของคุณ",
+      tuneCalc:        "เครื่องคำนวณ Tune",
+      commentTitle:    "ความคิดเห็น",
+      commentPlaceholder: "แสดงความคิดเห็น...",
+      posting:         "กำลังโพสต์...",
+      postComment:     "โพสต์",
+      noComments:      "ยังไม่มีความคิดเห็น",
+      notFoundTitle:   "ไม่พบ tune",
+      notFoundDesc:    "อาจถูกลบไปแล้ว หรือ URL ไม่ถูกต้อง",
+      backTunes:       "← ดู Tune ทั้งหมด",
+      loading:         "กำลังโหลด...",
+      titleRequired:   "กรุณากรอกชื่อ",
+      errGeneric:      "เกิดข้อผิดพลาด",
+    },
+    forums: {
+      title:              "ฟอรั่ม",
+      subtitle:           "พื้นที่พูดคุยสำหรับชุมชน Tunix",
+      newPost:            "สร้าง Post",
+      viewAll:            "ดูทั้งหมด",
+      addAnnouncement:    "+ เพิ่มประกาศ",
+      catAnnouncement:    "ประกาศ",
+      catAnnouncementSub: "ข้อมูลสำคัญจากทีมงาน",
+      catGeneral:         "พูดคุยทั่วไป",
+      catGeneralSub:      "5 กระทู้ล่าสุด",
+      catReports:         "ปัญหาและรายงาน",
+      catReportsSub:      "bug, ปัญหาการใช้งาน, รายงานเนื้อหาไม่เหมาะสม",
+      emptyAnnouncements: "ยังไม่มีประกาศ",
+      emptyGeneral:       "ยังไม่มีกระทู้ — เป็นคนแรกที่เริ่มพูดคุย",
+      emptyReports:       "ไม่มีรายงานที่ค้างอยู่",
+      comments:           "ความคิดเห็น",
+    },
+    calc: {
+      title:          "เครื่องคำนวณ Tune อัตโนมัติ",
+      subtitle:       "กรอกข้อมูลรถ → กด คำนวณ → รับค่า tune setting ที่แนะนำ (read-only)",
+      balanceFront:   "น้ำหนักด้านหน้า",
+      rearHeavy:      "หนักด้านหลัง 30%",
+      neutral:        "กลาง 50%",
+      frontHeavy:     "หนักด้านหน้า 70%",
+      drivetrain:     "ระบบขับเคลื่อน",
+      discipline:     "ประเภทการใช้งาน",
+      weight:         "น้ำหนัก",
+      torque:         "แรงบิด",
+      calculate:      "🧮 คำนวณ Tune",
+      loadingBtn:     "กำลังโหลด...",
+      loginBtn:       "🔒 เข้าสู่ระบบเพื่อใช้งาน",
+      loginPromptTitle: "🔒 ต้องเข้าสู่ระบบก่อนใช้งาน",
+      signIn:         "เข้าสู่ระบบ",
+      register:       "สมัครสมาชิก",
+      noResultHint:   "กรอกข้อมูลแล้วกด \"คำนวณ Tune\"",
+      noResultSub:    "ผลลัพธ์จะแสดงที่นี่ · ค่าทั้งหมดเป็น read-only",
+      gearDefault:    "ใช้ค่า Default",
+      gearNote:       "ค่า Gear Ratio ขึ้นอยู่กับของแต่งเฉพาะรถแต่ละคัน แนะนำให้ใช้ค่า Default แล้วปรับ Final Drive ตามสนาม",
+      warningNote:    "⚠️ ค่าเหล่านี้เป็นจุดเริ่มต้นเท่านั้น ควรปรับตาม feedback จากการขับจริงในเกม",
+      rideHeightLowest: "ต่ำสุด (Track/Drift)",
+      rideHeightLow:    "ต่ำ (Street)",
+      rideHeightMid:    "กลาง (Rally)",
+      rideHeightHigh:   "สูงสุด (Offroad)",
+      arbNoteAWD:     "AWD: Rear สูงกว่า Front เล็กน้อย → เข้าโค้งง่าย",
+      arbNoteRWD:     "RWD: Front สูง / Rear ต่ำ → ป้องกัน Oversteer",
+      arbNoteFWD:     "FWD: Rear สูงกว่า Front → ดึงท้ายออก ลด Understeer",
+      aeroNote:       "Drift: Downforce ต่ำสุด → ท้ายเบา เลื่อนได้ง่าย",
+      driftNote:      "Drift: Downforce ต่ำสุด → ท้ายเบา เลื่อนได้ง่าย",
+    },
+    settings: {
+      title:        "ตั้งค่า",
+      langTitle:    "ภาษา",
+      langDesc:     "เลือกภาษาที่ต้องการแสดง",
+      langUpdated:  "อัปเดตภาษาแล้ว",
+      notLoggedIn:  "กรุณา",
+      logIn:        "เข้าสู่ระบบ",
+      profileTitle: "โปรไฟล์",
+      profileDesc:  "แก้ไขชื่อผู้ใช้ ประวัติ และรูปโปรไฟล์",
+      profileLink:  "แก้ไขโปรไฟล์ →",
+      passwordTitle:"รหัสผ่าน",
+      passwordDesc: "เปลี่ยนรหัสผ่านของบัญชี",
+      passwordLink: "เปลี่ยนรหัสผ่าน →",
+      signOutTitle: "ออกจากระบบ",
+      signOutDesc:  "สิ้นสุดเซสชันปัจจุบัน",
+      signOut:      "ออกจากระบบ",
+      signingOut:   "กำลังออกจากระบบ...",
+    },
+    saved: {
+      title:        "Tune ที่บันทึก",
+      subtitle:     "Tune ที่คุณบันทึกไว้สำหรับดูภายหลัง",
+      savedCount:   "บันทึก",
+      empty:        "ยังไม่มี tune ที่บันทึก",
+      emptyDesc:    "กด save บน tune ใดก็ได้เพื่อบันทึกไว้ที่นี่",
+      browseTunes:  "ดู Tune ทั้งหมด",
+      loginError:   "กรุณาเข้าสู่ระบบเพื่อดู tune ที่บันทึก",
+      loadError:    "ไม่สามารถโหลด tune ที่บันทึกได้",
+      unsave:       "ยกเลิกบันทึก",
+      views:        "วิว",
+      savedLabel:   "บันทึก",
+      edited:       "แก้ไข",
+      comingSoon:   "Tune ที่บันทึก — เร็วๆ นี้",
+      comingDesc:   "เรากำลังปรับปรุงฟีเจอร์นี้ก่อนเปิดตัว ตอนนี้คุณสามารถดู tune และโหวตได้ — ระบบบันทึกจะมีให้ใช้เร็วๆ นี้",
+      browseTunesCta: "ดู Tune ทั้งหมด →",
+      prevPage:     "← ก่อนหน้า",
+      nextPage:     "ถัดไป →",
     },
   },
 }

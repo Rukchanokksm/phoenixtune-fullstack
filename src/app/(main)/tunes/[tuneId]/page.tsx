@@ -4,6 +4,8 @@ import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
 import { AdUnit } from '@/components/ads/AdUnit'
 import { createClient } from '@/lib/supabase/client'
+import { useLanguage } from '@/lib/i18n/LanguageProvider'
+import { timeAgo as timeAgoLocale } from '@/lib/i18n/timeAgo'
 
 // Types
 interface Comment {
@@ -180,24 +182,14 @@ function Avatar({ username, size = 36 }: { username: string; size?: number }) {
   )
 }
 
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins  = Math.floor(diff / 60000)
-  const hrs   = Math.floor(diff / 3600000)
-  const days  = Math.floor(diff / 86400000)
-  if (mins < 2)  return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  if (hrs  < 24) return `${hrs}h ago`
-  if (days < 30) return `${days}d ago`
-  return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
-}
-
 function wasEdited(created: string, updated: string) {
   return new Date(updated).getTime() - new Date(created).getTime() > 60_000
 }
 
 export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: string }> }) {
   const { tuneId } = use(params)
+  const { t, locale } = useLanguage()
+  const d = t.tuneDetail
 
   const [tune, setTune]               = useState<TuneDetail | null>(null)
   const [loading, setLoading]         = useState(true)
@@ -323,7 +315,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
 
   async function handleEdit() {
     if (!tune || editLoading) return
-    if (!editForm.title.trim()) { setEditError('Title is required'); return }
+    if (!editForm.title.trim()) { setEditError(d.titleRequired); return }
     setEditLoading(true)
     setEditError('')
     try {
@@ -344,14 +336,14 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
       })
       if (!res.ok) {
         const d = await res.json()
-        setEditError(d.error ?? 'บันทึกไม่สำเร็จ')
+        setEditError(d.error ?? d.errGeneric)
         return
       }
       const updated: TuneDetail = await res.json()
       setTune(prev => prev ? { ...prev, ...updated } : prev)
       setIsEditing(false)
     } catch {
-      setEditError('เกิดข้อผิดพลาด')
+      setEditError(d.errGeneric)
     } finally {
       setEditLoading(false)
     }
@@ -365,13 +357,13 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>{'🏎️'}</div>
-          <h1 style={{ color: '#f1f5f9', marginBottom: '8px' }}>Tune not found</h1>
-          <p style={{ color: '#475569', marginBottom: '20px' }}>It may have been deleted or the URL is invalid.</p>
+          <h1 style={{ color: '#f1f5f9', marginBottom: '8px' }}>{d.notFoundTitle}</h1>
+          <p style={{ color: '#475569', marginBottom: '20px' }}>{d.notFoundDesc}</p>
           <Link href="/tunes" style={{
             padding: '10px 24px', borderRadius: '9px', background: '#facc15',
             color: '#0d0f14', fontWeight: 700, fontSize: '14px', textDecoration: 'none',
           }}>
-            {'<- Browse Tunes'}
+            {d.backTunes}
           </Link>
         </div>
       </div>
@@ -394,9 +386,9 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
         }}>
           <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', fontSize: '13px' }}>
-              <Link href="/" style={{ color: '#334155', textDecoration: 'none' }}>Home</Link>
+              <Link href="/" style={{ color: '#334155', textDecoration: 'none' }}>{d.home}</Link>
               <span style={{ color: '#1e293b' }}>{'>'}</span>
-              <Link href="/tunes" style={{ color: '#334155', textDecoration: 'none' }}>Tunes</Link>
+              <Link href="/tunes" style={{ color: '#334155', textDecoration: 'none' }}>{d.breadTunes}</Link>
               <span style={{ color: '#1e293b' }}>{'>'}</span>
               <span style={{ color: accent }}>{tune.title}</span>
             </div>
@@ -425,7 +417,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                   padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700,
                   background: 'rgba(250,204,21,0.15)', color: '#facc15', letterSpacing: '0.06em',
                 }}>
-                  FEATURED
+                  {d.featured}
                 </span>
               )}
               {tune.game && (
@@ -451,18 +443,18 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               {tune.user && <Avatar username={tune.user.username} size={28} />}
               <span style={{ fontSize: '13px', color: '#64748b' }}>
-                {'by '}
+                {d.by}{' '}
                 <Link href={`/profile/${tune.user?.username}`} style={{ color: accent, textDecoration: 'none', fontWeight: 600 }}>
-                  {tune.user?.username ?? 'Unknown'}
+                  {tune.user?.username ?? t.tunes.unknown}
                 </Link>
               </span>
               <span style={{ color: '#1e293b' }}>{'·'}</span>
-              <span style={{ fontSize: '13px', color: '#334155' }}>{timeAgo(tune.created_at)}</span>
+              <span style={{ fontSize: '13px', color: '#334155' }}>{timeAgoLocale(tune.created_at, locale)}</span>
               {wasEdited(tune.created_at, tune.updated_at) && (
                 <>
                   <span style={{ color: '#1e293b' }}>{'·'}</span>
                   <span style={{ fontSize: '12px', color: '#60a5fa', background: 'rgba(96,165,250,0.1)', padding: '2px 8px', borderRadius: '5px', fontWeight: 600 }}>
-                    edited {timeAgo(tune.updated_at)}
+                    {t.tunes.edited} {timeAgoLocale(tune.updated_at, locale)}
                   </span>
                 </>
               )}
@@ -496,7 +488,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                 color: saved ? '#4ade80' : '#94a3b8',
                 fontSize: '14px', fontWeight: 600, transition: 'all 0.15s',
               }}>
-                {saved ? 'Saved' : 'Save'}
+                {saved ? d.saved : d.save}
               </button>
 
               {tune.share_code && (
@@ -509,7 +501,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                   fontSize: '14px', fontWeight: 600, transition: 'all 0.15s',
                   fontFamily: 'monospace',
                 }}>
-                  {copied ? 'Copied!' : tune.share_code}
+                  {copied ? d.copied : tune.share_code}
                 </button>
               )}
 
@@ -523,12 +515,12 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                   color: isEditing ? '#f87171' : '#facc15',
                   fontSize: '14px', fontWeight: 600, transition: 'all 0.15s',
                 }}>
-                  {isEditing ? 'Cancel' : 'Edit Tune'}
+                  {isEditing ? d.cancel : d.editTune}
                 </button>
               )}
 
               <div style={{ display: 'flex', alignItems: 'center', padding: '10px 0' }}>
-                <span style={{ fontSize: '13px', color: '#334155' }}>{tune.view_count} views</span>
+                <span style={{ fontSize: '13px', color: '#334155' }}>{tune.view_count} {d.views.toLowerCase()}</span>
               </div>
             </div>
           )}
@@ -539,7 +531,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
               borderRadius: '14px', padding: '20px 22px', marginBottom: '20px',
             }}>
               <div style={{ fontSize: '12px', color: '#334155', fontWeight: 700, letterSpacing: '0.08em', marginBottom: '12px' }}>
-                CAR
+                {d.car}
               </div>
               <div style={{ fontSize: '18px', fontWeight: 800, color: '#f1f5f9', marginBottom: '8px' }}>
                 {tune.car.year && <span style={{ color: '#475569', fontWeight: 600 }}>{tune.car.year}{' '}</span>}
@@ -581,7 +573,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
 
           {isEditing && tune && (
             <div style={{ background: '#13151c', border: '1px solid rgba(250,204,21,0.25)', borderRadius: '14px', padding: '22px', marginBottom: '16px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#facc15', letterSpacing: '0.06em', marginBottom: '16px' }}>EDIT TUNE</div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#facc15', letterSpacing: '0.06em', marginBottom: '16px' }}>{d.editTitle}</div>
 
               {editError && (
                 <div style={{ padding: '10px 14px', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '8px', color: '#f87171', fontSize: '13px', marginBottom: '14px' }}>
@@ -591,10 +583,10 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
 
               {/* Basic fields */}
               {[
-                { label: 'Title *', key: 'title' as const, placeholder: 'Tune title' },
-                { label: 'Description', key: 'description' as const, placeholder: 'Brief description' },
-                { label: 'Share Code', key: 'shareCode' as const, placeholder: '123 456 789' },
-                { label: 'Game Version', key: 'gameVersion' as const, placeholder: 'e.g. 1.0' },
+                { label: d.titleField, key: 'title' as const, placeholder: d.titlePlaceholder },
+                { label: d.descField, key: 'description' as const, placeholder: d.descPlaceholder },
+                { label: d.shareCodeField, key: 'shareCode' as const, placeholder: d.shareCodePlaceholder },
+                { label: d.gameVersionField, key: 'gameVersion' as const, placeholder: d.versionPlaceholder },
               ].map(f => (
                 <div key={f.key} style={{ marginBottom: '12px' }}>
                   <label style={{ display: 'block', fontSize: '12px', color: '#64748b', fontWeight: 600, marginBottom: '5px' }}>{f.label}</label>
@@ -613,7 +605,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                   <span style={{ fontSize: '13px', color: '#64748b' }}>{tune.car.year ? `${tune.car.year} ` : ''}{tune.car.make} {tune.car.model}</span>
                   <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '5px', background: 'rgba(255,255,255,0.06)', color: '#94a3b8', fontFamily: 'monospace' }}>{tune.car.pi_class}</span>
                   <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '5px', background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>{tune.car.drivetrain}</span>
-                  <span style={{ fontSize: '11px', color: '#334155' }}>— ไม่สามารถแก้ไขได้</span>
+                  <span style={{ fontSize: '11px', color: '#334155' }}>{d.carReadOnly}</span>
                 </div>
               )}
 
@@ -641,10 +633,10 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
                 <button onClick={handleEdit} disabled={editLoading} style={{ flex: 1, padding: '10px', borderRadius: '9px', border: 'none', background: editLoading ? '#334155' : '#facc15', color: '#0d0f14', fontWeight: 700, fontSize: '14px', cursor: editLoading ? 'not-allowed' : 'pointer' }}>
-                  {editLoading ? 'Saving...' : 'Save Changes'}
+                  {editLoading ? d.saving : d.saveChanges}
                 </button>
                 <button onClick={() => setIsEditing(false)} style={{ padding: '10px 20px', borderRadius: '9px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#64748b', fontSize: '14px', cursor: 'pointer' }}>
-                  Cancel
+                  {d.cancel}
                 </button>
               </div>
             </div>
@@ -707,14 +699,14 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
             borderRadius: '14px', padding: '20px 22px', marginTop: '0',
           }}>
             <div style={{ fontSize: '15px', fontWeight: 700, color: '#f1f5f9', marginBottom: '16px' }}>
-              Comments {comments.length > 0 && `(${comments.length})`}
+              {d.commentTitle} {comments.length > 0 && `(${comments.length})`}
             </div>
 
             <form onSubmit={handleComment} style={{ marginBottom: '20px' }}>
               <textarea
                 value={commentText}
                 onChange={e => setCommentText(e.target.value)}
-                placeholder="Leave a comment or feedback..."
+                placeholder={d.commentPlaceholder}
                 rows={3}
                 style={{
                   width: '100%', padding: '12px 14px', boxSizing: 'border-box',
@@ -735,14 +727,14 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                     transition: 'all 0.15s',
                   }}
                 >
-                  {submittingComment ? 'Posting...' : 'Post Comment'}
+                  {submittingComment ? d.posting : d.postComment}
                 </button>
               </div>
             </form>
 
             {comments.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '20px 0', color: '#334155', fontSize: '13px' }}>
-                No comments yet
+                {d.noComments}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -752,10 +744,10 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                         <span style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8' }}>
-                          {comment.user?.username ?? 'Unknown'}
+                          {comment.user?.username ?? t.tunes.unknown}
                         </span>
                         <span style={{ fontSize: '11px', color: '#334155' }}>
-                          {timeAgo(comment.created_at)}
+                          {timeAgoLocale(comment.created_at, locale)}
                         </span>
                       </div>
                       <div style={{ fontSize: '13.5px', color: '#cbd5e1', lineHeight: 1.5 }}>
@@ -778,13 +770,13 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
             }}>
               <div style={{ fontSize: '12px', color: '#334155', fontWeight: 700,
                 letterSpacing: '0.08em', marginBottom: '12px' }}>
-                STATS
+                {d.stats}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <StatBox label="Upvotes" value={upvoteCount} />
-                <StatBox label="Views" value={tune.view_count} />
-                <StatBox label="Comments" value={comments.length} />
-                {tune.game_version && <StatBox label="Version" value={tune.game_version} />}
+                <StatBox label={d.upvotes} value={upvoteCount} />
+                <StatBox label={d.views} value={tune.view_count} />
+                <StatBox label={d.comments} value={comments.length} />
+                {tune.game_version && <StatBox label={d.version} value={tune.game_version} />}
               </div>
             </div>
           )}
@@ -797,7 +789,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
             }}>
               <div style={{ fontSize: '12px', color: '#334155', fontWeight: 700,
                 letterSpacing: '0.08em', marginBottom: '10px' }}>
-                SHARE CODE
+                {d.shareCode}
               </div>
               <div style={{
                 fontSize: '20px', fontWeight: 900, color: accent,
@@ -812,7 +804,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                 color: copied ? accent : '#64748b', fontSize: '13px', fontWeight: 600,
                 transition: 'all 0.15s',
               }}>
-                {copied ? 'Copied!' : 'Copy Code'}
+                {copied ? d.copied : d.copyCode}
               </button>
             </div>
           )}
@@ -823,7 +815,7 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
           }}>
             <div style={{ fontSize: '12px', color: '#334155', fontWeight: 700,
               letterSpacing: '0.08em', marginBottom: '12px' }}>
-              LINKS
+              {d.links}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <Link href="/tunes" style={{
@@ -831,21 +823,21 @@ export default function TuneDetailPage({ params }: { params: Promise<{ tuneId: s
                 background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
                 color: '#64748b', fontSize: '13px',
               }}>
-                Browse Tunes
+                {d.browseTunes}
               </Link>
               <Link href="/tunes/new" style={{
                 padding: '9px 14px', borderRadius: '8px', textDecoration: 'none',
                 background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.15)',
                 color: '#4ade80', fontSize: '13px',
               }}>
-                + Share Your Tune
+                {d.shareTune}
               </Link>
               <Link href="/calculator" style={{
                 padding: '9px 14px', borderRadius: '8px', textDecoration: 'none',
                 background: 'rgba(250,204,21,0.06)', border: '1px solid rgba(250,204,21,0.15)',
                 color: '#facc15', fontSize: '13px',
               }}>
-                Tune Calculator
+                {d.tuneCalc}
               </Link>
               {tune?.game && (
                 <Link href={`/games/${tune.game.slug}`} style={{

@@ -83,10 +83,10 @@ export function Footer() {
     const year = new Date().getFullYear()
 
     const PLATFORM_LINKS = [
-        { label: t.footer.browseTunes,    href: "/tunes" },
+        { label: t.footer.browseTunes, href: "/tunes" },
         { label: t.footer.tuneCalculator, href: "/calculator" },
-        { label: t.footer.forums,         href: "/forums" },
-        { label: t.footer.uploadTune,     href: "/tunes/new" },
+        { label: t.footer.forums, href: "/forums" },
+        { label: t.footer.uploadTune, href: "/tunes/new" },
     ]
 
     return (
