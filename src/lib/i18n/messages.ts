@@ -11,6 +11,8 @@ type Schema = {
         | "forums"
         | "tunes"
         | "calculator"
+        | "guideline"
+        | "blog"
         | "search"
         | "signIn"
         | "register"
@@ -463,6 +465,95 @@ type Schema = {
         | "edited",
         string
     >
+    guideline: Record<
+        | "badge"
+        | "title"
+        | "subtitle"
+        | "newPost"
+        | "newPostTitle"
+        | "empty"
+        | "comments"
+        | "commentsTitle"
+        | "noComments"
+        | "notFound"
+        | "backList"
+        | "breadHome"
+        | "tocTitle"
+        | "sections"
+        | "titleLabel"
+        | "titlePlaceholder"
+        | "excerptLabel"
+        | "excerptPlaceholder"
+        | "coverUrlLabel"
+        | "contentLabel"
+        | "textPlaceholder"
+        | "sectionTitlePlaceholder"
+        | "editBodyHint"
+        | "bodyJsonPlaceholder"
+        | "editPost"
+        | "deletePost"
+        | "deleteComment"
+        | "confirmDelete"
+        | "cancel"
+        | "save"
+        | "saving"
+        | "postComment"
+        | "posting"
+        | "commentPlaceholder"
+        | "signInToComment"
+        | "submitBtn"
+        | "submitting"
+        | "adminOnly"
+        | "loading"
+        | "errNoTitle"
+        | "errGeneric",
+        string
+    >
+    blog: Record<
+        | "badge"
+        | "title"
+        | "subtitle"
+        | "featured"
+        | "newPost"
+        | "newPostTitle"
+        | "empty"
+        | "comments"
+        | "commentsTitle"
+        | "noComments"
+        | "notFound"
+        | "backList"
+        | "breadHome"
+        | "tocTitle"
+        | "sections"
+        | "titleLabel"
+        | "titlePlaceholder"
+        | "excerptLabel"
+        | "excerptPlaceholder"
+        | "coverUrlLabel"
+        | "contentLabel"
+        | "textPlaceholder"
+        | "sectionTitlePlaceholder"
+        | "editBodyHint"
+        | "bodyJsonPlaceholder"
+        | "editPost"
+        | "deletePost"
+        | "deleteComment"
+        | "confirmDelete"
+        | "cancel"
+        | "save"
+        | "saving"
+        | "postComment"
+        | "posting"
+        | "commentPlaceholder"
+        | "signInToComment"
+        | "submitBtn"
+        | "submitting"
+        | "adminOnly"
+        | "loading"
+        | "errNoTitle"
+        | "errGeneric",
+        string
+    >
 }
 
 export const MESSAGES: Record<Locale, Schema> = {
@@ -474,6 +565,8 @@ export const MESSAGES: Record<Locale, Schema> = {
             forums: "Forums",
             tunes: "Tunes",
             calculator: "Calculator",
+            guideline: "Guideline",
+            blog: "Blog",
             search: "Search tunes, cars, or tuners...",
             signIn: "Sign in",
             register: "Register",
@@ -937,6 +1030,95 @@ export const MESSAGES: Record<Locale, Schema> = {
             viewAllInGame: "View all in this game →",
             edited: "edited",
         },
+        // ─── Guideline page ──────────────────────────────────────────────────
+        guideline: {
+            badge: "Guideline",
+            title: "Guideline",
+            subtitle: "Step-by-step guides for tuning and using Tunix",
+            newPost: "New Post",
+            newPostTitle: "New Guideline Post",
+            empty: "No guides yet",
+            comments: "comments",
+            commentsTitle: "Comments",
+            noComments: "No comments yet — be the first",
+            notFound: "Post not found",
+            backList: "Back to Guideline",
+            breadHome: "Home",
+            tocTitle: "Contents",
+            sections: "sections",
+            titleLabel: "Title",
+            titlePlaceholder: "Guide title...",
+            excerptLabel: "Excerpt",
+            excerptPlaceholder: "Short summary shown on listing...",
+            coverUrlLabel: "Cover Image URL",
+            contentLabel: "Content",
+            textPlaceholder: "Write guide content here...",
+            sectionTitlePlaceholder: "Section title (appears in Table of Contents)...",
+            editBodyHint: "Body is stored as JSON blocks (text/image/section). Edit raw JSON.",
+            bodyJsonPlaceholder: '[{"type":"section","title":"Introduction"},{"type":"text","content":"..."}]',
+            editPost: "Edit",
+            deletePost: "Delete",
+            deleteComment: "Delete",
+            confirmDelete: "Delete this post?",
+            cancel: "Cancel",
+            save: "Save",
+            saving: "Saving...",
+            postComment: "Post",
+            posting: "Posting...",
+            commentPlaceholder: "Leave a comment...",
+            signInToComment: "Sign in to comment",
+            submitBtn: "Publish Guide",
+            submitting: "Publishing...",
+            adminOnly: "Admin access required.",
+            loading: "Loading...",
+            errNoTitle: "Please enter a title",
+            errGeneric: "An error occurred",
+        },
+        // ─── Blog page ───────────────────────────────────────────────────────
+        blog: {
+            badge: "Blog",
+            title: "Blog",
+            subtitle: "News, updates, and stories from the Tunix team",
+            featured: "FEATURED",
+            newPost: "New Post",
+            newPostTitle: "New Blog Post",
+            empty: "No posts yet",
+            comments: "comments",
+            commentsTitle: "Comments",
+            noComments: "No comments yet — be the first",
+            notFound: "Post not found",
+            backList: "Back to Blog",
+            breadHome: "Home",
+            tocTitle: "Contents",
+            sections: "sections",
+            titleLabel: "Title",
+            titlePlaceholder: "Blog post title...",
+            excerptLabel: "Excerpt",
+            excerptPlaceholder: "Short summary shown on listing...",
+            coverUrlLabel: "Cover Image URL",
+            contentLabel: "Content",
+            textPlaceholder: "Write content here...",
+            sectionTitlePlaceholder: "Section title (appears in Table of Contents)...",
+            editBodyHint: "Body is stored as JSON blocks (text/image/section). Edit raw JSON.",
+            bodyJsonPlaceholder: '[{"type":"section","title":"Introduction"},{"type":"text","content":"..."}]',
+            editPost: "Edit",
+            deletePost: "Delete",
+            deleteComment: "Delete",
+            confirmDelete: "Delete this post?",
+            cancel: "Cancel",
+            save: "Save",
+            saving: "Saving...",
+            postComment: "Post",
+            posting: "Posting...",
+            commentPlaceholder: "Leave a comment...",
+            signInToComment: "Sign in to comment",
+            submitBtn: "Publish Post",
+            submitting: "Publishing...",
+            adminOnly: "Admin access required.",
+            loading: "Loading...",
+            errNoTitle: "Please enter a title",
+            errGeneric: "An error occurred",
+        },
     },
 
     // ─── Thai ─────────────────────────────────────────────────────────────────
@@ -947,6 +1129,8 @@ export const MESSAGES: Record<Locale, Schema> = {
             forums: "ฟอรั่ม",
             tunes: "Tune",
             calculator: "เครื่องคำนวณ",
+            guideline: "คู่มือ",
+            blog: "บล็อก",
             search: "ค้นหา tune, รถ, หรือ tuner...",
             signIn: "เข้าสู่ระบบ",
             register: "สมัครสมาชิก",
@@ -1384,6 +1568,95 @@ export const MESSAGES: Record<Locale, Schema> = {
             liked50Desc: "ได้รับ upvote รวม 50 ครั้ง",
             liked100: "ราชาแห่ง Setup",
             liked100Desc: "ได้รับ upvote รวม 100 ครั้ง",
+        },
+        // ─── Guideline page ──────────────────────────────────────────────────
+        guideline: {
+            badge: "คู่มือ",
+            title: "คู่มือ",
+            subtitle: "คำแนะนำทีละขั้นตอนสำหรับการ tune และใช้งาน Tunix",
+            newPost: "สร้างโพสต์",
+            newPostTitle: "สร้างโพสต์คู่มือ",
+            empty: "ยังไม่มีคู่มือ",
+            comments: "ความคิดเห็น",
+            commentsTitle: "ความคิดเห็น",
+            noComments: "ยังไม่มีความคิดเห็น — เป็นคนแรก",
+            notFound: "ไม่พบโพสต์",
+            backList: "กลับไปยังคู่มือ",
+            breadHome: "หน้าแรก",
+            tocTitle: "สารบัญ",
+            sections: "หัวข้อ",
+            titleLabel: "หัวข้อ",
+            titlePlaceholder: "ชื่อคู่มือ...",
+            excerptLabel: "บทสรุป",
+            excerptPlaceholder: "สรุปสั้นๆ ที่แสดงในหน้ารายการ...",
+            coverUrlLabel: "URL รูปปก",
+            contentLabel: "เนื้อหา",
+            textPlaceholder: "เขียนเนื้อหาคู่มือที่นี่...",
+            sectionTitlePlaceholder: "ชื่อหัวข้อ (จะแสดงในสารบัญ)...",
+            editBodyHint: "เนื้อหาเก็บเป็น JSON blocks (text/image/section) แก้ไข raw JSON",
+            bodyJsonPlaceholder: '[{"type":"section","title":"เกริ่นนำ"},{"type":"text","content":"..."}]',
+            editPost: "แก้ไข",
+            deletePost: "ลบ",
+            deleteComment: "ลบ",
+            confirmDelete: "ลบโพสต์นี้?",
+            cancel: "ยกเลิก",
+            save: "บันทึก",
+            saving: "กำลังบันทึก...",
+            postComment: "ส่ง",
+            posting: "กำลังส่ง...",
+            commentPlaceholder: "แสดงความคิดเห็น...",
+            signInToComment: "เข้าสู่ระบบเพื่อแสดงความคิดเห็น",
+            submitBtn: "เผยแพร่คู่มือ",
+            submitting: "กำลังเผยแพร่...",
+            adminOnly: "ต้องมีสิทธิ์แอดมิน",
+            loading: "กำลังโหลด...",
+            errNoTitle: "กรุณาใส่หัวข้อ",
+            errGeneric: "เกิดข้อผิดพลาด",
+        },
+        // ─── Blog page ───────────────────────────────────────────────────────
+        blog: {
+            badge: "บล็อก",
+            title: "บล็อก",
+            subtitle: "ข่าวสาร อัปเดต และเรื่องราวจากทีม Tunix",
+            featured: "แนะนำ",
+            newPost: "สร้างโพสต์",
+            newPostTitle: "สร้างโพสต์บล็อก",
+            empty: "ยังไม่มีโพสต์",
+            comments: "ความคิดเห็น",
+            commentsTitle: "ความคิดเห็น",
+            noComments: "ยังไม่มีความคิดเห็น — เป็นคนแรก",
+            notFound: "ไม่พบโพสต์",
+            backList: "กลับไปยังบล็อก",
+            breadHome: "หน้าแรก",
+            tocTitle: "สารบัญ",
+            sections: "หัวข้อ",
+            titleLabel: "หัวข้อ",
+            titlePlaceholder: "ชื่อบล็อก...",
+            excerptLabel: "บทสรุป",
+            excerptPlaceholder: "สรุปสั้นๆ ที่แสดงในหน้ารายการ...",
+            coverUrlLabel: "URL รูปปก",
+            contentLabel: "เนื้อหา",
+            textPlaceholder: "เขียนเนื้อหาที่นี่...",
+            sectionTitlePlaceholder: "ชื่อหัวข้อ (จะแสดงในสารบัญ)...",
+            editBodyHint: "เนื้อหาเก็บเป็น JSON blocks (text/image/section) แก้ไข raw JSON",
+            bodyJsonPlaceholder: '[{"type":"section","title":"เกริ่นนำ"},{"type":"text","content":"..."}]',
+            editPost: "แก้ไข",
+            deletePost: "ลบ",
+            deleteComment: "ลบ",
+            confirmDelete: "ลบโพสต์นี้?",
+            cancel: "ยกเลิก",
+            save: "บันทึก",
+            saving: "กำลังบันทึก...",
+            postComment: "ส่ง",
+            posting: "กำลังส่ง...",
+            commentPlaceholder: "แสดงความคิดเห็น...",
+            signInToComment: "เข้าสู่ระบบเพื่อแสดงความคิดเห็น",
+            submitBtn: "เผยแพร่โพสต์",
+            submitting: "กำลังเผยแพร่...",
+            adminOnly: "ต้องมีสิทธิ์แอดมิน",
+            loading: "กำลังโหลด...",
+            errNoTitle: "กรุณาใส่หัวข้อ",
+            errGeneric: "เกิดข้อผิดพลาด",
         },
         // ─── Profile Page ────────────────────────────────────────────────────
         profilePage: {

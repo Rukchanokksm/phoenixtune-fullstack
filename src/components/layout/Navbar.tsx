@@ -319,6 +319,14 @@ export function Navbar() {
                         <Link href="/forums" style={navLinkStyle}>
                             {t.nav.forums}
                         </Link>
+
+                        <Link href="/guideline" style={navLinkStyle}>
+                            {t.nav.guideline}
+                        </Link>
+
+                        <Link href="/blog" style={navLinkStyle}>
+                            {t.nav.blog}
+                        </Link>
                     </div>
                 </div>
 

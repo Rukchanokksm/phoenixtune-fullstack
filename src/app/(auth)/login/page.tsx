@@ -8,7 +8,10 @@ import type { Messages } from "@/lib/i18n/messages"
 
 type View = "login" | "forgot" | "change"
 
-function calcStrength(pw: string, t: Messages["auth"]): {
+function calcStrength(
+    pw: string,
+    t: Messages["auth"],
+): {
     level: 0 | 1 | 2
     label: string
     color: string
@@ -50,7 +53,7 @@ function StrengthBar({ password }: { password: string }) {
 export default function LoginPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const nextPath = searchParams.get('next') ?? '/'
+    const nextPath = searchParams.get("next") ?? "/"
     const supabase = createClient()
     const { t } = useLanguage()
 
@@ -191,7 +194,7 @@ export default function LoginPage() {
     }
     const ICON = { login: "🔑", forgot: "🔓", change: "🔒" }
     const TAB_LABEL: Record<View, string> = {
-        login:  t.auth.tabLogin,
+        login: t.auth.tabLogin,
         forgot: t.auth.tabForgot,
         change: t.auth.tabChange,
     }
@@ -419,12 +422,24 @@ export default function LoginPage() {
                                 onChange={(e) => setFConfirm(e.target.value)}
                             />
                             {fConfirm && fConfirm !== fNewPw && (
-                                <p style={{ color: "#f87171", fontSize: "12px", margin: "4px 0 0" }}>
+                                <p
+                                    style={{
+                                        color: "#f87171",
+                                        fontSize: "12px",
+                                        margin: "4px 0 0",
+                                    }}
+                                >
                                     {t.auth.pwNoMatch}
                                 </p>
                             )}
                             {fConfirm && fConfirm === fNewPw && fNewPw && (
-                                <p style={{ color: "#4ade80", fontSize: "12px", margin: "4px 0 0" }}>
+                                <p
+                                    style={{
+                                        color: "#4ade80",
+                                        fontSize: "12px",
+                                        margin: "4px 0 0",
+                                    }}
+                                >
                                     ✓ {t.auth.pwMatch}
                                 </p>
                             )}
@@ -484,7 +499,13 @@ export default function LoginPage() {
                                 onChange={(e) => setCNew(e.target.value)}
                             />
                             {cNew && cNew === cOld && (
-                                <p style={{ color: "#f87171", fontSize: "12px", margin: "4px 0 0" }}>
+                                <p
+                                    style={{
+                                        color: "#f87171",
+                                        fontSize: "12px",
+                                        margin: "4px 0 0",
+                                    }}
+                                >
                                     {t.auth.errPwSame}
                                 </p>
                             )}
@@ -506,15 +527,30 @@ export default function LoginPage() {
                                 onChange={(e) => setCConfirm(e.target.value)}
                             />
                             {cConfirm && cConfirm !== cNew && (
-                                <p style={{ color: "#f87171", fontSize: "12px", margin: "4px 0 0" }}>
+                                <p
+                                    style={{
+                                        color: "#f87171",
+                                        fontSize: "12px",
+                                        margin: "4px 0 0",
+                                    }}
+                                >
                                     {t.auth.pwNoMatch}
                                 </p>
                             )}
-                            {cConfirm && cConfirm === cNew && cNew && cNew !== cOld && (
-                                <p style={{ color: "#4ade80", fontSize: "12px", margin: "4px 0 0" }}>
-                                    ✓ {t.auth.pwMatch}
-                                </p>
-                            )}
+                            {cConfirm &&
+                                cConfirm === cNew &&
+                                cNew &&
+                                cNew !== cOld && (
+                                    <p
+                                        style={{
+                                            color: "#4ade80",
+                                            fontSize: "12px",
+                                            margin: "4px 0 0",
+                                        }}
+                                    >
+                                        ✓ {t.auth.pwMatch}
+                                    </p>
+                                )}
                         </div>
                         <button type="submit" disabled={loading} style={btn}>
                             {loading ? t.auth.changing : t.auth.changeButton}

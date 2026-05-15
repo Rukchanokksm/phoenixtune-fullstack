@@ -5,5 +5,18 @@ export async function GET() {
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) return NextResponse.json({ user: null })
-  return NextResponse.json({ user: { id: user.id, email: user.email } })
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  return NextResponse.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      role: (profile as { role?: string } | null)?.role ?? 'user',
+    },
+  })
 }
