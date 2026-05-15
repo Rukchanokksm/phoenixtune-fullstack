@@ -489,7 +489,12 @@ export function Navbar() {
                                         },
                                         // Saved Tunes is a premium-gated feature — hide while premium is held
                                         ...(PREMIUM_ENABLED
-                                            ? [{ label: t.nav.savedTunes, href: `/saved` }]
+                                            ? [
+                                                  {
+                                                      label: t.nav.savedTunes,
+                                                      href: `/saved`,
+                                                  },
+                                              ]
                                             : []),
                                         {
                                             label: t.nav.settings,

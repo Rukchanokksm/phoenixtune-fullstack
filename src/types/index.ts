@@ -101,58 +101,15 @@ export type TitleId =
     | "liked_50"
     | "liked_100"
 
-export const TITLES: Record<
-    TitleId,
-    { label: string; desc: string; icon: string; color: string }
-> = {
-    newcomer: {
-        label: "มือสตาร์ทใหม่",
-        desc: "สมาชิกทั่วไป",
-        icon: "🏁",
-        color: "#64748b",
-    },
-    first_tune: {
-        label: "ช่างจูนก้าวแรก",
-        desc: "แชร์ tune ครั้งแรก",
-        icon: "🔧",
-        color: "#60a5fa",
-    },
-    tuner_10: {
-        label: "ช่างจูนฝึกหัด",
-        desc: "แชร์ tune ครบ 10 ครั้ง",
-        icon: "⚙️",
-        color: "#4ade80",
-    },
-    tuner_30: {
-        label: "ช่างจูนมืออาชีพ",
-        desc: "แชร์ tune ครบ 30 ครั้ง",
-        icon: "🛠️",
-        color: "#facc15",
-    },
-    tuner_100: {
-        label: "Master Tuner",
-        desc: "แชร์ tune ครบ 100 ครั้ง",
-        icon: "🏆",
-        color: "#f97316",
-    },
-    liked_10: {
-        label: "Tune เข้าตา",
-        desc: "ได้รับ upvote รวม 10 ครั้ง",
-        icon: "👍",
-        color: "#c084fc",
-    },
-    liked_50: {
-        label: "Tune ระดับ TOP",
-        desc: "ได้รับ upvote รวม 50 ครั้ง",
-        icon: "⭐",
-        color: "#f472b6",
-    },
-    liked_100: {
-        label: "ราชาแห่ง Setup",
-        desc: "ได้รับ upvote รวม 100 ครั้ง",
-        icon: "👑",
-        color: "#facc15",
-    },
+export const TITLES: Record<TitleId, { icon: string; color: string }> = {
+    newcomer: { icon: "🏁", color: "#64748b" },
+    first_tune: { icon: "🔧", color: "#60a5fa" },
+    tuner_10: { icon: "⚙️", color: "#4ade80" },
+    tuner_30: { icon: "🛠️", color: "#facc15" },
+    tuner_100: { icon: "🏆", color: "#f97316" },
+    liked_10: { icon: "👍", color: "#c084fc" },
+    liked_50: { icon: "⭐", color: "#f472b6" },
+    liked_100: { icon: "👑", color: "#facc15" },
 }
 
 export interface UserProfile {

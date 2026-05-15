@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useLanguage } from '@/lib/i18n/LanguageProvider'
 
 type Period = 'week' | 'month' | 'all'
 const DC: Record<string, { bg: string; color: string }> = {
@@ -18,6 +19,7 @@ interface Tune {
 }
 
 export function TopTunesClient({ gameSlug }: { gameSlug: string }) {
+  const { t } = useLanguage()
   const [period, setPeriod] = useState<Period>('week')
   const [tunes, setTunes] = useState<Tune[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,9 +33,9 @@ export function TopTunesClient({ gameSlug }: { gameSlug: string }) {
   }, [gameSlug, period])
 
   const tabs: { key: Period; label: string }[] = [
-    { key: 'week',  label: 'รายอาทิตย์' },
-    { key: 'month', label: 'รายเดือน'   },
-    { key: 'all',   label: 'ตลอดกาล'    },
+    { key: 'week',  label: t.game.periodWeek  },
+    { key: 'month', label: t.game.periodMonth },
+    { key: 'all',   label: t.game.periodAll   },
   ]
 
   return (
@@ -51,11 +53,11 @@ export function TopTunesClient({ gameSlug }: { gameSlug: string }) {
       </div>
 
       {loading ? (
-        <div style={{ textAlign:'center', padding:'56px', color:'#475569' }}>กำลังโหลด...</div>
+        <div style={{ textAlign:'center', padding:'56px', color:'#475569' }}>{t.game.topLoading}</div>
       ) : tunes.length === 0 ? (
         <div style={{ textAlign:'center', padding:'56px', color:'#475569' }}>
           <div style={{ fontSize:'32px', marginBottom:'12px' }}>🏁</div>
-          ยังไม่มี tune ในช่วงนี้ — เป็นคนแรกที่แชร์!
+          {t.game.topEmpty}
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
