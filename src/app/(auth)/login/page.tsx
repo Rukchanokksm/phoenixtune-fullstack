@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -61,6 +61,16 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false)
     const [done, setDone] = useState("")
     const [err, setErr] = useState("")
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                setIsLoggedIn(true)
+                setView("change")
+            }
+        })
+    }, [])
 
     // Login
     const [loginEmail, setLoginEmail] = useState("")
@@ -251,7 +261,10 @@ export default function LoginPage() {
                         gap: "4px",
                     }}
                 >
-                    {(["login", "forgot", "change"] as View[]).map((v) => (
+                    {(isLoggedIn
+                        ? (["forgot", "change"] as View[])
+                        : (["login", "forgot", "change"] as View[])
+                    ).map((v) => (
                         <button
                             key={v}
                             onClick={() => switchTo(v)}
