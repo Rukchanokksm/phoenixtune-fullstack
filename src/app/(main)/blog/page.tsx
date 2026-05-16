@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { BlogListClient } from "@/components/blog/BlogListClient"
 
 const POST_SELECT = `
-  id, title, excerpt, cover_url, comment_count, created_at,
+  id, title, excerpt, cover_url, tags, comment_count, created_at,
   user:user_profiles!blog_posts_user_id_fkey(username)
 `
 

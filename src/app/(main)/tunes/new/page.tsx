@@ -22,7 +22,7 @@ const GAME_OPTS = [
         short: "FH6",
         accent: "#c084fc",
         active: true,
-        noteKey: "fh6Note" as string | null,
+        noteKey: null as string | null,
     },
     {
         slug: "nfs-unbound",
@@ -42,9 +42,8 @@ const GAME_OPTS = [
     },
 ]
 
-// For car lookup: FH6 shares FH5 car pool
 function carLookupSlug(gameSlug: string) {
-    return gameSlug === "forza-horizon-6" ? "forza-horizon-5" : gameSlug
+    return gameSlug
 }
 
 type CarBrand = { id: string; name: string }
@@ -64,6 +63,7 @@ const CAR_CLASSES = [
     { id: "S1", label: "S1", color: "#c084fc" },
     { id: "S2", label: "S2", color: "#818cf8" },
     { id: "X", label: "X", color: "#60a5fa" },
+    { id: "R", label: "R", color: "#e879f9" },
 ]
 
 /* ─── Helpers ────────────────────────────────────────────────── */
@@ -541,7 +541,13 @@ function ShareTunePageInner() {
     const [submitError, setSubmitError] = useState("")
 
     const piClassMap: Record<string, string> = {
-        D: "D", C: "C", B: "B", A: "A", S1: "S1", S2: "S2", X: "X",
+        D: "D",
+        C: "C",
+        B: "B",
+        A: "A",
+        S1: "S1",
+        S2: "S2",
+        X: "X",
     }
 
     const [diffType, setDiffType] = useState<"AWD" | "RWD" | "FWD">("RWD")
@@ -600,10 +606,14 @@ function ShareTunePageInner() {
         }
         if (diffOn) {
             if (diffType === "AWD") {
-                if (dFrontAccel) parameters.diffFrontAccel = parseFloat(dFrontAccel)
-                if (dFrontDecel) parameters.diffFrontDecel = parseFloat(dFrontDecel)
-                if (dRearAccel) parameters.diffRearAccel = parseFloat(dRearAccel)
-                if (dRearDecel) parameters.diffRearDecel = parseFloat(dRearDecel)
+                if (dFrontAccel)
+                    parameters.diffFrontAccel = parseFloat(dFrontAccel)
+                if (dFrontDecel)
+                    parameters.diffFrontDecel = parseFloat(dFrontDecel)
+                if (dRearAccel)
+                    parameters.diffRearAccel = parseFloat(dRearAccel)
+                if (dRearDecel)
+                    parameters.diffRearDecel = parseFloat(dRearDecel)
                 if (dCenter) parameters.diffCenter = parseFloat(dCenter)
             } else {
                 if (dAccel) parameters.diffAccel = parseFloat(dAccel)
@@ -650,7 +660,8 @@ function ShareTunePageInner() {
                     piClass: piClassMap[carClass] ?? "A",
                     drivetrain: diffOn
                         ? diffType
-                        : (models.find((m) => m.id === modelId)?.drivetrain ?? "RWD"),
+                        : (models.find((m) => m.id === modelId)?.drivetrain ??
+                          "RWD"),
                 }),
             })
             const json = await res.json()
@@ -661,7 +672,9 @@ function ShareTunePageInner() {
             const gameSlug = json.game?.slug ?? "forza-horizon-5"
             const carMake = json.car?.make ?? selectedBrand?.name ?? brand
             const carUUID = json.car?.id ?? ""
-            router.push(`/games/${gameSlug}/${encodeURIComponent(carMake)}/${carUUID}`)
+            router.push(
+                `/games/${gameSlug}/${encodeURIComponent(carMake)}/${carUUID}`,
+            )
         } catch {
             setSubmitError(st.errRetry)
         } finally {
@@ -820,7 +833,9 @@ function ShareTunePageInner() {
                                     disabled={carsLoading}
                                 >
                                     <option value="">
-                                        {carsLoading ? st.loadingCars : st.selectBrand}
+                                        {carsLoading
+                                            ? st.loadingCars
+                                            : st.selectBrand}
                                     </option>
                                     {brands.map((b) => (
                                         <option key={b.id} value={b.id}>
@@ -837,7 +852,9 @@ function ShareTunePageInner() {
                                     disabled={!brand || carsLoading}
                                     style={{
                                         ...S.input,
-                                        cursor: brand ? "pointer" : "not-allowed",
+                                        cursor: brand
+                                            ? "pointer"
+                                            : "not-allowed",
                                         opacity: brand ? 1 : 0.4,
                                     }}
                                 >
@@ -873,7 +890,9 @@ function ShareTunePageInner() {
                                         <button
                                             key={cls.id}
                                             onClick={() =>
-                                                setCarClass(active ? "" : cls.id)
+                                                setCarClass(
+                                                    active ? "" : cls.id,
+                                                )
                                             }
                                             style={{
                                                 padding: "8px 18px",
@@ -882,10 +901,16 @@ function ShareTunePageInner() {
                                                 fontWeight: 800,
                                                 cursor: "pointer",
                                                 transition: "all 0.15s",
-                                                background: active ? cls.color : "#0f1117",
-                                                color: active ? "#0d0f14" : cls.color,
+                                                background: active
+                                                    ? cls.color
+                                                    : "#0f1117",
+                                                color: active
+                                                    ? "#0d0f14"
+                                                    : cls.color,
                                                 border: `1.5px solid ${active ? cls.color : cls.color + "44"}`,
-                                                boxShadow: active ? `0 0 12px ${cls.color}55` : "none",
+                                                boxShadow: active
+                                                    ? `0 0 12px ${cls.color}55`
+                                                    : "none",
                                             }}
                                         >
                                             {cls.label}
@@ -918,7 +943,14 @@ function ShareTunePageInner() {
                                         marginBottom: "20px",
                                     }}
                                 >
-                                    <span style={{ fontSize: "20px", marginRight: "10px" }}>🔴</span>
+                                    <span
+                                        style={{
+                                            fontSize: "20px",
+                                            marginRight: "10px",
+                                        }}
+                                    >
+                                        🔴
+                                    </span>
                                     <h3
                                         style={{
                                             margin: 0,
@@ -957,7 +989,9 @@ function ShareTunePageInner() {
                                         max={3.8}
                                         step={0.1}
                                         onChange={setTF}
-                                        onBlur={() => setTF(clamp(tF, 1.0, 3.8, 1))}
+                                        onBlur={() =>
+                                            setTF(clamp(tF, 1.0, 3.8, 1))
+                                        }
                                     />
                                     <NumInput
                                         label="Rear"
@@ -967,7 +1001,9 @@ function ShareTunePageInner() {
                                         max={3.8}
                                         step={0.1}
                                         onChange={setTR}
-                                        onBlur={() => setTR(clamp(tR, 1.0, 3.8, 1))}
+                                        onBlur={() =>
+                                            setTR(clamp(tR, 1.0, 3.8, 1))
+                                        }
                                     />
                                 </div>
                             </div>
@@ -989,18 +1025,27 @@ function ShareTunePageInner() {
                                             gap: "20px",
                                         }}
                                     >
-                                        <div style={{ display: "flex", gap: "10px" }}>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                gap: "10px",
+                                            }}
+                                        >
                                             <Chip
                                                 label="Final Drive Only"
                                                 active={gearType === "final"}
                                                 color="#f59e0b"
-                                                onClick={() => setGearType("final")}
+                                                onClick={() =>
+                                                    setGearType("final")
+                                                }
                                             />
                                             <Chip
                                                 label="Full Gearing"
                                                 active={gearType === "full"}
                                                 color="#f59e0b"
-                                                onClick={() => setGearType("full")}
+                                                onClick={() =>
+                                                    setGearType("full")
+                                                }
                                             />
                                         </div>
                                         <div style={{ maxWidth: "200px" }}>
@@ -1012,7 +1057,14 @@ function ShareTunePageInner() {
                                                 step={0.01}
                                                 onChange={setGearFinal}
                                                 onBlur={() =>
-                                                    setGearFinal(clamp(gearFinal, 0, 6.1, 2))
+                                                    setGearFinal(
+                                                        clamp(
+                                                            gearFinal,
+                                                            0,
+                                                            6.1,
+                                                            2,
+                                                        ),
+                                                    )
                                                 }
                                             />
                                         </div>
@@ -1025,7 +1077,12 @@ function ShareTunePageInner() {
                                                     <select
                                                         value={gearCount}
                                                         onChange={(e) =>
-                                                            setGearCount(parseInt(e.target.value))
+                                                            setGearCount(
+                                                                parseInt(
+                                                                    e.target
+                                                                        .value,
+                                                                ),
+                                                            )
                                                         }
                                                         style={{
                                                             ...S.input,
@@ -1038,8 +1095,12 @@ function ShareTunePageInner() {
                                                             { length: 9 },
                                                             (_, i) => i + 2,
                                                         ).map((n) => (
-                                                            <option key={n} value={n}>
-                                                                {n} {st.speedSuffix}
+                                                            <option
+                                                                key={n}
+                                                                value={n}
+                                                            >
+                                                                {n}{" "}
+                                                                {st.speedSuffix}
                                                             </option>
                                                         ))}
                                                     </select>
@@ -1059,7 +1120,8 @@ function ShareTunePageInner() {
                                                             key={i}
                                                             style={{
                                                                 flex: "0 0 calc(25% - 9px)",
-                                                                minWidth: "100px",
+                                                                minWidth:
+                                                                    "100px",
                                                             }}
                                                         >
                                                             <NumInput
@@ -1068,11 +1130,23 @@ function ShareTunePageInner() {
                                                                 min={0}
                                                                 max={6.0}
                                                                 step={0.01}
-                                                                onChange={(v) => setGear(i, v)}
+                                                                onChange={(v) =>
+                                                                    setGear(
+                                                                        i,
+                                                                        v,
+                                                                    )
+                                                                }
                                                                 onBlur={() =>
                                                                     setGear(
                                                                         i,
-                                                                        clamp(gears[i], 0, 6.0, 2),
+                                                                        clamp(
+                                                                            gears[
+                                                                                i
+                                                                            ],
+                                                                            0,
+                                                                            6.0,
+                                                                            2,
+                                                                        ),
                                                                     )
                                                                 }
                                                             />
@@ -1110,12 +1184,18 @@ function ShareTunePageInner() {
                                                     marginBottom: "12px",
                                                 }}
                                             >
-                                                <span style={S.sub}>Camber</span>
-                                                <span style={S.hint}>(°) −5.0 ~ 5.0</span>
+                                                <span style={S.sub}>
+                                                    Camber
+                                                </span>
+                                                <span style={S.hint}>
+                                                    (°) −5.0 ~ 5.0
+                                                </span>
                                                 <SubToggle
                                                     label={st.included}
                                                     enabled={camberOn}
-                                                    onToggle={() => setCamberOn((p) => !p)}
+                                                    onToggle={() =>
+                                                        setCamberOn((p) => !p)
+                                                    }
                                                 />
                                             </div>
                                             <div style={S.row}>
@@ -1128,7 +1208,11 @@ function ShareTunePageInner() {
                                                     step={0.1}
                                                     disabled={!camberOn}
                                                     onChange={setCF}
-                                                    onBlur={() => setCF(clamp(cF, -5, 5, 1))}
+                                                    onBlur={() =>
+                                                        setCF(
+                                                            clamp(cF, -5, 5, 1),
+                                                        )
+                                                    }
                                                 />
                                                 <NumInput
                                                     label="Rear"
@@ -1139,7 +1223,11 @@ function ShareTunePageInner() {
                                                     step={0.1}
                                                     disabled={!camberOn}
                                                     onChange={setCR}
-                                                    onBlur={() => setCR(clamp(cR, -5, 5, 1))}
+                                                    onBlur={() =>
+                                                        setCR(
+                                                            clamp(cR, -5, 5, 1),
+                                                        )
+                                                    }
                                                 />
                                             </div>
                                         </div>
@@ -1152,11 +1240,15 @@ function ShareTunePageInner() {
                                                 }}
                                             >
                                                 <span style={S.sub}>Toe</span>
-                                                <span style={S.hint}>(°) −5.0 ~ 5.0</span>
+                                                <span style={S.hint}>
+                                                    (°) −5.0 ~ 5.0
+                                                </span>
                                                 <SubToggle
                                                     label={st.included}
                                                     enabled={toeOn}
-                                                    onToggle={() => setToeOn((p) => !p)}
+                                                    onToggle={() =>
+                                                        setToeOn((p) => !p)
+                                                    }
                                                 />
                                             </div>
                                             <div style={S.row}>
@@ -1169,7 +1261,16 @@ function ShareTunePageInner() {
                                                     step={0.1}
                                                     disabled={!toeOn}
                                                     onChange={setToF}
-                                                    onBlur={() => setToF(clamp(toF, -5, 5, 1))}
+                                                    onBlur={() =>
+                                                        setToF(
+                                                            clamp(
+                                                                toF,
+                                                                -5,
+                                                                5,
+                                                                1,
+                                                            ),
+                                                        )
+                                                    }
                                                 />
                                                 <NumInput
                                                     label="Rear"
@@ -1180,7 +1281,16 @@ function ShareTunePageInner() {
                                                     step={0.1}
                                                     disabled={!toeOn}
                                                     onChange={setToR}
-                                                    onBlur={() => setToR(clamp(toR, -5, 5, 1))}
+                                                    onBlur={() =>
+                                                        setToR(
+                                                            clamp(
+                                                                toR,
+                                                                -5,
+                                                                5,
+                                                                1,
+                                                            ),
+                                                        )
+                                                    }
                                                 />
                                             </div>
                                         </div>
@@ -1192,12 +1302,18 @@ function ShareTunePageInner() {
                                                     marginBottom: "12px",
                                                 }}
                                             >
-                                                <span style={S.sub}>Front Caster</span>
-                                                <span style={S.hint}>(°) 1.0 ~ 7.0</span>
+                                                <span style={S.sub}>
+                                                    Front Caster
+                                                </span>
+                                                <span style={S.hint}>
+                                                    (°) 1.0 ~ 7.0
+                                                </span>
                                                 <SubToggle
                                                     label={st.included}
                                                     enabled={castOn}
-                                                    onToggle={() => setCastOn((p) => !p)}
+                                                    onToggle={() =>
+                                                        setCastOn((p) => !p)
+                                                    }
                                                 />
                                             </div>
                                             <div style={{ maxWidth: "200px" }}>
@@ -1209,7 +1325,16 @@ function ShareTunePageInner() {
                                                     step={0.1}
                                                     disabled={!castOn}
                                                     onChange={setCast}
-                                                    onBlur={() => setCast(clamp(cast, 1, 7, 1))}
+                                                    onBlur={() =>
+                                                        setCast(
+                                                            clamp(
+                                                                cast,
+                                                                1,
+                                                                7,
+                                                                1,
+                                                            ),
+                                                        )
+                                                    }
                                                 />
                                             </div>
                                         </div>
@@ -1235,7 +1360,9 @@ function ShareTunePageInner() {
                                             max={65}
                                             step={0.01}
                                             onChange={setAF}
-                                            onBlur={() => setAF(clamp(aF, 1, 65, 2))}
+                                            onBlur={() =>
+                                                setAF(clamp(aF, 1, 65, 2))
+                                            }
                                         />
                                         <NumInput
                                             label="Rear  (1 – 65)"
@@ -1244,7 +1371,9 @@ function ShareTunePageInner() {
                                             max={65}
                                             step={0.01}
                                             onChange={setAR}
-                                            onBlur={() => setAR(clamp(aR, 1, 65, 2))}
+                                            onBlur={() =>
+                                                setAR(clamp(aR, 1, 65, 2))
+                                            }
                                         />
                                     </div>
                                 )}
@@ -1268,9 +1397,15 @@ function ShareTunePageInner() {
                                         }}
                                     >
                                         <div>
-                                            <div style={{ marginBottom: "12px" }}>
-                                                <span style={S.sub}>Spring Rate</span>
-                                                <span style={S.hint}>N/MM (0 – 9999.9)</span>
+                                            <div
+                                                style={{ marginBottom: "12px" }}
+                                            >
+                                                <span style={S.sub}>
+                                                    Spring Rate
+                                                </span>
+                                                <span style={S.hint}>
+                                                    N/MM (0 – 9999.9)
+                                                </span>
                                             </div>
                                             <div style={S.row}>
                                                 <NumInput
@@ -1282,7 +1417,14 @@ function ShareTunePageInner() {
                                                     step={0.1}
                                                     onChange={setSpF}
                                                     onBlur={() =>
-                                                        setSpF(clamp(spF, 0, 9999.9, 1))
+                                                        setSpF(
+                                                            clamp(
+                                                                spF,
+                                                                0,
+                                                                9999.9,
+                                                                1,
+                                                            ),
+                                                        )
                                                     }
                                                 />
                                                 <NumInput
@@ -1294,15 +1436,28 @@ function ShareTunePageInner() {
                                                     step={0.1}
                                                     onChange={setSpR}
                                                     onBlur={() =>
-                                                        setSpR(clamp(spR, 0, 9999.9, 1))
+                                                        setSpR(
+                                                            clamp(
+                                                                spR,
+                                                                0,
+                                                                9999.9,
+                                                                1,
+                                                            ),
+                                                        )
                                                     }
                                                 />
                                             </div>
                                         </div>
                                         <div>
-                                            <div style={{ marginBottom: "12px" }}>
-                                                <span style={S.sub}>Ride Height</span>
-                                                <span style={S.hint}>CM (0 – 99.9)</span>
+                                            <div
+                                                style={{ marginBottom: "12px" }}
+                                            >
+                                                <span style={S.sub}>
+                                                    Ride Height
+                                                </span>
+                                                <span style={S.hint}>
+                                                    CM (0 – 99.9)
+                                                </span>
                                             </div>
                                             <div style={S.row}>
                                                 <NumInput
@@ -1314,7 +1469,14 @@ function ShareTunePageInner() {
                                                     step={0.1}
                                                     onChange={setRhF}
                                                     onBlur={() =>
-                                                        setRhF(clamp(rhF, 0, 99.9, 1))
+                                                        setRhF(
+                                                            clamp(
+                                                                rhF,
+                                                                0,
+                                                                99.9,
+                                                                1,
+                                                            ),
+                                                        )
                                                     }
                                                 />
                                                 <NumInput
@@ -1326,7 +1488,14 @@ function ShareTunePageInner() {
                                                     step={0.1}
                                                     onChange={setRhR}
                                                     onBlur={() =>
-                                                        setRhR(clamp(rhR, 0, 99.9, 1))
+                                                        setRhR(
+                                                            clamp(
+                                                                rhR,
+                                                                0,
+                                                                99.9,
+                                                                1,
+                                                            ),
+                                                        )
                                                     }
                                                 />
                                             </div>
@@ -1354,14 +1523,34 @@ function ShareTunePageInner() {
                                     >
                                         {(
                                             [
-                                                ["Rebound Stiffness", rbF, setRbF, rbR, setRbR],
-                                                ["Bump Stiffness", buF, setBuF, buR, setBuR],
+                                                [
+                                                    "Rebound Stiffness",
+                                                    rbF,
+                                                    setRbF,
+                                                    rbR,
+                                                    setRbR,
+                                                ],
+                                                [
+                                                    "Bump Stiffness",
+                                                    buF,
+                                                    setBuF,
+                                                    buR,
+                                                    setBuR,
+                                                ],
                                             ] as const
                                         ).map(([title, fv, fs, rv, rs]) => (
                                             <div key={title}>
-                                                <div style={{ marginBottom: "12px" }}>
-                                                    <span style={S.sub}>{title}</span>
-                                                    <span style={S.hint}>1.0 – 20.0</span>
+                                                <div
+                                                    style={{
+                                                        marginBottom: "12px",
+                                                    }}
+                                                >
+                                                    <span style={S.sub}>
+                                                        {title}
+                                                    </span>
+                                                    <span style={S.hint}>
+                                                        1.0 – 20.0
+                                                    </span>
                                                 </div>
                                                 <div style={S.row}>
                                                     <NumInput
@@ -1371,7 +1560,16 @@ function ShareTunePageInner() {
                                                         max={20}
                                                         step={0.1}
                                                         onChange={(v) => fs(v)}
-                                                        onBlur={() => fs(clamp(fv, 1, 20, 1))}
+                                                        onBlur={() =>
+                                                            fs(
+                                                                clamp(
+                                                                    fv,
+                                                                    1,
+                                                                    20,
+                                                                    1,
+                                                                ),
+                                                            )
+                                                        }
                                                     />
                                                     <NumInput
                                                         label="Rear"
@@ -1380,7 +1578,16 @@ function ShareTunePageInner() {
                                                         max={20}
                                                         step={0.1}
                                                         onChange={(v) => rs(v)}
-                                                        onBlur={() => rs(clamp(rv, 1, 20, 1))}
+                                                        onBlur={() =>
+                                                            rs(
+                                                                clamp(
+                                                                    rv,
+                                                                    1,
+                                                                    20,
+                                                                    1,
+                                                                ),
+                                                            )
+                                                        }
                                                     />
                                                 </div>
                                             </div>
@@ -1414,12 +1621,20 @@ function ShareTunePageInner() {
                                                     marginBottom: "12px",
                                                 }}
                                             >
-                                                <span style={S.sub}>Front Downforce</span>
-                                                <span style={S.hint}>(0 – 999)</span>
+                                                <span style={S.sub}>
+                                                    Front Downforce
+                                                </span>
+                                                <span style={S.hint}>
+                                                    (0 – 999)
+                                                </span>
                                                 <SubToggle
                                                     label={st.included}
                                                     enabled={aeroFrontOn}
-                                                    onToggle={() => setAeroFrontOn((p) => !p)}
+                                                    onToggle={() =>
+                                                        setAeroFrontOn(
+                                                            (p) => !p,
+                                                        )
+                                                    }
                                                 />
                                             </div>
                                             <div style={{ maxWidth: "200px" }}>
@@ -1431,7 +1646,16 @@ function ShareTunePageInner() {
                                                     step={1}
                                                     disabled={!aeroFrontOn}
                                                     onChange={setArF}
-                                                    onBlur={() => setArF(clamp(arF, 0, 999, 0))}
+                                                    onBlur={() =>
+                                                        setArF(
+                                                            clamp(
+                                                                arF,
+                                                                0,
+                                                                999,
+                                                                0,
+                                                            ),
+                                                        )
+                                                    }
                                                 />
                                             </div>
                                         </div>
@@ -1443,12 +1667,18 @@ function ShareTunePageInner() {
                                                     marginBottom: "12px",
                                                 }}
                                             >
-                                                <span style={S.sub}>Rear Downforce</span>
-                                                <span style={S.hint}>(0 – 999)</span>
+                                                <span style={S.sub}>
+                                                    Rear Downforce
+                                                </span>
+                                                <span style={S.hint}>
+                                                    (0 – 999)
+                                                </span>
                                                 <SubToggle
                                                     label={st.included}
                                                     enabled={aeroRearOn}
-                                                    onToggle={() => setAeroRearOn((p) => !p)}
+                                                    onToggle={() =>
+                                                        setAeroRearOn((p) => !p)
+                                                    }
                                                 />
                                             </div>
                                             <div style={{ maxWidth: "200px" }}>
@@ -1460,7 +1690,16 @@ function ShareTunePageInner() {
                                                     step={1}
                                                     disabled={!aeroRearOn}
                                                     onChange={setArR}
-                                                    onBlur={() => setArR(clamp(arR, 0, 999, 0))}
+                                                    onBlur={() =>
+                                                        setArR(
+                                                            clamp(
+                                                                arR,
+                                                                0,
+                                                                999,
+                                                                0,
+                                                            ),
+                                                        )
+                                                    }
                                                 />
                                             </div>
                                         </div>
@@ -1486,10 +1725,15 @@ function ShareTunePageInner() {
                                         }}
                                     >
                                         <div>
-                                            <div style={{ marginBottom: "12px" }}>
-                                                <span style={S.sub}>Braking Balance</span>
+                                            <div
+                                                style={{ marginBottom: "12px" }}
+                                            >
+                                                <span style={S.sub}>
+                                                    Braking Balance
+                                                </span>
                                                 <span style={S.hint}>
-                                                    0 = Full Front → 100 = Full Rear
+                                                    0 = Full Front → 100 = Full
+                                                    Rear
                                                 </span>
                                             </div>
                                             <div
@@ -1521,8 +1765,16 @@ function ShareTunePageInner() {
                                                         min={0}
                                                         max={100}
                                                         value={bBal}
-                                                        onChange={(e) => setBBal(e.target.value)}
-                                                        style={{ flex: 1, accentColor: "#f87171" }}
+                                                        onChange={(e) =>
+                                                            setBBal(
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        style={{
+                                                            flex: 1,
+                                                            accentColor:
+                                                                "#f87171",
+                                                        }}
                                                     />
                                                     <span
                                                         style={{
@@ -1547,9 +1799,20 @@ function ShareTunePageInner() {
                                                         max={100}
                                                         step={1}
                                                         value={bBal}
-                                                        onChange={(e) => setBBal(e.target.value)}
+                                                        onChange={(e) =>
+                                                            setBBal(
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         onBlur={() =>
-                                                            setBBal(clamp(bBal, 0, 100, 0))
+                                                            setBBal(
+                                                                clamp(
+                                                                    bBal,
+                                                                    0,
+                                                                    100,
+                                                                    0,
+                                                                ),
+                                                            )
                                                         }
                                                         style={{
                                                             ...S.input,
@@ -1558,7 +1821,10 @@ function ShareTunePageInner() {
                                                         }}
                                                     />
                                                     <span
-                                                        style={{ fontSize: "13px", color: "#475569" }}
+                                                        style={{
+                                                            fontSize: "13px",
+                                                            color: "#475569",
+                                                        }}
                                                     >
                                                         %
                                                     </span>
@@ -1577,9 +1843,15 @@ function ShareTunePageInner() {
                                             </div>
                                         </div>
                                         <div>
-                                            <div style={{ marginBottom: "12px" }}>
-                                                <span style={S.sub}>Braking Pressure</span>
-                                                <span style={S.hint}>% (0 – 200)</span>
+                                            <div
+                                                style={{ marginBottom: "12px" }}
+                                            >
+                                                <span style={S.sub}>
+                                                    Braking Pressure
+                                                </span>
+                                                <span style={S.hint}>
+                                                    % (0 – 200)
+                                                </span>
                                             </div>
                                             <div style={{ maxWidth: "160px" }}>
                                                 <NumInput
@@ -1590,7 +1862,14 @@ function ShareTunePageInner() {
                                                     step={1}
                                                     onChange={setBPre}
                                                     onBlur={() =>
-                                                        setBPre(clamp(bPre, 0, 200, 0))
+                                                        setBPre(
+                                                            clamp(
+                                                                bPre,
+                                                                0,
+                                                                200,
+                                                                0,
+                                                            ),
+                                                        )
                                                     }
                                                 />
                                             </div>
@@ -1617,15 +1896,30 @@ function ShareTunePageInner() {
                                         }}
                                     >
                                         <div>
-                                            <label style={S.label}>Drivetrain</label>
-                                            <div style={{ display: "flex", gap: "10px" }}>
-                                                {(["AWD", "RWD", "FWD"] as const).map((dt) => (
+                                            <label style={S.label}>
+                                                Drivetrain
+                                            </label>
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    gap: "10px",
+                                                }}
+                                            >
+                                                {(
+                                                    [
+                                                        "AWD",
+                                                        "RWD",
+                                                        "FWD",
+                                                    ] as const
+                                                ).map((dt) => (
                                                     <Chip
                                                         key={dt}
                                                         label={dt}
                                                         active={diffType === dt}
                                                         color="#fbbf24"
-                                                        onClick={() => setDiffType(dt)}
+                                                        onClick={() =>
+                                                            setDiffType(dt)
+                                                        }
                                                     />
                                                 ))}
                                             </div>
@@ -1633,11 +1927,17 @@ function ShareTunePageInner() {
 
                                         {diffType !== "AWD" && (
                                             <div>
-                                                <div style={{ marginBottom: "12px" }}>
+                                                <div
+                                                    style={{
+                                                        marginBottom: "12px",
+                                                    }}
+                                                >
                                                     <span style={S.sub}>
                                                         {diffType} Differential
                                                     </span>
-                                                    <span style={S.hint}>0 – 100 %</span>
+                                                    <span style={S.hint}>
+                                                        0 – 100 %
+                                                    </span>
                                                 </div>
                                                 <div style={S.row}>
                                                     <NumInput
@@ -1649,7 +1949,14 @@ function ShareTunePageInner() {
                                                         step={1}
                                                         onChange={setDAccel}
                                                         onBlur={() =>
-                                                            setDAccel(clamp(dAccel, 0, 100, 0))
+                                                            setDAccel(
+                                                                clamp(
+                                                                    dAccel,
+                                                                    0,
+                                                                    100,
+                                                                    0,
+                                                                ),
+                                                            )
                                                         }
                                                     />
                                                     <NumInput
@@ -1661,7 +1968,14 @@ function ShareTunePageInner() {
                                                         step={1}
                                                         onChange={setDDecel}
                                                         onBlur={() =>
-                                                            setDDecel(clamp(dDecel, 0, 100, 0))
+                                                            setDDecel(
+                                                                clamp(
+                                                                    dDecel,
+                                                                    0,
+                                                                    100,
+                                                                    0,
+                                                                ),
+                                                            )
                                                         }
                                                     />
                                                 </div>
@@ -1677,11 +1991,23 @@ function ShareTunePageInner() {
                                                 }}
                                             >
                                                 <div>
-                                                    <div style={{ marginBottom: "12px" }}>
-                                                        <span style={{ ...S.sub, color: "#60a5fa" }}>
+                                                    <div
+                                                        style={{
+                                                            marginBottom:
+                                                                "12px",
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                ...S.sub,
+                                                                color: "#60a5fa",
+                                                            }}
+                                                        >
                                                             Front Differential
                                                         </span>
-                                                        <span style={S.hint}>0 – 100 %</span>
+                                                        <span style={S.hint}>
+                                                            0 – 100 %
+                                                        </span>
                                                     </div>
                                                     <div style={S.row}>
                                                         <NumInput
@@ -1691,10 +2017,17 @@ function ShareTunePageInner() {
                                                             min={0}
                                                             max={100}
                                                             step={1}
-                                                            onChange={setDFrontAccel}
+                                                            onChange={
+                                                                setDFrontAccel
+                                                            }
                                                             onBlur={() =>
                                                                 setDFrontAccel(
-                                                                    clamp(dFrontAccel, 0, 100, 0),
+                                                                    clamp(
+                                                                        dFrontAccel,
+                                                                        0,
+                                                                        100,
+                                                                        0,
+                                                                    ),
                                                                 )
                                                             }
                                                         />
@@ -1705,21 +2038,40 @@ function ShareTunePageInner() {
                                                             min={0}
                                                             max={100}
                                                             step={1}
-                                                            onChange={setDFrontDecel}
+                                                            onChange={
+                                                                setDFrontDecel
+                                                            }
                                                             onBlur={() =>
                                                                 setDFrontDecel(
-                                                                    clamp(dFrontDecel, 0, 100, 0),
+                                                                    clamp(
+                                                                        dFrontDecel,
+                                                                        0,
+                                                                        100,
+                                                                        0,
+                                                                    ),
                                                                 )
                                                             }
                                                         />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <div style={{ marginBottom: "12px" }}>
-                                                        <span style={{ ...S.sub, color: "#fb923c" }}>
+                                                    <div
+                                                        style={{
+                                                            marginBottom:
+                                                                "12px",
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                ...S.sub,
+                                                                color: "#fb923c",
+                                                            }}
+                                                        >
                                                             Rear Differential
                                                         </span>
-                                                        <span style={S.hint}>0 – 100 %</span>
+                                                        <span style={S.hint}>
+                                                            0 – 100 %
+                                                        </span>
                                                     </div>
                                                     <div style={S.row}>
                                                         <NumInput
@@ -1729,10 +2081,17 @@ function ShareTunePageInner() {
                                                             min={0}
                                                             max={100}
                                                             step={1}
-                                                            onChange={setDRearAccel}
+                                                            onChange={
+                                                                setDRearAccel
+                                                            }
                                                             onBlur={() =>
                                                                 setDRearAccel(
-                                                                    clamp(dRearAccel, 0, 100, 0),
+                                                                    clamp(
+                                                                        dRearAccel,
+                                                                        0,
+                                                                        100,
+                                                                        0,
+                                                                    ),
                                                                 )
                                                             }
                                                         />
@@ -1743,34 +2102,65 @@ function ShareTunePageInner() {
                                                             min={0}
                                                             max={100}
                                                             step={1}
-                                                            onChange={setDRearDecel}
+                                                            onChange={
+                                                                setDRearDecel
+                                                            }
                                                             onBlur={() =>
                                                                 setDRearDecel(
-                                                                    clamp(dRearDecel, 0, 100, 0),
+                                                                    clamp(
+                                                                        dRearDecel,
+                                                                        0,
+                                                                        100,
+                                                                        0,
+                                                                    ),
                                                                 )
                                                             }
                                                         />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <div style={{ marginBottom: "12px" }}>
-                                                        <span style={{ ...S.sub, color: "#c084fc" }}>
+                                                    <div
+                                                        style={{
+                                                            marginBottom:
+                                                                "12px",
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                ...S.sub,
+                                                                color: "#c084fc",
+                                                            }}
+                                                        >
                                                             Center Balance
                                                         </span>
                                                         <span style={S.hint}>
-                                                            0 = Full Front · 100 = Full Rear
+                                                            0 = Full Front · 100
+                                                            = Full Rear
                                                         </span>
                                                     </div>
-                                                    <div style={{ maxWidth: "200px" }}>
+                                                    <div
+                                                        style={{
+                                                            maxWidth: "200px",
+                                                        }}
+                                                    >
                                                         <NumInput
                                                             value={dCenter}
                                                             unit="%"
                                                             min={0}
                                                             max={100}
                                                             step={1}
-                                                            onChange={setDCenter}
+                                                            onChange={
+                                                                setDCenter
+                                                            }
                                                             onBlur={() =>
-                                                                setDCenter(clamp(dCenter, 0, 100, 0))
+                                                                setDCenter(
+                                                                    clamp(
+                                                                        dCenter,
+                                                                        0,
+                                                                        100,
+                                                                        0,
+                                                                    ),
+                                                                )
                                                             }
                                                         />
                                                     </div>
@@ -1911,7 +2301,10 @@ function ShareTunePageInner() {
                                                 "drag",
                                             ] as const
                                         ).map((d) => {
-                                            const colors: Record<string, string> = {
+                                            const colors: Record<
+                                                string,
+                                                string
+                                            > = {
                                                 street: "#c084fc",
                                                 track: "#60a5fa",
                                                 drift: "#facc15",
@@ -1923,12 +2316,19 @@ function ShareTunePageInner() {
                                                 <Chip
                                                     key={d}
                                                     label={
-                                                        d.charAt(0).toUpperCase() + d.slice(1)
+                                                        d
+                                                            .charAt(0)
+                                                            .toUpperCase() +
+                                                        d.slice(1)
                                                     }
                                                     active={discipline === d}
                                                     color={colors[d]}
                                                     onClick={() =>
-                                                        setDiscipline(discipline === d ? "" : d)
+                                                        setDiscipline(
+                                                            discipline === d
+                                                                ? ""
+                                                                : d,
+                                                        )
                                                     }
                                                 />
                                             )
@@ -1938,10 +2338,14 @@ function ShareTunePageInner() {
 
                                 {/* Title */}
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={S.label}>{st.tuneTitleLabel}</label>
+                                    <label style={S.label}>
+                                        {st.tuneTitleLabel}
+                                    </label>
                                     <input
                                         value={tuneTitle}
-                                        onChange={(e) => setTuneTitle(e.target.value)}
+                                        onChange={(e) =>
+                                            setTuneTitle(e.target.value)
+                                        }
                                         placeholder={st.tuneTitlePlaceholder}
                                         maxLength={120}
                                         style={{ ...S.input }}
@@ -1950,10 +2354,14 @@ function ShareTunePageInner() {
 
                                 {/* Description */}
                                 <div style={{ marginBottom: "16px" }}>
-                                    <label style={S.label}>{st.tuneDescLabel}</label>
+                                    <label style={S.label}>
+                                        {st.tuneDescLabel}
+                                    </label>
                                     <textarea
                                         value={tuneDesc}
-                                        onChange={(e) => setTuneDesc(e.target.value)}
+                                        onChange={(e) =>
+                                            setTuneDesc(e.target.value)
+                                        }
                                         placeholder={st.tuneDescPlaceholder}
                                         rows={3}
                                         style={{
@@ -1967,11 +2375,15 @@ function ShareTunePageInner() {
 
                                 {/* Share Code */}
                                 <div>
-                                    <label style={S.label}>{st.shareCodeLabel}</label>
+                                    <label style={S.label}>
+                                        {st.shareCodeLabel}
+                                    </label>
                                     <input
                                         value={shareCode}
                                         onChange={(e) =>
-                                            setShareCode(e.target.value.toUpperCase())
+                                            setShareCode(
+                                                e.target.value.toUpperCase(),
+                                            )
                                         }
                                         placeholder={st.shareCodePlaceholder}
                                         maxLength={20}
@@ -1986,7 +2398,10 @@ function ShareTunePageInner() {
                             </div>
 
                             {/* Submit */}
-                            <AdUnit slot="tunes-new-bottom" format="horizontal" />
+                            <AdUnit
+                                slot="tunes-new-bottom"
+                                format="horizontal"
+                            />
                             {submitError && (
                                 <div
                                     style={{
@@ -2032,10 +2447,14 @@ function ShareTunePageInner() {
                                         borderRadius: "10px",
                                         fontSize: "14px",
                                         fontWeight: 700,
-                                        background: carSelected ? "#6366f1" : "#1e2330",
+                                        background: carSelected
+                                            ? "#6366f1"
+                                            : "#1e2330",
                                         color: carSelected ? "#fff" : "#475569",
                                         border: "none",
-                                        cursor: carSelected ? "pointer" : "not-allowed",
+                                        cursor: carSelected
+                                            ? "pointer"
+                                            : "not-allowed",
                                         opacity: submitting ? 0.6 : 1,
                                     }}
                                 >

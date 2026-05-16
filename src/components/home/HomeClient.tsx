@@ -305,16 +305,9 @@ export function HomeClient({
                     >
                         {games.map((game) => {
                             const count = game.tune_count?.[0]?.count ?? 0
-                            const clickable =
-                                game.is_active &&
-                                game.slug !== "forza-horizon-6"
+                            const clickable = game.is_active
                             const meta = GAME_META[game.slug]
-                            const statusBadge =
-                                game.slug === "forza-horizon-6" ? (
-                                    <span style={bs("#2a1f0f", "#fb923c")}>
-                                        {h.statusSoon}
-                                    </span>
-                                ) : !game.is_active ? (
+                            const statusBadge = !game.is_active ? (
                                     <span style={bs("#1e293b", "#64748b")}>
                                         {h.statusComing}
                                     </span>

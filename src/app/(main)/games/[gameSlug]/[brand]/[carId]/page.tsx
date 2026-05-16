@@ -33,7 +33,7 @@ const DISCIPLINE_COLOR: Record<string, string> = {
   drag:    '#f87171',
 }
 
-const PI_CLASSES = ['', 'D', 'C', 'B', 'A', 'S1', 'X']
+const PI_CLASSES = ['', 'D', 'C', 'B', 'A', 'S1', 'S2', 'X', 'R']
 
 type Tune = {
   id: string

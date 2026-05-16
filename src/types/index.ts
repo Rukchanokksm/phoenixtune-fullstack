@@ -16,7 +16,7 @@ export interface Game {
 
 // ===== CARS =====
 export type Drivetrain = "FWD" | "RWD" | "AWD"
-export type PIClass = "D" | "C" | "B" | "A" | "S1" | "S2" | "X"
+export type PIClass = "D" | "C" | "B" | "A" | "S1" | "S2" | "X" | "R"
 export interface Car {
     id: string
     gameId: string

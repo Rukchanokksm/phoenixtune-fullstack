@@ -551,7 +551,9 @@ type Schema = {
         | "adminOnly"
         | "loading"
         | "errNoTitle"
-        | "errGeneric",
+        | "errGeneric"
+        | "tagsLabel"
+        | "filterAll",
         string
     >
 }
@@ -991,7 +993,7 @@ export const MESSAGES: Record<Locale, Schema> = {
                 "Search, filter and sort community tunes — by discipline, class, drivetrain and more",
             allTunesBtn: "View All Tunes →",
             subtitleFH5: "Mexico Open World · 500+ Cars",
-            subtitleFH6: "Coming Soon",
+            subtitleFH6: "Open World · 500+ Cars",
             subtitleNFS: "Lakeshore City · Street Racing",
         },
         // ─── Titles (user achievement badges) ───────────────────────────────
@@ -1118,6 +1120,8 @@ export const MESSAGES: Record<Locale, Schema> = {
             loading: "Loading...",
             errNoTitle: "Please enter a title",
             errGeneric: "An error occurred",
+            tagsLabel: "Tags",
+            filterAll: "All",
         },
     },
 
@@ -1545,7 +1549,7 @@ export const MESSAGES: Record<Locale, Schema> = {
                 "ค้นหา กรอง และเรียงดู tune จากชุมชน — ตาม discipline, class, drivetrain และอื่นๆ",
             allTunesBtn: "ดู Tune ทั้งหมด →",
             subtitleFH5: "โลกเปิดเม็กซิโก · รถกว่า 500 คัน",
-            subtitleFH6: "เร็วๆ นี้",
+            subtitleFH6: "โลกเปิด · รถกว่า 500 คัน",
             subtitleNFS: "เมือง Lakeshore · การแข่งรถบนถนน",
         },
         // ─── Titles (user achievement badges) ───────────────────────────────
@@ -1657,6 +1661,8 @@ export const MESSAGES: Record<Locale, Schema> = {
             loading: "กำลังโหลด...",
             errNoTitle: "กรุณาใส่หัวข้อ",
             errGeneric: "เกิดข้อผิดพลาด",
+            tagsLabel: "แท็ก",
+            filterAll: "ทั้งหมด",
         },
         // ─── Profile Page ────────────────────────────────────────────────────
         profilePage: {

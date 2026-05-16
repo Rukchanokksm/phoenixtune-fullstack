@@ -74,7 +74,7 @@ const APP_VERSION = "0.1.0"
 // ─── Game data (labels don't translate — game names are proper nouns) ────────
 const GAME_LINKS = [
     { label: "Forza Horizon 5", href: "/games/forza-horizon-5" },
-    { label: "Forza Horizon 6", href: "/games/forza-horizon-6", soon: true },
+    { label: "Forza Horizon 6", href: "/games/forza-horizon-6" },
     { label: "The Crew Motorfest", href: "/games/the-crew-motorfest" },
     { label: "NFS Unbound", href: "/games/nfs-unbound" },
 ]
@@ -250,38 +250,21 @@ export function Footer() {
                                     href={l.href}
                                     style={{
                                         ...footerLinkStyle,
-                                        color: l.soon ? "#475569" : "#64748b",
+                                        color: "#64748b",
                                     }}
                                     onMouseEnter={(e) => {
-                                        if (!l.soon)
-                                            (
-                                                e.currentTarget as HTMLElement
-                                            ).style.color = "#e2e8f0"
+                                        ;(
+                                            e.currentTarget as HTMLElement
+                                        ).style.color = "#e2e8f0"
                                     }}
                                     onMouseLeave={(e) => {
                                         ;(
                                             e.currentTarget as HTMLElement
-                                        ).style.color = l.soon
-                                            ? "#475569"
-                                            : "#64748b"
+                                        ).style.color = "#64748b"
                                     }}
                                 >
                                     {l.label}
                                 </Link>
-                                {l.soon && (
-                                    <span
-                                        style={{
-                                            fontSize: "10px",
-                                            fontWeight: 600,
-                                            padding: "1px 5px",
-                                            borderRadius: "4px",
-                                            background: "rgba(250,204,21,0.12)",
-                                            color: "#facc15",
-                                        }}
-                                    >
-                                        {t.nav.soon}
-                                    </span>
-                                )}
                             </li>
                         ))}
                     </ul>

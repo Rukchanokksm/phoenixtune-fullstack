@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { CarModelsGrid } from "@/components/game/CarModelsGrid"
+import styles from "./page.module.css"
 
 const GAME_META: Record<string, { name: string; accent: string }> = {
     "forza-horizon-5": { name: "Forza Horizon 5", accent: "#60a5fa" },
@@ -24,6 +25,7 @@ export default async function BrandPage({
         .select("id")
         .eq("slug", gameSlug)
         .single()
+
     if (!game) {
         return (
             <div
@@ -61,95 +63,33 @@ export default async function BrandPage({
     const models = cars ?? []
 
     return (
-        <div
-            style={{
-                background: "#0d0f14",
-                minHeight: "100vh",
-                color: "#e2e8f0",
-            }}
-        >
-            {/* Header */}
-            <div
-                style={{
-                    borderBottom: "1px solid #1e2330",
-                    background: "#0f1117",
-                }}
-            >
-                <div
-                    style={{
-                        maxWidth: "1100px",
-                        margin: "0 auto",
-                        padding: "20px 24px",
-                    }}
-                >
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            fontSize: "13px",
-                            color: "#64748b",
-                            marginBottom: "12px",
-                            flexWrap: "wrap",
-                        }}
-                    >
-                        <Link
-                            href="/"
-                            style={{ color: "#64748b", textDecoration: "none" }}
-                        >
+        <div className={styles.page}>
+            <div className={styles.header}>
+                <div className={styles.headerInner}>
+                    <nav className={styles.breadcrumb} aria-label="breadcrumb">
+                        <Link href="/" className={styles.breadcrumbLink}>
                             Home
                         </Link>
                         <span>›</span>
                         <Link
                             href={`/games/${gameSlug}`}
-                            style={{ color: "#64748b", textDecoration: "none" }}
+                            className={styles.breadcrumbLink}
                         >
                             {meta.name}
                         </Link>
                         <span>›</span>
                         <span style={{ color: meta.accent }}>{brandName}</span>
-                    </div>
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "12px",
-                        }}
-                    >
-                        <h1
-                            style={{
-                                margin: 0,
-                                fontSize: "28px",
-                                fontWeight: 900,
-                                color: "#f1f5f9",
-                            }}
-                        >
-                            {brandName}
-                        </h1>
-                        <span
-                            style={{
-                                fontSize: "13px",
-                                color: "#475569",
-                                background: "#131620",
-                                padding: "4px 10px",
-                                borderRadius: "6px",
-                                border: "1px solid #1e2330",
-                            }}
-                        >
+                    </nav>
+                    <div className={styles.titleRow}>
+                        <h1 className={styles.title}>{brandName}</h1>
+                        <span className={styles.countBadge}>
                             {models.length} รุ่น
                         </span>
                     </div>
                 </div>
             </div>
 
-            {/* Models Grid — Client Component handles hover */}
-            <div
-                style={{
-                    maxWidth: "1100px",
-                    margin: "0 auto",
-                    padding: "32px 24px",
-                }}
-            >
+            <div className={styles.content}>
                 <CarModelsGrid
                     cars={models}
                     gameSlug={gameSlug}

@@ -5,12 +5,14 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { ArticleBody, parseBlocks, extractSections } from "@/components/content/ArticleBody"
 import { useLanguage } from "@/lib/i18n/LanguageProvider"
+import { getBlogTag } from "@/lib/blogTags"
 
 type Post = {
     id: string
     title: string
     excerpt: string | null
     cover_url: string | null
+    tags: string[]
     body: string
     comment_count: number
     created_at: string
@@ -268,6 +270,30 @@ export default function BlogPostPage() {
                                         <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "14px", lineHeight: 1.7 }}>
                                             {post.excerpt}
                                         </p>
+                                    )}
+                                    {post.tags?.length > 0 && (
+                                        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "16px" }}>
+                                            {post.tags.map((id) => {
+                                                const tag = getBlogTag(id)
+                                                if (!tag) return null
+                                                return (
+                                                    <span
+                                                        key={id}
+                                                        style={{
+                                                            fontSize: "11px",
+                                                            fontWeight: 600,
+                                                            padding: "3px 10px",
+                                                            borderRadius: "12px",
+                                                            background: tag.color + "22",
+                                                            color: tag.color,
+                                                            border: `1px solid ${tag.color}44`,
+                                                        }}
+                                                    >
+                                                        {tag.label}
+                                                    </span>
+                                                )
+                                            })}
+                                        </div>
                                     )}
                                     <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "28px", flexWrap: "wrap", paddingBottom: "20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                                         {post.user && (

@@ -14,7 +14,7 @@ import type { UserProfile } from "@/types"
 // ─── Games list ─────────────────────────────────────────────────────────────
 const GAMES = [
     { name: "Forza Horizon 5", slug: "forza-horizon-5", active: true },
-    { name: "Forza Horizon 6", slug: "forza-horizon-6", active: false },
+    { name: "Forza Horizon 6", slug: "forza-horizon-6", active: true },
     { name: "The Crew Motorfest", slug: "the-crew-motorfest", active: true },
     { name: "NFS Unbound", slug: "nfs-unbound", active: true },
 ]

@@ -23,7 +23,7 @@ const GAME_META: Record<
         name: "Forza Horizon 6",
         gradient: "linear-gradient(135deg,#2a1f3a,#1a0f2a,#0d0f1e)",
         accent: "#c084fc",
-        available: false,
+        available: true,
     },
     "nfs-unbound": {
         name: "Need for Speed Unbound",

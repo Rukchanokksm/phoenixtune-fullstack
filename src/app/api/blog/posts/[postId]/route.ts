@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 
 const FULL_SELECT = `
-  id, title, excerpt, cover_url, body, comment_count, created_at, updated_at,
+  id, title, excerpt, cover_url, tags, body, comment_count, created_at, updated_at,
   user:user_profiles!blog_posts_user_id_fkey(id, username)
 `
 

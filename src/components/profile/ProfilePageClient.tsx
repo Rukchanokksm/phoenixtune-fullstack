@@ -47,7 +47,7 @@ interface Props {
 
 const PI_COLORS: Record<string, string> = {
     D: '#a3e635', C: '#facc15', B: '#fb923c',
-    A: '#f87171', S1: '#c084fc', S2: '#818cf8', X: '#60a5fa',
+    A: '#f87171', S1: '#c084fc', S2: '#818cf8', X: '#60a5fa', R: '#e879f9',
 }
 const DISC_COLORS: Record<string, string> = {
     street: '#c084fc', track: '#60a5fa', drift: '#f472b6',

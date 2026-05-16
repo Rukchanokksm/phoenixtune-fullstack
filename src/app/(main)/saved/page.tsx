@@ -42,7 +42,7 @@ const DISCIPLINE_STYLE: Record<string, { bg: string; color: string }> = {
 
 const PI_COLORS: Record<string, string> = {
   D: '#94a3b8', C: '#fbbf24', B: '#4ade80',
-  A: '#60a5fa', S1: '#c084fc', S2: '#f472b6', X: '#f87171',
+  A: '#60a5fa', S1: '#c084fc', S2: '#f472b6', X: '#f87171', R: '#e879f9',
 }
 
 const GAME_ACCENT: Record<string, string> = {

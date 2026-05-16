@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 
 const POST_SELECT = `
-  id, title, excerpt, cover_url, comment_count, created_at, updated_at,
+  id, title, excerpt, cover_url, tags, comment_count, created_at, updated_at,
   user:user_profiles!blog_posts_user_id_fkey(username)
 `
 
@@ -38,13 +38,13 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { title, excerpt, cover_url, body: postBody } = body
+    const { title, excerpt, cover_url, body: postBody, tags } = body
     if (!title?.trim()) return NextResponse.json({ error: "Title required" }, { status: 400 })
 
     const admin = createAdminClient()
     const { data, error } = await admin
         .from("blog_posts")
-        .insert({ user_id: user.id, title: title.trim(), excerpt, cover_url, body: postBody ?? "[]" })
+        .insert({ user_id: user.id, title: title.trim(), excerpt, cover_url, body: postBody ?? "[]", tags: tags ?? [] })
         .select(POST_SELECT)
         .single()
 
