@@ -69,6 +69,8 @@ function MailIcon() {
     )
 }
 
+const APP_VERSION = "0.1.0"
+
 // ─── Game data (labels don't translate — game names are proper nouns) ────────
 const GAME_LINKS = [
     { label: "Forza Horizon 5", href: "/games/forza-horizon-5" },
@@ -406,9 +408,26 @@ export function Footer() {
                     gap: "8px",
                 }}
             >
-                <span style={{ fontSize: "12px", color: "#475569" }}>
-                    © {year} Tunix — {t.footer.copyright}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ fontSize: "12px", color: "#475569" }}>
+                        © {year} Tunix — {t.footer.copyright}
+                    </span>
+                    <span
+                        style={{
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            padding: "2px 7px",
+                            borderRadius: "5px",
+                            background: "rgba(255,255,255,0.05)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            color: "#475569",
+                            letterSpacing: "0.02em",
+                            fontFamily: "monospace",
+                        }}
+                    >
+                        v{APP_VERSION}
+                    </span>
+                </div>
                 <div style={{ display: "flex", gap: "20px" }}>
                     {[
                         { label: t.footer.privacy, href: "/privacy" },

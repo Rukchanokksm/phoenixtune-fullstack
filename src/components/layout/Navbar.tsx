@@ -93,22 +93,6 @@ export function Navbar() {
 
     // ── Auth state ──────────────────────────────────────────────────────────
     useEffect(() => {
-        const fetchUser = async () => {
-            const {
-                data: { user: authUser },
-            } = await supabase.auth.getUser()
-            if (authUser) {
-                const { data: profile } = await supabase
-                    .from("user_profiles")
-                    .select("*")
-                    .eq("id", authUser.id)
-                    .single()
-                setUser(profile ?? null)
-            }
-            setLoading(false)
-        }
-        fetchUser()
-
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -122,6 +106,7 @@ export function Navbar() {
             } else {
                 setUser(null)
             }
+            setLoading(false)
         })
         return () => subscription.unsubscribe()
     }, [])
