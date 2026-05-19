@@ -319,7 +319,7 @@ export function GamePageClient({ gameSlug, meta, brands, coverUrl }: Props) {
                             style={{
                                 background:
                                     "linear-gradient(135deg,#1a1400,#0d0f14)",
-                                border: `1px solid ${gameSlug === "forza-horizon-6" ? "rgba(250,204,21,0.06)" : "rgba(250,204,21,0.15)"}`,
+                                border: "1px solid rgba(250,204,21,0.15)",
                                 borderRadius: "16px",
                                 padding: "40px 32px",
                                 display: "flex",
@@ -327,36 +327,19 @@ export function GamePageClient({ gameSlug, meta, brands, coverUrl }: Props) {
                                 justifyContent: "space-between",
                                 flexWrap: "wrap",
                                 gap: "24px",
-                                opacity: gameSlug === "forza-horizon-6" ? 0.6 : 1,
                             }}
                         >
                             <div>
-                                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                                    <h3
-                                        style={{
-                                            margin: 0,
-                                            fontSize: "20px",
-                                            fontWeight: 800,
-                                            color: "#f1f5f9",
-                                        }}
-                                    >
-                                        {g.autoCalcTitle}
-                                    </h3>
-                                    {gameSlug === "forza-horizon-6" && (
-                                        <span style={{
-                                            fontSize: "10px",
-                                            fontWeight: 700,
-                                            letterSpacing: "0.08em",
-                                            padding: "3px 8px",
-                                            borderRadius: "5px",
-                                            background: "rgba(250,204,21,0.1)",
-                                            border: "1px solid rgba(250,204,21,0.25)",
-                                            color: "#facc15",
-                                        }}>
-                                            {t.nav.soon}
-                                        </span>
-                                    )}
-                                </div>
+                                <h3
+                                    style={{
+                                        margin: "0 0 8px",
+                                        fontSize: "20px",
+                                        fontWeight: 800,
+                                        color: "#f1f5f9",
+                                    }}
+                                >
+                                    {g.autoCalcTitle}
+                                </h3>
                                 <p
                                     style={{
                                         margin: 0,
@@ -366,28 +349,9 @@ export function GamePageClient({ gameSlug, meta, brands, coverUrl }: Props) {
                                         lineHeight: 1.6,
                                     }}
                                 >
-                                    {gameSlug === "forza-horizon-6"
-                                        ? "The calculation formula for FH6 is still being researched. This feature will be available soon."
-                                        : g.autoCalcDesc}
+                                    {g.autoCalcDesc}
                                 </p>
                             </div>
-                            {gameSlug === "forza-horizon-6" ? (
-                                <span
-                                    style={{
-                                        padding: "13px 28px",
-                                        borderRadius: "10px",
-                                        background: "rgba(250,204,21,0.08)",
-                                        border: "1px solid rgba(250,204,21,0.2)",
-                                        color: "#64748b",
-                                        fontWeight: 800,
-                                        fontSize: "15px",
-                                        whiteSpace: "nowrap",
-                                        cursor: "not-allowed",
-                                    }}
-                                >
-                                    {t.nav.soon}
-                                </span>
-                            ) : (
                             <Link
                                 href="/calculator"
                                 className="btn-calculator"
@@ -404,7 +368,6 @@ export function GamePageClient({ gameSlug, meta, brands, coverUrl }: Props) {
                             >
                                 {g.calcBtn}
                             </Link>
-                            )}
                         </div>
                         <div
                             style={{
