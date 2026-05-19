@@ -231,7 +231,7 @@ type Schema = {
         | "drivetrain"
         | "discipline"
         | "weight"
-        | "torque"
+        | "power"
         | "calculate"
         | "loadingBtn"
         | "loginBtn"
@@ -240,8 +240,9 @@ type Schema = {
         | "register"
         | "noResultHint"
         | "noResultSub"
-        | "gearDefault"
+        | "gearDragNote"
         | "gearNote"
+        | "casterNote"
         | "warningNote"
         | "rideHeightLowest"
         | "rideHeightLow"
@@ -789,7 +790,7 @@ export const MESSAGES: Record<Locale, Schema> = {
             drivetrain: "Drivetrain",
             discipline: "Discipline",
             weight: "Weight",
-            torque: "Torque",
+            power: "Power",
             calculate: "🧮 Calculate Tune",
             loadingBtn: "Loading...",
             loginBtn: "🔒 Sign in to use",
@@ -798,9 +799,12 @@ export const MESSAGES: Record<Locale, Schema> = {
             register: "Register",
             noResultHint: 'Enter car specs then press "Calculate Tune"',
             noResultSub: "Results will appear here · all values are read-only",
-            gearDefault: "Use Default",
+            gearDragNote:
+                "Drag: put top gear at the far right, spread the lower gears evenly, then tune 1st gear on the drag strip.",
             gearNote:
-                "Gear ratios depend on individual car mods. Use the default then adjust Final Drive per track.",
+                "Final Drive is calculated from power. Gear ratios still depend on car mods — fine-tune so top gear hits redline at the end of the longest straight.",
+            casterNote:
+                "FH6 is sensitive to caster above 6.0° — the car may feel snappy on turn-in.",
             warningNote:
                 "⚠️ These values are a starting point only. Adjust based on real in-game feedback.",
             rideHeightLowest: "Lowest (Track/Drift)",
@@ -1349,7 +1353,7 @@ export const MESSAGES: Record<Locale, Schema> = {
             drivetrain: "ระบบขับเคลื่อน",
             discipline: "ประเภทการใช้งาน",
             weight: "น้ำหนัก",
-            torque: "แรงบิด",
+            power: "กำลังเครื่อง",
             calculate: "🧮 คำนวณ Tune",
             loadingBtn: "กำลังโหลด...",
             loginBtn: "🔒 เข้าสู่ระบบเพื่อใช้งาน",
@@ -1358,9 +1362,12 @@ export const MESSAGES: Record<Locale, Schema> = {
             register: "สมัครสมาชิก",
             noResultHint: 'กรอกข้อมูลแล้วกด "คำนวณ Tune"',
             noResultSub: "ผลลัพธ์จะแสดงที่นี่ · ค่าทั้งหมดเป็น read-only",
-            gearDefault: "ใช้ค่า Default",
+            gearDragNote:
+                "Drag: ดัน top gear ไปขวาสุด ไล่ gear ล่างให้กระจายเท่าๆ กัน แล้วจูน 1st gear บน drag strip",
             gearNote:
-                "ค่า Gear Ratio ขึ้นอยู่กับของแต่งเฉพาะรถแต่ละคัน แนะนำให้ใช้ค่า Default แล้วปรับ Final Drive ตามสนาม",
+                "Final Drive คำนวณจากกำลังเครื่อง ส่วน Gear Ratio ยังขึ้นกับของแต่งของรถ — ปรับให้ top gear แตะ redline พอดีที่ปลายทางตรงที่ยาวที่สุด",
+            casterNote:
+                "FH6 ไวต่อ caster ที่เกิน 6.0° — รถอาจรู้สึก snappy ตอน turn-in",
             warningNote:
                 "⚠️ ค่าเหล่านี้เป็นจุดเริ่มต้นเท่านั้น ควรปรับตาม feedback จากการขับจริงในเกม",
             rideHeightLowest: "ต่ำสุด (Track/Drift)",
