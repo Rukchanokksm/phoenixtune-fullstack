@@ -54,7 +54,7 @@ export default function TermsPage() {
       <section style={sectionStyle}>
         <h2 style={h2Style}>6. Disclaimer</h2>
         <p style={pStyle}>
-          Tunix is provided "as is". Tune settings are user-contributed and not
+          Tunix is provided &quot;as is&quot;. Tune settings are user-contributed and not
           guaranteed to work in any specific game version. Use at your own risk.
         </p>
       </section>

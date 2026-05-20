@@ -418,7 +418,12 @@ export default function NewForumPostPage() {
         }
 
         const ext = file.name.split(".").pop() ?? "jpg"
+        // uploadFile runs from an onChange event, not during render — the
+        // purity rule's heuristic flags Math.random/Date.now in any function
+        // declared inside the component body.
+        // eslint-disable-next-line react-hooks/purity
         const rand = Math.random().toString(36).slice(2, 8)
+        // eslint-disable-next-line react-hooks/purity
         const tempPath = `temps/${user.id}_${Date.now()}_${rand}.${ext}`
 
         const { error: upErr } = await supabase.storage

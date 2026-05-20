@@ -236,6 +236,14 @@ function ComingSoonPlaceholder() {
 }
 
 export default function SavedPage() {
+  // Premium hold: render placeholder while the feature is gated off.
+  // PREMIUM_ENABLED is a build-time constant, so this gate never flips
+  // at runtime. Splitting into outer/inner keeps all hooks unconditional.
+  if (!PREMIUM_ENABLED) return <ComingSoonPlaceholder />
+  return <SavedPageInner />
+}
+
+function SavedPageInner() {
   const { t } = useLanguage()
   const S = t.saved
 
@@ -245,9 +253,6 @@ export default function SavedPage() {
   const [page, setPage]         = useState(1)
   const [unsaving, setUnsaving] = useState<string | null>(null)
   const [error, setError]       = useState('')
-
-  // ── Premium hold: render placeholder while the feature is gated off ──────
-  if (!PREMIUM_ENABLED) return <ComingSoonPlaceholder />
 
   const perPage = 20
 
