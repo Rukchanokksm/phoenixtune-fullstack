@@ -1,5 +1,6 @@
 import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTypeScript from "eslint-config-next/typescript";
+import prettierConfig from "eslint-config-prettier/flat";
 
 const eslintConfig = [
   ...nextCoreWebVitals,
@@ -23,6 +24,8 @@ const eslintConfig = [
       "react-hooks/set-state-in-effect": "warn",
     },
   },
+  // Must come last so it can disable conflicting style rules.
+  prettierConfig,
 ];
 
 export default eslintConfig;
