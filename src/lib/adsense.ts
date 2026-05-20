@@ -9,36 +9,36 @@
 
 export const AD_SLOTS: Record<string, string> = {
   // Homepage
-  "homepage-hero-banner":      "",
+  "homepage-hero-banner": "",
 
   // Tunes list / detail
-  "tune-list-infeed":          "",
-  "tune-detail-banner":        "",
-  "tune-detail-sidebar":       "",
-  "tunes-new-top":             "",
-  "tunes-new-bottom":          "",
+  "tune-list-infeed": "",
+  "tune-detail-banner": "",
+  "tune-detail-sidebar": "",
+  "tunes-new-top": "",
+  "tunes-new-bottom": "",
 
   // Per-game pages (dynamic slug fills in)
-  "game-forza-horizon-5-mid":     "",
-  "game-forza-horizon-5-bottom":  "",
-  "game-the-crew-motorfest-mid":  "",
-  "game-the-crew-motorfest-bottom":"",
-  "game-nfs-unbound-mid":         "",
-  "game-nfs-unbound-bottom":      "",
+  "game-forza-horizon-5-mid": "",
+  "game-forza-horizon-5-bottom": "",
+  "game-the-crew-motorfest-mid": "",
+  "game-the-crew-motorfest-bottom": "",
+  "game-nfs-unbound-mid": "",
+  "game-nfs-unbound-bottom": "",
 
   // Car detail
-  "car-detail-infeed":         "",
+  "car-detail-infeed": "",
 
   // Forums
-  "forums-hub-banner":         "",
-  "forum-post-banner":         "",
+  "forums-hub-banner": "",
+  "forum-post-banner": "",
 
   // Calculator
-  "calculator-form-bottom":    "",
-  "calculator-result-bottom":  "",
-}
+  "calculator-form-bottom": "",
+  "calculator-result-bottom": "",
+};
 
 /** Look up the real numeric slot ID for a given slot key. */
 export function resolveSlotId(key: string): string {
-  return AD_SLOTS[key] ?? ""
+  return AD_SLOTS[key] ?? "";
 }

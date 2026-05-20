@@ -15,6 +15,7 @@
 ## File Structure
 
 **Create:**
+
 - `eslint.config.mjs` — flat config, Next preset + Prettier compat
 - `.prettierrc.json` — Prettier defaults made explicit
 - `.prettierignore` — skip `node_modules`, `.next`, build artifacts, SQL migrations
@@ -24,11 +25,13 @@
 - `src/lib/i18n/timeAgo.test.ts` — characterization tests for `timeAgo`
 
 **Modify:**
+
 - `package.json` — scripts + deps (one diff at the end of each tooling task)
 - `CLAUDE.md` — update Commands section, remove "No test runner or linter" line (Task 6)
 - All `*.ts` / `*.tsx` files (Task 4 — Prettier formatting only)
 
 **Delete:**
+
 - `src/app/page.tsx.bak`
 - `src/app/(main)/_page.tsx.bak`
 - `src/middleware.ts.bak`
@@ -40,6 +43,7 @@
 Trivial cleanup, but isolated so it can be reverted if any `.bak` was secretly load-bearing.
 
 **Files:**
+
 - Delete: `src/app/page.tsx.bak`
 - Delete: `src/app/(main)/_page.tsx.bak`
 - Delete: `src/middleware.ts.bak`
@@ -83,6 +87,7 @@ Leftover from earlier migrations; no source imports them."
 Adds ESLint with the Next.js 16 flat-config preset and the `lint` / `lint:fix` scripts. Does NOT add Prettier yet (Task 3).
 
 **Files:**
+
 - Create: `eslint.config.mjs`
 - Modify: `package.json` (add devDeps + scripts)
 
@@ -170,6 +175,7 @@ lint:fix applied where auto-fixable."
 Adds Prettier deps, config files, and scripts — but does NOT run `prettier --write` on the codebase. That happens in Task 4 so the format-all diff is its own commit.
 
 **Files:**
+
 - Create: `.prettierrc.json`
 - Create: `.prettierignore`
 - Modify: `eslint.config.mjs` (extend `eslint-config-prettier`)
@@ -262,6 +268,7 @@ commas). format-all comes in the next commit so the diff is isolated."
 Single huge commit. Pure formatting — no logic changes. The resulting SHA gets captured for `.git-blame-ignore-revs` in Task 5.
 
 **Files:**
+
 - Modify: every TS/TSX file Prettier touches
 
 - [ ] **Step 1: Run Prettier across the codebase**
@@ -311,6 +318,7 @@ Expected: prints the SHA of the format-all commit. **Write it down** — Task 5 
 Adds the test runner, the first real test suite (the highest-value pure functions in the codebase), and the blame-ignore file referencing the Task 4 SHA.
 
 **Files:**
+
 - Create: `.git-blame-ignore-revs`
 - Create: `vitest.config.ts`
 - Create: `src/lib/calculator.test.ts`
@@ -526,6 +534,7 @@ git blame skips it."
 Final task. Adds the second test suite, consolidates everything into `npm run check`, and updates CLAUDE.md to reflect the new tooling.
 
 **Files:**
+
 - Create: `src/lib/i18n/timeAgo.test.ts`
 - Modify: `package.json` (add `check` script)
 - Modify: `CLAUDE.md`
@@ -646,8 +655,8 @@ Open `CLAUDE.md`. Find the Commands section, currently:
 ## Commands
 
 \`\`\`bash
-npm run dev    # http://localhost:3000
-npm run build  # production build + type check
+npm run dev # http://localhost:3000
+npm run build # production build + type check
 \`\`\`
 
 No test runner or linter configured.
@@ -659,12 +668,12 @@ Replace with:
 ## Commands
 
 \`\`\`bash
-npm run dev        # http://localhost:3000
-npm run build      # production build + type check
-npm run check      # lint + typecheck + format:check + tests (run before commits)
-npm run test       # vitest run (one-shot)
+npm run dev # http://localhost:3000
+npm run build # production build + type check
+npm run check # lint + typecheck + format:check + tests (run before commits)
+npm run test # vitest run (one-shot)
 npm run test:watch # vitest in watch mode
-npm run format     # prettier --write .
+npm run format # prettier --write .
 \`\`\`
 
 Tests live next to the source file (`*.test.ts`). Vitest, node env,
@@ -694,24 +703,25 @@ reflect the new commands."
 
 **Spec coverage:**
 
-| Spec section | Implementing task(s) |
-| --- | --- |
-| Tooling Stack (ESLint flat config, Prettier 3, Vitest, tsc) | T2 (ESLint), T3 (Prettier), T5 (Vitest), T5 (typecheck script) |
-| Code Style (Prettier defaults) | T3 step 2 (`.prettierrc.json`) |
-| Test Scope: calculator.ts (smoke, named values, invariants, drag, aero balance) | T5 step 6 |
-| Test Scope: timeAgo.ts (buckets, EN/TH, default locale) | T6 step 1 |
-| Scripts (lint, lint:fix, format, format:check, typecheck, test, test:watch, check) | T2 (lint/lint:fix), T3 (format/format:check), T5 (typecheck/test/test:watch), T6 (check) |
-| Rollout Order (6 commits) | T1–T6 (one commit each) |
-| ESLint Rule Strictness (Next preset + ts-eslint recommended, not strict) | T2 step 2 — Next preset includes `next/typescript` which uses recommended-typed, not strict |
-| Risk: format-all SHA in `.git-blame-ignore-revs` | T4 step 7 (capture SHA), T5 step 2 (record it) |
-| Risk: ESLint surfaces violations | T2 step 5 (triage instructions, no mass-disable) |
-| Verification checklist (clean install, build, log shape, blame-ignore, CLAUDE.md) | T6 step 6 + the existing commit history after T6 |
+| Spec section                                                                       | Implementing task(s)                                                                        |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Tooling Stack (ESLint flat config, Prettier 3, Vitest, tsc)                        | T2 (ESLint), T3 (Prettier), T5 (Vitest), T5 (typecheck script)                              |
+| Code Style (Prettier defaults)                                                     | T3 step 2 (`.prettierrc.json`)                                                              |
+| Test Scope: calculator.ts (smoke, named values, invariants, drag, aero balance)    | T5 step 6                                                                                   |
+| Test Scope: timeAgo.ts (buckets, EN/TH, default locale)                            | T6 step 1                                                                                   |
+| Scripts (lint, lint:fix, format, format:check, typecheck, test, test:watch, check) | T2 (lint/lint:fix), T3 (format/format:check), T5 (typecheck/test/test:watch), T6 (check)    |
+| Rollout Order (6 commits)                                                          | T1–T6 (one commit each)                                                                     |
+| ESLint Rule Strictness (Next preset + ts-eslint recommended, not strict)           | T2 step 2 — Next preset includes `next/typescript` which uses recommended-typed, not strict |
+| Risk: format-all SHA in `.git-blame-ignore-revs`                                   | T4 step 7 (capture SHA), T5 step 2 (record it)                                              |
+| Risk: ESLint surfaces violations                                                   | T2 step 5 (triage instructions, no mass-disable)                                            |
+| Verification checklist (clean install, build, log shape, blame-ignore, CLAUDE.md)  | T6 step 6 + the existing commit history after T6                                            |
 
 All spec sections mapped.
 
 **Placeholder scan:** None of "TBD", "TODO", "implement later", "appropriate", "handle edge cases", "similar to Task N" appear in the plan. Step 5 of Task 2 has a contingency branch but it's concrete (specific responses to specific outcomes), not a placeholder.
 
 **Type consistency:**
+
 - `CalcInput`, `Discipline`, `Drivetrain` — imported from `./calculator` in T5 step 6, names match `calculator.ts` exports.
 - `timeAgo(dateStr, locale)` — signature matches `src/lib/i18n/timeAgo.ts` (confirmed by Read during plan-writing).
 - `Locale` type — not imported in the test; the test passes string literals `"en"`/`"th"` which TypeScript will narrow against the `Locale` parameter type without needing the import.

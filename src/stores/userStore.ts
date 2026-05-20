@@ -1,25 +1,25 @@
-import { create } from 'zustand'
-import { devtools } from 'zustand/middleware'
-import { PREMIUM_ENABLED } from '@/lib/premium'
-import type { UserProfile } from '@/types'
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
+import { PREMIUM_ENABLED } from "@/lib/premium";
+import type { UserProfile } from "@/types";
 
 // ─── Store interface ──────────────────────────────────────────────────────────
 interface UserStore {
   // ── Auth / Profile ────────────────────────────────────────────────────────
-  user: UserProfile | null
-  setUser: (user: UserProfile | null) => void
+  user: UserProfile | null;
+  setUser: (user: UserProfile | null) => void;
 
-  isLoading: boolean
-  setIsLoading: (loading: boolean) => void
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
 
   // ── Computed ──────────────────────────────────────────────────────────────
-  isPremium: () => boolean
+  isPremium: () => boolean;
 
   // ── Saved tunes ───────────────────────────────────────────────────────────
-  savedTuneIds: string[]
-  setSavedTuneIds: (ids: string[]) => void
-  toggleSavedTune: (tuneId: string) => void
-  isTuneSaved: (tuneId: string) => boolean
+  savedTuneIds: string[];
+  setSavedTuneIds: (ids: string[]) => void;
+  toggleSavedTune: (tuneId: string) => void;
+  isTuneSaved: (tuneId: string) => boolean;
 }
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -29,33 +29,31 @@ export const useUserStore = create<UserStore>()(
       // ── Auth ────────────────────────────────────────────────────────────
       user: null,
 
-      setUser: (user) =>
-        set({ user }, false, 'setUser'),
+      setUser: (user) => set({ user }, false, "setUser"),
 
       isLoading: true,
 
-      setIsLoading: (isLoading) =>
-        set({ isLoading }, false, 'setIsLoading'),
+      setIsLoading: (isLoading) => set({ isLoading }, false, "setIsLoading"),
 
       // ── Computed: isPremium ──────────────────────────────────────────────
       isPremium: () => {
         // Master kill-switch — premium features are held until enabled site-wide
-        if (!PREMIUM_ENABLED) return false
+        if (!PREMIUM_ENABLED) return false;
 
-        const { user } = get()
-        if (!user?.isPremium) return false
+        const { user } = get();
+        if (!user?.isPremium) return false;
         // Also check premiumUntil expiry if present
         if (user.premiumUntil) {
-          return new Date(user.premiumUntil) > new Date()
+          return new Date(user.premiumUntil) > new Date();
         }
-        return true
+        return true;
       },
 
       // ── Saved tunes ──────────────────────────────────────────────────────
       savedTuneIds: [],
 
       setSavedTuneIds: (ids) =>
-        set({ savedTuneIds: ids }, false, 'setSavedTuneIds'),
+        set({ savedTuneIds: ids }, false, "setSavedTuneIds"),
 
       toggleSavedTune: (tuneId) =>
         set(
@@ -65,16 +63,16 @@ export const useUserStore = create<UserStore>()(
               : [...state.savedTuneIds, tuneId],
           }),
           false,
-          'toggleSavedTune'
+          "toggleSavedTune",
         ),
 
       isTuneSaved: (tuneId) => get().savedTuneIds.includes(tuneId),
     }),
-    { name: 'UserStore' }
-  )
-)
+    { name: "UserStore" },
+  ),
+);
 
 // ─── Selectors ────────────────────────────────────────────────────────────────
-export const selectUser        = (s: UserStore) => s.user
-export const selectIsLoading   = (s: UserStore) => s.isLoading
-export const selectSavedIds    = (s: UserStore) => s.savedTuneIds
+export const selectUser = (s: UserStore) => s.user;
+export const selectIsLoading = (s: UserStore) => s.isLoading;
+export const selectSavedIds = (s: UserStore) => s.savedTuneIds;

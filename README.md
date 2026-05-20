@@ -43,15 +43,15 @@ The `vercel.json` already wires a daily cron job for temp-image cleanup.
 
 See `.env.example` for the full list. Critical ones:
 
-| Variable | Purpose |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key (RLS-respecting) |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Server-only** key, bypasses RLS — never expose |
-| `STRIPE_SECRET_KEY` | Stripe API key |
-| `STRIPE_WEBHOOK_SECRET` | Signing secret for `/api/webhooks/stripe` |
-| `STRIPE_PREMIUM_PRICE_ID` | Stripe price ID for the premium plan |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Public Stripe key (browser-safe) |
+| Variable                             | Purpose                                          |
+| ------------------------------------ | ------------------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`           | Supabase project URL                             |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`      | Public anon key (RLS-respecting)                 |
+| `SUPABASE_SERVICE_ROLE_KEY`          | **Server-only** key, bypasses RLS — never expose |
+| `STRIPE_SECRET_KEY`                  | Stripe API key                                   |
+| `STRIPE_WEBHOOK_SECRET`              | Signing secret for `/api/webhooks/stripe`        |
+| `STRIPE_PREMIUM_PRICE_ID`            | Stripe price ID for the premium plan             |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Public Stripe key (browser-safe)                 |
 
 ## Project layout
 
@@ -80,6 +80,7 @@ src/
 ## Protected routes
 
 Enforced in `src/proxy.ts`:
+
 - `/tunes/new` — create a tune
 - `/profile/*` — user profile pages
 - `/saved` — bookmarked tunes
