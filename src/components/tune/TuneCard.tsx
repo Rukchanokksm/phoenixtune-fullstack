@@ -1,5 +1,5 @@
-import Link from "next/link"
-import type { Tune } from "@/types"
+import Link from "next/link";
+import type { Tune } from "@/types";
 
 export function TuneCard({ tune }: { tune: Tune }) {
   return (
@@ -9,5 +9,5 @@ export function TuneCard({ tune }: { tune: Tune }) {
         <p className="mt-1 text-sm text-muted-foreground">{tune.description}</p>
       </Link>
     </div>
-  )
+  );
 }

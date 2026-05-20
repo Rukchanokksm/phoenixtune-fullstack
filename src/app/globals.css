@@ -37,7 +37,10 @@ body {
 }
 
 .btn-calculator {
-  transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
+  transition:
+    background 0.18s,
+    transform 0.15s,
+    box-shadow 0.18s;
 }
 .btn-calculator:hover {
   background: #fde047 !important;
@@ -49,7 +52,10 @@ body {
 }
 
 .btn-share-tune {
-  transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
+  transition:
+    background 0.18s,
+    transform 0.15s,
+    box-shadow 0.18s;
 }
 .btn-share-tune:hover {
   background: #86efac !important;

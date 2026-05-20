@@ -1,7 +1,13 @@
-import type { TuneParameters as TuneParametersType } from "@/types"
+import type { TuneParameters as TuneParametersType } from "@/types";
 
-export function TuneParameters({ parameters }: { parameters: TuneParametersType }) {
-  const rows = Object.entries(parameters).filter(([, v]) => v !== undefined && v !== null)
+export function TuneParameters({
+  parameters,
+}: {
+  parameters: TuneParametersType;
+}) {
+  const rows = Object.entries(parameters).filter(
+    ([, v]) => v !== undefined && v !== null,
+  );
 
   return (
     <table className="w-full text-sm">
@@ -20,5 +26,5 @@ export function TuneParameters({ parameters }: { parameters: TuneParametersType 
         ))}
       </tbody>
     </table>
-  )
+  );
 }

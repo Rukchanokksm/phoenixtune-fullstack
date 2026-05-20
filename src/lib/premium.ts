@@ -15,4 +15,4 @@
 //     env var change with zero data migration.
 
 export const PREMIUM_ENABLED =
-  process.env.NEXT_PUBLIC_PREMIUM_ENABLED === "true"
+  process.env.NEXT_PUBLIC_PREMIUM_ENABLED === "true";
